@@ -1,0 +1,1485 @@
+#VRML_SIM R2025a utf8
+
+WorldInfo {
+  title "MediBot hospital delivery"
+}
+Viewpoint {
+  orientation -0.32454598512176097 0.3298631408804215 0.8864875700368555 1.6748439962777428
+  position 0.6956900015791722 -13.866196612657586 13.83904889488139
+}
+Background {
+  skyColor [
+    0.78 0.86 0.95
+  ]
+}
+DirectionalLight {
+  ambientIntensity 0.75
+  direction -0.3 0.4 -1
+  intensity 0.8
+}
+Solid {
+  translation 3.5 1.75 -0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.82 0.84 0.86
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 10 5.5 0.1
+      }
+    }
+  ]
+  name "floor"
+  boundingObject Box {
+    size 10 5.5 0.1
+  }
+}
+Solid {
+  translation 0 0 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.8 0.4
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_HOME"
+}
+Solid {
+  translation 2 0 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.3 0.5 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_PHARMACY"
+}
+Solid {
+  translation 4 0 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.65 0.65 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_JUNCTION"
+}
+Solid {
+  translation 4 3 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.7 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_WARD-2A"
+}
+Solid {
+  translation 7 0 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.9 0.3 0.3
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_ICU"
+}
+Solid {
+  translation 7 3 0.002
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.2 0.7 0.7
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.9 0.004
+      }
+    }
+  ]
+  name "zone_WARD-3B"
+}
+Solid {
+  translation 3.5 -1.05 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 10.2 0.1 0.6
+      }
+    }
+  ]
+  name "wall_s"
+  boundingObject Box {
+    size 10.2 0.1 0.6
+  }
+}
+Solid {
+  translation 3.5 4.55 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 10.2 0.1 0.6
+      }
+    }
+  ]
+  name "wall_n"
+  boundingObject Box {
+    size 10.2 0.1 0.6
+  }
+}
+Solid {
+  translation -1.55 1.75 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 5.7 0.6
+      }
+    }
+  ]
+  name "wall_w"
+  boundingObject Box {
+    size 0.1 5.7 0.6
+  }
+}
+Solid {
+  translation 8.55 1.75 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.1 5.7 0.6
+      }
+    }
+  ]
+  name "wall_e"
+  boundingObject Box {
+    size 0.1 5.7 0.6
+  }
+}
+Solid {
+  translation 0.95 3.95 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 4.9 0.1 0.6
+      }
+    }
+  ]
+  name "ward_wall_0"
+  boundingObject Box {
+    size 4.9 0.1 0.6
+  }
+}
+Solid {
+  translation 5.5 3.95 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 1.8 0.1 0.6
+      }
+    }
+  ]
+  name "ward_wall_1"
+  boundingObject Box {
+    size 1.8 0.1 0.6
+  }
+}
+Solid {
+  translation 8.05 3.95 0.3
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.93 0.93 0.9
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.1 0.6
+      }
+    }
+  ]
+  name "ward_wall_2"
+  boundingObject Box {
+    size 0.9 0.1 0.6
+  }
+}
+Solid {
+  translation 5.5 1.5 0.4
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.55 0.7 0.85
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 1.6 1 0.8
+      }
+    }
+  ]
+  name "nurse_station"
+  boundingObject Box {
+    size 1.6 1 0.8
+  }
+}
+Solid {
+  translation 2 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_0"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 3 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_1"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 5 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_2"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 6 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_3"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 7.9 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_4"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 0.5 4.25 0.2
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.9 0.45 0.4
+      }
+    }
+  ]
+  name "bed_5"
+  boundingObject Box {
+    size 0.9 0.45 0.4
+  }
+}
+Solid {
+  translation 1 0.55 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_00.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_01.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_0"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 3 -0.55 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_02.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_03.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_1"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 5.5 -0.55 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_04.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_05.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_2"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 5.5 3.55 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_06.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_07.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_3"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 3.45 1.5 0.25
+  rotation 0 0 1 1.5708
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_08.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_09.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_4"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 7.55 1.5 0.25
+  rotation 0 0 1 1.5708
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_10.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_11.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_5"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation 8 3 0.25
+  rotation 0 0 1 3.14159
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_12.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_13.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_6"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+Solid {
+  translation -1.2 0 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.01 0.3 0.5
+      }
+    }
+    Shape {
+      appearance Appearance {
+        texture ImageTexture {
+          url [
+            "textures/tag_14.png"
+          ]
+          filtering 0
+        }
+      }
+      geometry IndexedFaceSet {
+        coord Coordinate {
+          point [
+            0.006 -0.15 -0.15
+            0.006 0.15 -0.15
+            0.006 0.15 0.15
+            0.006 -0.15 0.15
+          ]
+        }
+        texCoord TextureCoordinate {
+          point [
+            0 0
+            1 0
+            1 1
+            0 1
+          ]
+        }
+        coordIndex [
+          0, 1, 2, 3, -1
+        ]
+        texCoordIndex [
+          0, 1, 2, 3, -1
+        ]
+      }
+    }
+    Pose {
+      rotation 0 0 1 3.14159265
+      children [
+        Shape {
+          appearance Appearance {
+            texture ImageTexture {
+              url [
+                "textures/tag_15.png"
+              ]
+              filtering 0
+            }
+          }
+          geometry IndexedFaceSet {
+            coord Coordinate {
+              point [
+                0.006 -0.15 -0.15
+                0.006 0.15 -0.15
+                0.006 0.15 0.15
+                0.006 -0.15 0.15
+              ]
+            }
+            texCoord TextureCoordinate {
+              point [
+                0 0
+                1 0
+                1 1
+                0 1
+              ]
+            }
+            coordIndex [
+              0, 1, 2, 3, -1
+            ]
+            texCoordIndex [
+              0, 1, 2, 3, -1
+            ]
+          }
+        }
+      ]
+    }
+  ]
+  name "tag_board_7"
+  boundingObject Box {
+    size 0.01 0.3 0.5
+  }
+}
+DEF TROLLEY Solid {
+  translation -1 3.4 0.35
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.55 0.1
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.5 0.45 0.7
+      }
+    }
+  ]
+  name "trolley"
+  boundingObject Box {
+    size 0.5 0.45 0.7
+  }
+}
+DEF MEDIBOT Robot {
+  translation 1.4175616442627616e-14 2.6478813690452415e-09 0.04927190179967238
+  rotation -0.9999999999864864 5.198772223488803e-06 -1.98300145843408e-09 5.287792297584613e-08
+  children [
+    Pose {
+      translation 0 0 0.02
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.92 0.94 0.97
+            roughness 0.6
+            metalness 0
+          }
+          geometry Box {
+            size 0.3 0.18 0.08
+          }
+        }
+      ]
+    }
+    Pose {
+      translation 0.13 0 0.12
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.15 0.35 0.75
+            roughness 0.6
+            metalness 0
+          }
+          geometry Box {
+            size 0.02 0.02 0.12
+          }
+        }
+      ]
+    }
+    Camera {
+      translation 0.14 0 0.18
+      fieldOfView 1.2
+      width 640
+      height 480
+      near 0.05
+    }
+    DistanceSensor {
+      translation 0.16 0 0.02
+      name "us_front"
+      lookupTable [
+        0 0 0
+        4 4 0
+      ]
+      type "sonar"
+      numberOfRays 3
+      aperture 0.3
+    }
+    DistanceSensor {
+      translation 0.16 0.07 0.02
+      rotation 0 0 1 0.7854
+      name "us_left"
+      lookupTable [
+        0 0 0
+        4 4 0
+      ]
+      type "sonar"
+      numberOfRays 3
+      aperture 0.3
+    }
+    DistanceSensor {
+      translation 0.16 -0.07 0.02
+      rotation 0 0 1 -0.7854
+      name "us_right"
+      lookupTable [
+        0 0 0
+        4 4 0
+      ]
+      type "sonar"
+      numberOfRays 3
+      aperture 0.3
+    }
+    InertialUnit {
+      translation 0 0 0.03
+      name "imu"
+    }
+    Gyro {
+      translation 0 0 0.03
+    }
+    Accelerometer {
+      translation 0 0 0.03
+      name "accel"
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 6.867000014210153e-08
+        axis 0 1 0
+        anchor -0.14 0 0.066
+      }
+      device [
+        RotationalMotor {
+          name "lid_motor"
+          maxVelocity 3
+          minPosition -1.6
+        }
+        PositionSensor {
+          name "lid_ps"
+        }
+      ]
+      endPoint Solid {
+        translation -0.14 0 0.066
+        rotation 0 1 0 6.664001874625056e-08
+        children [
+          Pose {
+            translation 0.14 0 0.004
+            children [
+              Shape {
+                appearance PBRAppearance {
+                  baseColor 0.2 0.7 0.35
+                  roughness 0.6
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.28 0.16 0.008
+                }
+              }
+            ]
+          }
+        ]
+        name "lid"
+        boundingObject Pose {
+          translation 0.14 0 0.004
+          children [
+            Box {
+              size 0.28 0.16 0.008
+            }
+          ]
+        }
+        physics Physics {
+          density -1
+          mass 0.05
+        }
+        linearVelocity 5.4978220987931306e-17 -3.684598514646884e-16 0
+        angularVelocity -1.5972147219411259e-15 4.075043708087367e-15 1.1706204026731865e-15
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 1.3701048117269831e-11
+        axis 0 1 0
+        anchor 0.1 0.115 0
+      }
+      device [
+        RotationalMotor {
+          name "wheel_fl"
+          maxVelocity 20
+        }
+        PositionSensor {
+          name "ps_fl"
+        }
+      ]
+      endPoint Solid {
+        translation 0.1 0.115 0
+        rotation 1 6.850498895301199e-12 -6.850524058634916e-12 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.1 0.1 0.1
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.03
+              radius 0.05
+            }
+          }
+        ]
+        name "wheel_fl_solid"
+        boundingObject Cylinder {
+          height 0.03
+          radius 0.05
+        }
+        physics Physics {
+          density -1
+          mass 0.15
+        }
+        linearVelocity 2.0526177315765882e-17 -2.5804425264796903e-16 5.211197130395108e-16
+        angularVelocity -5.294338978005198e-19 1.5487300404094147e-15 1.0531640037166377e-15
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 1.3699620268997173e-11
+        axis 0 1 0
+        anchor 0.1 -0.115 0
+      }
+      device [
+        RotationalMotor {
+          name "wheel_fr"
+          maxVelocity 20
+        }
+        PositionSensor {
+          name "ps_fr"
+        }
+      ]
+      endPoint Solid {
+        translation 0.1 -0.115 0
+        rotation 1 6.8497849737872534e-12 -6.849810134498587e-12 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.1 0.1 0.1
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.03
+              radius 0.05
+            }
+          }
+        ]
+        name "wheel_fr_solid"
+        boundingObject Cylinder {
+          height 0.03
+          radius 0.05
+        }
+        physics Physics {
+          density -1
+          mass 0.15
+        }
+        linearVelocity 1.4423066241771075e-16 -4.569158554812537e-17 3.317803867918795e-16
+        angularVelocity 4.229071037365459e-15 2.100988750532383e-15 1.049149257883959e-15
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 1.3699319781573324e-11
+        axis 0 1 0
+        anchor -0.1 0.115 0
+      }
+      device [
+        RotationalMotor {
+          name "wheel_rl"
+          maxVelocity 20
+        }
+        PositionSensor {
+          name "ps_rl"
+        }
+      ]
+      endPoint Solid {
+        translation -0.1 0.115 0
+        rotation 1 6.849634730627205e-12 -6.849659890786663e-12 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.1 0.1 0.1
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.03
+              radius 0.05
+            }
+          }
+        ]
+        name "wheel_rl_solid"
+        boundingObject Cylinder {
+          height 0.03
+          radius 0.05
+        }
+        physics Physics {
+          density -1
+          mass 0.15
+        }
+        linearVelocity 2.5505384122109574e-17 -3.7749801610043107e-16 -6.161592695896954e-16
+        angularVelocity 4.2295707562208716e-15 1.7661852288080482e-15 1.0764608109975245e-15
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        position 1.3696191980272365e-11
+        axis 0 1 0
+        anchor -0.1 -0.115 0
+      }
+      device [
+        RotationalMotor {
+          name "wheel_rr"
+          maxVelocity 20
+        }
+        PositionSensor {
+          name "ps_rr"
+        }
+      ]
+      endPoint Solid {
+        translation -0.1 -0.115 0
+        rotation 1 6.848070835721243e-12 -6.848095990136183e-12 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.1 0.1 0.1
+              roughness 1
+              metalness 0
+            }
+            geometry Cylinder {
+              height 0.03
+              radius 0.05
+            }
+          }
+        ]
+        name "wheel_rr_solid"
+        boundingObject Cylinder {
+          height 0.03
+          radius 0.05
+        }
+        physics Physics {
+          density -1
+          mass 0.15
+        }
+        linearVelocity 1.692350725324355e-16 -9.682941039524452e-16 7.101715127099318e-16
+        angularVelocity 2.7491160952766045e-14 1.7756314157160664e-15 1.0717222922682338e-15
+      }
+    }
+  ]
+  name "MediBot"
+  boundingObject Pose {
+    translation 0 0 0.02
+    children [
+      Box {
+        size 0.3 0.18 0.08
+      }
+    ]
+  }
+  physics Physics {
+    density -1
+    mass 3
+  }
+  controller "medibot_controller"
+  supervisor TRUE
+  linearVelocity 1.4401646778228963e-16 -4.148628747371856e-16 0
+  angularVelocity -3.6625914214501517e-16 1.9164015542279484e-15 1.069263816751436e-15
+}
