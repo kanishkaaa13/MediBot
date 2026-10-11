@@ -252,18 +252,30 @@
     "width": 640,
     "height": 480,
     "fov": 1.2,
-    "x": 0.14,
-    "z": 0.18
+    "x": 0.22,
+    "z": 0.19
+  },
+  "face_camera": {
+    "width": 640,
+    "height": 480,
+    "fov": 0.9,
+    "x": 0.19,
+    "z": 0.88
   },
   "robot": {
-    "wheel_radius": 0.05,
-    "track": 0.23,
+    "wheel_radius": 0.06,
+    "track": 0.28,
     "start": [
       0.0,
       0.0,
       0.0
     ],
-    "z": 0.05
+    "z": 0.06,
+    "footprint": [
+      0.44,
+      0.24,
+      0.12
+    ]
   },
   "trolley_park": [
     -1.5,
