@@ -1,0 +1,708 @@
+#!/usr/bin/env python3
+"""
+MediBot - Webots hospital world generator (Phase 1).
+
+Generates:
+  worlds/medibot.wbt                         Hospital world + robot + trolley + AprilTag boards
+  worlds/textures/tag_XX.png                 Real AprilTag (tag36h11) images
+  worlds/textures/sign_*.png                 High-res hospital signs generated with Pillow
+  controllers/medibot_controller/config.json Single source of truth for graph, tags, robot
+
+Run from the project root:   py generate_world.py
+"""
+import json
+import math
+import os
+
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+WORLD_DIR = os.path.join(ROOT, "worlds")
+TEX_DIR = os.path.join(WORLD_DIR, "textures")
+CTRL_DIR = os.path.join(ROOT, "controllers", "medibot_controller")
+
+# ----------------------------------------------------------------------------
+# Waypoint graph (metres, 1 Webots unit = 1 m) - KEPT FIXED
+# ----------------------------------------------------------------------------
+NODES = {
+    "HOME": (0.0, 0.0),
+    "PHARMACY": (2.0, 0.0),
+    "JUNCTION": (4.0, 0.0),
+    "WARD-2A": (4.0, 3.0),
+    "ICU": (7.0, 0.0),
+    "WARD-3B": (7.0, 3.0),
+}
+EDGES = [
+    ("HOME", "PHARMACY"),
+    ("PHARMACY", "JUNCTION"),
+    ("JUNCTION", "WARD-2A"),
+    ("JUNCTION", "ICU"),
+    ("WARD-2A", "WARD-3B"),
+    ("ICU", "WARD-3B"),
+]
+
+PI = math.pi
+TAG_SIZE = 0.20      # black square side, metres
+TAG_PAD = 0.05       # white margin per side, metres
+TAG_Z = 0.25         # tag centre height above floor
+BOARD_W = TAG_SIZE + 2 * TAG_PAD   # 0.30 m
+BOARD_H = 0.50
+
+# Robot geometry
+WHEEL_R = 0.05
+WHEEL_X = 0.10
+WHEEL_Y = 0.115
+CHASSIS = (0.30, 0.18, 0.08)
+CAM = {"width": 640, "height": 480, "fov": 1.2, "x": 0.14, "z": 0.18}
+
+# Safe trolley parking spot in reception alcove (away from transit lines)
+TROLLEY_PARK = (-1.5, 1.8)
+
+
+# ----------------------------------------------------------------------------
+# Automatic AprilTag board placement
+# ----------------------------------------------------------------------------
+def generate_boards():
+    """Double-sided boards along every graph edge and near room doors / dead-ends.
+
+    Each board i has:
+      front face id = 2*i     (normal along yaw)
+      back  face id = 2*i + 1 (normal along yaw + pi)
+    Boards stand 0.55 m beside the corridor centre line.
+    """
+    boards = [
+        # Edge: HOME -> PHARMACY (direction +x, yaw 0.0)
+        (1.0, 0.55, 0.0),
+        # Edge: PHARMACY -> JUNCTION (direction +x, yaw 0.0, alternating right side)
+        (3.0, -0.55, 0.0),
+        # Edge: JUNCTION -> ICU (direction +x, yaw 0.0, right side avoids nurse station)
+        (5.5, -0.55, 0.0),
+        # Edge: JUNCTION -> WARD-2A (direction +y, yaw PI/2, west side avoids nurse station)
+        (3.45, 1.5, PI / 2),
+        # Edge: WARD-2A -> WARD-3B (direction +x, yaw 0.0, north side avoids nurse station)
+        (5.5, 3.55, 0.0),
+        # Edge: ICU -> WARD-3B (direction +y, yaw PI/2, east side avoids nurse station)
+        (7.55, 1.5, PI / 2),
+        # Endpoint / dead-end boards (vital for approach/return accuracy):
+        (-1.2, 0.0, 0.0),          # Behind HOME (seen while returning to HOME)
+        (8.0, 3.0, PI),            # Behind WARD-3B (seen while approaching WARD-3B)
+        (4.0, -0.85, PI / 2),      # South of JUNCTION (seen when driving south to JUNCTION)
+        (7.0, -0.85, PI / 2),      # South of ICU (seen when approaching ICU)
+        (4.0, 3.85, -PI / 2),      # North of WARD-2A door (seen when approaching WARD-2A)
+        (2.0, -0.85, PI / 2),      # South of PHARMACY door (seen when approaching PHARMACY)
+    ]
+    return boards
+
+
+# ----------------------------------------------------------------------------
+# Signage and Texture Generation (Pillow + OpenCV)
+# ----------------------------------------------------------------------------
+def make_tag_image(tag_id):
+    """Return a 600x600 uint8 image: 400 px tag36h11 marker + 100 px white margin."""
+    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
+    if hasattr(cv2.aruco, "generateImageMarker"):
+        marker = cv2.aruco.generateImageMarker(dictionary, tag_id, 80, borderBits=1)
+    else:  # OpenCV < 4.7
+        marker = cv2.aruco.drawMarker(dictionary, tag_id, 80, borderBits=1)
+    marker = cv2.resize(marker, (400, 400), interpolation=cv2.INTER_NEAREST)
+    return cv2.copyMakeBorder(marker, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=255)
+
+
+def make_sign_textures(tex_dir):
+    """Generate high-resolution PNG textures for hospital signs using Pillow."""
+    signs = [
+        ("sign_ward_2a.png", "WARD 2A", (16, 128, 128)),
+        ("sign_ward_3b.png", "WARD 3B", (16, 128, 128)),
+        ("sign_icu.png", "ICU", (180, 24, 32)),
+        ("sign_pharmacy.png", "PHARMACY", (24, 72, 160)),
+        ("sign_nurse_station.png", "NURSE STATION", (18, 96, 136)),
+        ("sign_home_charging.png", "HOME / CHARGING", (20, 130, 60)),
+        ("sign_junction_dir.png", "<- PHARMACY  |  ICU ->", (28, 64, 120)),
+        ("sign_reception.png", "RECEPTION", (50, 70, 100)),
+    ]
+    for fn, text, bg in signs:
+        img = Image.new("RGB", (1024, 256), bg)
+        draw = ImageDraw.Draw(img)
+        # Clean double border
+        draw.rectangle([10, 10, 1013, 245], outline=(255, 255, 255), width=8)
+        draw.rectangle([20, 20, 1003, 235], outline=(255, 255, 255), width=2)
+        # Font loading with safe fallbacks
+        font = None
+        for font_path in [
+            "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/calibrib.ttf",
+        ]:
+            if os.path.exists(font_path):
+                try:
+                    font = ImageFont.truetype(font_path, 110)
+                    break
+                except Exception:
+                    pass
+        if font is None:
+            font = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), text, font=font)
+        tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        x = (1024 - tw) / 2
+        y = (256 - th) / 2 - bbox[1]
+        draw.text((x, y), text, fill=(255, 255, 255), font=font)
+        img.save(os.path.join(tex_dir, fn))
+
+
+# ----------------------------------------------------------------------------
+# .wbt text helpers
+# ----------------------------------------------------------------------------
+def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=None, roughness=1.0, metalness=0.0):
+    d = f"DEF {def_name} " if def_name else ""
+    s = (f"{d}Solid {{\n"
+         f"  translation {x:g} {y:g} {z:g}\n"
+         f"  rotation 0 0 1 {yaw:g}\n"
+         f"  name \"{name}\"\n"
+         f"  children [\n"
+         f"    Shape {{\n"
+         f"      appearance PBRAppearance {{\n"
+         f"        baseColor {rgb[0]:g} {rgb[1]:g} {rgb[2]:g}\n"
+         f"        roughness {roughness:g}\n"
+         f"        metalness {metalness:g}\n"
+         f"      }}\n"
+         f"      geometry Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
+         f"    }}\n"
+         f"  ]\n")
+    if collide:
+        s += f"  boundingObject Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
+    return s + "}\n"
+
+
+def cylinder_solid(name, x, y, z, r, h, rgb, collide=False, yaw=0.0):
+    s = (f"Solid {{\n"
+         f"  translation {x:g} {y:g} {z:g}\n"
+         f"  rotation 0 0 1 {yaw:g}\n"
+         f"  name \"{name}\"\n"
+         f"  children [\n"
+         f"    Shape {{\n"
+         f"      appearance PBRAppearance {{ baseColor {rgb[0]:g} {rgb[1]:g} {rgb[2]:g} roughness 0.5 metalness 0.2 }}\n"
+         f"      geometry Cylinder {{ radius {r:g} height {h:g} }}\n"
+         f"    }}\n"
+         f"  ]\n")
+    if collide:
+        s += f"  boundingObject Cylinder {{ radius {r:g} height {h:g} }}\n"
+    return s + "}\n"
+
+
+def point_light(name, x, y, z, intensity=0.6, radius=4.5):
+    return (f"PointLight {{\n"
+            f"  attenuation 0 0 1\n"
+            f"  castShadows FALSE\n"
+            f"  color 1.0 0.98 0.94\n"
+            f"  intensity {intensity:g}\n"
+            f"  location {x:g} {y:g} {z:g}\n"
+            f"  radius {radius:g}\n"
+            f"}}\n")
+
+
+def tag_face(tex_name):
+    h = BOARD_W / 2
+    return (f"Shape {{\n"
+            f"  appearance Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}\n"
+            f"  geometry IndexedFaceSet {{\n"
+            f"    coord Coordinate {{ point [ 0.006 {-h:g} {-h:g}, 0.006 {h:g} {-h:g}, 0.006 {h:g} {h:g}, 0.006 {-h:g} {h:g} ] }}\n"
+            f"    texCoord TextureCoordinate {{ point [ 0 0, 1 0, 1 1, 0 1 ] }}\n"
+            f"    coordIndex [ 0 1 2 3 -1 ]\n"
+            f"    texCoordIndex [ 0 1 2 3 -1 ]\n"
+            f"  }}\n"
+            f"}}\n")
+
+
+def tag_board(i, x, y, yaw):
+    front, back = f"tag_{2 * i:02d}.png", f"tag_{2 * i + 1:02d}.png"
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} {TAG_Z:g}\n"
+            f"  rotation 0 0 1 {yaw:.5f}\n"
+            f"  name \"tag_board_{i}\"\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      appearance PBRAppearance {{ baseColor 1 1 1 roughness 1 metalness 0 }}\n"
+            f"      geometry Box {{ size 0.01 {BOARD_W:g} {BOARD_H:g} }}\n"
+            f"    }}\n"
+            f"    {tag_face(front)}"
+            f"    Transform {{\n"
+            f"      rotation 0 0 1 3.14159265\n"
+            f"      children [\n"
+            f"        {tag_face(back)}"
+            f"      ]\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"  boundingObject Box {{ size 0.01 {BOARD_W:g} {BOARD_H:g} }}\n"
+            f"}}\n")
+
+
+def wall_sign(name, tex_name, x, y, z, w, h, yaw):
+    """Sign mounted on a wall. Yaw defines the normal pointing OUT of the sign towards the viewer."""
+    hw, hh = w / 2, h / 2
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} {z:g}\n"
+            f"  rotation 0 0 1 {yaw:.5f}\n"
+            f"  name \"{name}\"\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      appearance Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 2 }} }}\n"
+            f"      geometry IndexedFaceSet {{\n"
+            f"        coord Coordinate {{ point [ 0.005 {-hw:g} {-hh:g}, 0.005 {hw:g} {-hh:g}, 0.005 {hw:g} {hh:g}, 0.005 {-hw:g} {hh:g} ] }}\n"
+            f"        texCoord TextureCoordinate {{ point [ 0 0, 1 0, 1 1, 0 1 ] }}\n"
+            f"        coordIndex [ 0 1 2 3 -1 ]\n"
+            f"        texCoordIndex [ 0 1 2 3 -1 ]\n"
+            f"      }}\n"
+            f"    }}\n"
+            f"    Shape {{\n"
+            f"      appearance PBRAppearance {{ baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }}\n"
+            f"      geometry Box {{ size 0.008 {w + 0.04:g} {h + 0.04:g} }}\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"}}\n")
+
+
+def floor_sign(name, tex_name, x, y, w, length, yaw=0.0):
+    """Large floor zone patch displaying the ward / department name."""
+    hw, hl = w / 2, length / 2
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} 0.002\n"
+            f"  rotation 0 0 1 {yaw:.5f}\n"
+            f"  name \"{name}\"\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      appearance Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 2 }} }}\n"
+            f"      geometry IndexedFaceSet {{\n"
+            f"        coord Coordinate {{ point [ {-hw:g} {-hl:g} 0, {hw:g} {-hl:g} 0, {hw:g} {hl:g} 0, {-hw:g} {hl:g} 0 ] }}\n"
+            f"        texCoord TextureCoordinate {{ point [ 0 0, 1 0, 1 1, 0 1 ] }}\n"
+            f"        coordIndex [ 0 1 2 3 -1 ]\n"
+            f"        texCoordIndex [ 0 1 2 3 -1 ]\n"
+            f"      }}\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"}}\n")
+
+
+# ----------------------------------------------------------------------------
+# Procedural Hospital Prop Builders
+# ----------------------------------------------------------------------------
+def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False):
+    """Realistic hospital bed with mattress, pillow, headboard and optional vital signs monitor."""
+    parts = []
+    # Bed frame and mattress
+    bed_col = (0.2, 0.45, 0.7) if is_icu else (0.85, 0.88, 0.92)
+    parts.append(box_solid(f"{name}_frame", x, y, 0.15, 1.8, 0.85, 0.25, (0.25, 0.28, 0.3), collide=True, yaw=yaw))
+    parts.append(box_solid(f"{name}_mattress", x, y, 0.32, 1.7, 0.8, 0.12, (0.95, 0.95, 0.98), collide=False, yaw=yaw))
+    # Headboard
+    hx = x - 0.85 * math.cos(yaw)
+    hy = y - 0.85 * math.sin(yaw)
+    parts.append(box_solid(f"{name}_headboard", hx, hy, 0.38, 0.08, 0.85, 0.45, bed_col, collide=False, yaw=yaw))
+    # Pillow
+    px = x - 0.65 * math.cos(yaw)
+    py = y - 0.65 * math.sin(yaw)
+    parts.append(box_solid(f"{name}_pillow", px, py, 0.40, 0.35, 0.55, 0.08, (1, 1, 1), collide=False, yaw=yaw))
+    # Bedside cabinet
+    bx = x + 0.55 * math.sin(yaw)
+    by = y - 0.55 * math.cos(yaw)
+    parts.append(box_solid(f"{name}_cabinet", bx, by, 0.25, 0.4, 0.4, 0.5, (0.85, 0.9, 0.95), collide=True, yaw=yaw))
+    # Vital signs monitor stand for ICU beds
+    if has_monitor:
+        mx = x - 0.55 * math.sin(yaw) - 0.4 * math.cos(yaw)
+        my = y + 0.55 * math.cos(yaw) - 0.4 * math.sin(yaw)
+        parts.append(cylinder_solid(f"{name}_iv_stand", mx, my, 0.6, 0.02, 1.2, (0.8, 0.8, 0.85)))
+        parts.append(box_solid(f"{name}_monitor", mx, my, 1.0, 0.1, 0.25, 0.2, (0.1, 0.15, 0.2), yaw=yaw))
+        # Glowing green vital display
+        parts.append(box_solid(f"{name}_screen", mx + 0.05 * math.cos(yaw), my + 0.05 * math.sin(yaw), 1.0,
+                               0.01, 0.22, 0.16, (0.1, 0.9, 0.3), collide=False, yaw=yaw, roughness=0.1))
+    return "".join(parts)
+
+
+def wheelchair(name, x, y, yaw):
+    """Parked hospital wheelchair against a wall."""
+    parts = []
+    # Seat and frame
+    parts.append(box_solid(f"{name}_seat", x, y, 0.32, 0.45, 0.45, 0.06, (0.15, 0.2, 0.3), collide=True, yaw=yaw))
+    parts.append(box_solid(f"{name}_back", x - 0.2 * math.cos(yaw), y - 0.2 * math.sin(yaw), 0.55,
+                           0.06, 0.45, 0.42, (0.15, 0.2, 0.3), collide=False, yaw=yaw))
+    # Wheels
+    w1_x = x + 0.26 * math.sin(yaw)
+    w1_y = y - 0.26 * math.cos(yaw)
+    w2_x = x - 0.26 * math.sin(yaw)
+    w2_y = y + 0.26 * math.cos(yaw)
+    parts.append(cylinder_solid(f"{name}_w1", w1_x, w1_y, 0.3, 0.28, 0.03, (0.2, 0.2, 0.2)))
+    parts.append(cylinder_solid(f"{name}_w2", w2_x, w2_y, 0.3, 0.28, 0.03, (0.2, 0.2, 0.2)))
+    return "".join(parts)
+
+
+def hospital_bench(name, x, y, yaw):
+    """Waiting area multi-seat bench."""
+    return box_solid(name, x, y, 0.25, 1.4, 0.45, 0.45, (0.2, 0.4, 0.65), collide=True, yaw=yaw)
+
+
+def nurse_station_island(x, y):
+    """Central Nurse Station counter island with monitors and desk."""
+    parts = []
+    # Main counter
+    parts.append(box_solid("nurse_counter", x, y, 0.42, 1.5, 0.9, 0.84, (0.92, 0.95, 0.98), collide=True))
+    # Countertop trim
+    parts.append(box_solid("nurse_counter_top", x, y, 0.85, 1.54, 0.94, 0.04, (0.2, 0.35, 0.5), collide=False))
+    # Computer monitors
+    parts.append(box_solid("nurse_pc_1", x - 0.35, y, 0.97, 0.05, 0.35, 0.22, (0.15, 0.15, 0.18), collide=False))
+    parts.append(box_solid("nurse_pc_2", x + 0.35, y, 0.97, 0.05, 0.35, 0.22, (0.15, 0.15, 0.18), collide=False))
+    # Glowing screen faces
+    parts.append(box_solid("nurse_screen_1", x - 0.35, y - 0.03, 0.97, 0.01, 0.32, 0.19, (0.2, 0.7, 1.0), collide=False))
+    parts.append(box_solid("nurse_screen_2", x + 0.35, y - 0.03, 0.97, 0.01, 0.32, 0.19, (0.2, 0.7, 1.0), collide=False))
+    return "".join(parts)
+
+
+def charging_dock(x, y):
+    """Wall-mounted charging dock at HOME."""
+    parts = []
+    # Dock tower
+    parts.append(box_solid("charging_tower", x, y, 0.45, 0.25, 0.5, 0.9, (0.18, 0.22, 0.28), collide=True))
+    # Glowing green status LED
+    parts.append(box_solid("charging_led", x + 0.13, y, 0.75, 0.02, 0.25, 0.06, (0.1, 0.95, 0.3), collide=False))
+    # Floor contact plates
+    parts.append(box_solid("charging_pads", x + 0.18, y, 0.003, 0.2, 0.3, 0.006, (0.85, 0.75, 0.2), collide=False))
+    return "".join(parts)
+
+
+# ----------------------------------------------------------------------------
+# Robot and Wheel Assembly
+# ----------------------------------------------------------------------------
+def wheel(tag, x, y):
+    return (f"HingeJoint {{\n"
+            f"  jointParameters HingeJointParameters {{ axis 0 1 0 anchor {x:g} {y:g} 0 }}\n"
+            f"  device [\n"
+            f"    RotationalMotor {{ name \"wheel_{tag}\" maxVelocity 20 }}\n"
+            f"    PositionSensor {{ name \"ps_{tag}\" }}\n"
+            f"  ]\n"
+            f"  endPoint Solid {{\n"
+            f"    translation {x:g} {y:g} 0\n"
+            f"    rotation 1 0 0 1.5708\n"
+            f"    children [\n"
+            f"      Shape {{\n"
+            f"        appearance PBRAppearance {{ baseColor 0.1 0.1 0.1 roughness 1 metalness 0 }}\n"
+            f"        geometry Cylinder {{ height 0.03 radius {WHEEL_R:g} }}\n"
+            f"      }}\n"
+            f"    ]\n"
+            f"    name \"wheel_{tag}_solid\"\n"
+            f"    boundingObject Cylinder {{ height 0.03 radius {WHEEL_R:g} }}\n"
+            f"    physics Physics {{ density -1 mass 0.15 }}\n"
+            f"  }}\n"
+            f"}}\n")
+
+
+def sonar(name, x, y, yaw):
+    return (f"DistanceSensor {{\n"
+            f"  translation {x:g} {y:g} 0.02\n"
+            f"  rotation 0 0 1 {yaw:g}\n"
+            f"  name \"{name}\"\n"
+            f"  type \"sonar\"\n"
+            f"  lookupTable [ 0 0 0, 4 4 0 ]\n"
+            f"  numberOfRays 3\n"
+            f"  aperture 0.3\n"
+            f"}}\n")
+
+
+def robot_node():
+    cx, cy, cz = CHASSIS
+    wheels = "".join([
+        wheel("fl", WHEEL_X, WHEEL_Y), wheel("fr", WHEEL_X, -WHEEL_Y),
+        wheel("rl", -WHEEL_X, WHEEL_Y), wheel("rr", -WHEEL_X, -WHEEL_Y),
+    ])
+    return f"""DEF MEDIBOT Robot {{
+  translation 0 0 {WHEEL_R:g}
+  rotation 0 0 1 0
+  name "MediBot"
+  controller "medibot_controller"
+  supervisor TRUE
+  children [
+    Pose {{
+      translation 0 0 0.02
+      children [
+        Shape {{
+          appearance PBRAppearance {{ baseColor 0.92 0.94 0.97 roughness 0.6 metalness 0 }}
+          geometry Box {{ size {cx:g} {cy:g} {cz:g} }}
+        }}
+      ]
+    }}
+    Pose {{
+      translation 0.13 0 0.12
+      children [
+        Shape {{
+          appearance PBRAppearance {{ baseColor 0.15 0.35 0.75 roughness 0.6 metalness 0 }}
+          geometry Box {{ size 0.02 0.02 0.12 }}
+        }}
+      ]
+    }}
+    Camera {{
+      translation {CAM['x']:g} 0 {CAM['z']:g}
+      name "camera"
+      width {CAM['width']}
+      height {CAM['height']}
+      fieldOfView {CAM['fov']:g}
+      near 0.05
+    }}
+    {sonar("us_front", 0.16, 0.0, 0.0)}
+    {sonar("us_left", 0.16, 0.07, 0.7854)}
+    {sonar("us_right", 0.16, -0.07, -0.7854)}
+    InertialUnit {{ translation 0 0 0.03 name "imu" }}
+    Gyro {{ translation 0 0 0.03 name "gyro" }}
+    Accelerometer {{ translation 0 0 0.03 name "accel" }}
+    HingeJoint {{
+      jointParameters HingeJointParameters {{ axis 0 1 0 anchor -0.14 0 0.066 }}
+      device [
+        RotationalMotor {{ name "lid_motor" minPosition -1.6 maxPosition 0 maxVelocity 3 }}
+        PositionSensor {{ name "lid_ps" }}
+      ]
+      endPoint Solid {{
+        translation -0.14 0 0.066
+        children [
+          Pose {{
+            translation 0.14 0 0.004
+            children [
+              Shape {{
+                appearance PBRAppearance {{ baseColor 0.2 0.7 0.35 roughness 0.6 metalness 0 }}
+                geometry Box {{ size 0.28 0.16 0.008 }}
+              }}
+            ]
+          }}
+        ]
+        name "lid"
+        boundingObject Pose {{
+          translation 0.14 0 0.004
+          children [ Box {{ size 0.28 0.16 0.008 }} ]
+        }}
+        physics Physics {{ density -1 mass 0.05 }}
+      }}
+    }}
+    {wheels}
+  ]
+  boundingObject Pose {{
+    translation 0 0 0.02
+    children [ Box {{ size {cx:g} {cy:g} {cz:g} }} ]
+  }}
+  physics Physics {{ density -1 mass 3 }}
+}}
+"""
+
+
+def look_at(pos, target):
+    """Webots Viewpoint orientation (axis, angle) looking from pos at target (ENU, z up)."""
+    f = np.array(target, float) - np.array(pos, float)
+    f /= np.linalg.norm(f)
+    left = np.cross([0, 0, 1.0], f)
+    left /= np.linalg.norm(left)
+    up = np.cross(f, left)
+    R = np.column_stack([f, left, up])
+    angle = math.acos(max(-1.0, min(1.0, (np.trace(R) - 1) / 2)))
+    axis = np.array([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]])
+    axis = axis / np.linalg.norm(axis)
+    return axis, angle
+
+
+# ----------------------------------------------------------------------------
+# Complete World Construction
+# ----------------------------------------------------------------------------
+def build_world():
+    parts = []
+    # R2025a header
+    parts.append("#VRML_SIM R2025a utf8\n\n")
+
+    # Viewpoint: beautiful top-down overview of the entire hospital
+    # Follow-robot tip: in Webots 3D view, right-click robot -> Follow Object
+    axis, ang = look_at((3.5, -5.2, 8.8), (3.5, 1.2, 0.0))
+    parts.append(f"""WorldInfo {{
+  title "MediBot hospital delivery"
+  basicTimeStep 32
+  coordinateSystem "ENU"
+}}
+Viewpoint {{
+  orientation {axis[0]:.5f} {axis[1]:.5f} {axis[2]:.5f} {ang:.5f}
+  position 3.5 -5.2 8.8
+}}
+Background {{ skyColor [ 0.78 0.86 0.95 ] }}
+DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
+""")
+
+    # Ceiling PointLights for warm hospital ambience
+    lights = [
+        ("light_home", 0.0, 0.0, 2.3, 0.7),
+        ("light_pharmacy", 2.0, -1.8, 2.3, 0.7),
+        ("light_junction", 4.0, 0.0, 2.3, 0.7),
+        ("light_waiting", 4.5, -2.0, 2.3, 0.7),
+        ("light_icu", 7.0, -1.8, 2.3, 0.7),
+        ("light_corridor_w", 4.0, 1.5, 2.3, 0.7),
+        ("light_nurse", 5.5, 1.5, 2.3, 0.7),
+        ("light_corridor_e", 7.0, 1.5, 2.3, 0.7),
+        ("light_ward2a", 3.8, 4.4, 2.3, 0.7),
+        ("light_ward3b", 7.0, 4.4, 2.3, 0.7),
+    ]
+    for ln, lx, ly, lz, li in lights:
+        parts.append(point_light(ln, lx, ly, lz, intensity=li))
+
+    # Hospital Floor: 12.0m x 8.4m, top at z=0.0
+    parts.append(box_solid("floor", 3.3, 1.2, -0.05, 12.0, 8.4, 0.1, (0.86, 0.88, 0.90)))
+
+    # Transit guide lines on corridor centre lines (blue line)
+    parts.append(box_solid("line_south", 3.5, 0.0, 0.001, 7.5, 0.04, 0.002, (0.1, 0.45, 0.9), collide=False))
+    parts.append(box_solid("line_west", 4.0, 1.5, 0.001, 0.04, 3.0, 0.002, (0.1, 0.45, 0.9), collide=False))
+    parts.append(box_solid("line_north", 5.5, 3.0, 0.001, 3.0, 0.04, 0.002, (0.1, 0.45, 0.9), collide=False))
+    parts.append(box_solid("line_east", 7.0, 1.5, 0.001, 0.04, 3.0, 0.002, (0.1, 0.45, 0.9), collide=False))
+
+    # Floor Zone Signs at Waypoint Nodes
+    parts.append(floor_sign("zone_HOME", "sign_home_charging.png", 0.0, 0.0, 1.1, 0.85))
+    parts.append(floor_sign("zone_PHARMACY", "sign_pharmacy.png", 2.0, 0.0, 1.1, 0.85))
+    parts.append(floor_sign("zone_JUNCTION", "sign_junction_dir.png", 4.0, 0.0, 1.2, 0.85))
+    parts.append(floor_sign("zone_WARD2A", "sign_ward_2a.png", 4.0, 3.0, 1.1, 0.85))
+    parts.append(floor_sign("zone_ICU", "sign_icu.png", 7.0, 0.0, 1.1, 0.85))
+    parts.append(floor_sign("zone_WARD3B", "sign_ward_3b.png", 7.0, 3.0, 1.1, 0.85))
+
+    # Wall Signs above room entrances and key locations (height z=1.05m)
+    parts.append(wall_sign("header_pharmacy", "sign_pharmacy.png", 2.0, -0.72, 1.05, 0.9, 0.25, PI / 2))
+    parts.append(wall_sign("header_icu", "sign_icu.png", 7.0, -0.72, 1.05, 0.9, 0.25, PI / 2))
+    parts.append(wall_sign("header_ward2a", "sign_ward_2a.png", 4.0, 3.72, 1.05, 0.9, 0.25, -PI / 2))
+    parts.append(wall_sign("header_ward3b", "sign_ward_3b.png", 7.0, 3.72, 1.05, 0.9, 0.25, -PI / 2))
+    parts.append(wall_sign("sign_nurse_front", "sign_nurse_station.png", 5.5, 1.02, 0.72, 0.9, 0.24, -PI / 2))
+    parts.append(wall_sign("sign_dir_junction", "sign_junction_dir.png", 4.0, -2.75, 1.15, 1.1, 0.28, PI / 2))
+    parts.append(wall_sign("sign_reception_wall", "sign_reception.png", -1.2, 2.65, 1.15, 0.9, 0.25, -PI / 2))
+
+    # Perimeter and Room Walls (height 0.8m so top-down view is clean, sonars detect them)
+    wall_col = (0.92, 0.92, 0.90)
+    wh = 0.8
+    wz = wh / 2
+
+    # Outer perimeter boundary walls
+    parts.append(box_solid("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_col))
+    parts.append(box_solid("wall_north_outer", 3.3, 5.20, wz, 12.0, 0.12, wh, wall_col))
+    parts.append(box_solid("wall_west_outer", -2.60, 1.2, wz, 0.12, 8.4, wh, wall_col))
+    parts.append(box_solid("wall_east_outer", 9.20, 1.2, wz, 0.12, 8.4, wh, wall_col))
+
+    # South Corridor Wall along y = -0.70 with door gaps at Pharmacy (x=2) and ICU (x=7)
+    # Notice: x from 3.3 to 5.7 is an open waiting area, giving 2.8m clearance south of JUNCTION (4, 0)!
+    parts.append(box_solid("wall_s_alcove", -1.55, -0.70, wz, 2.1, 0.12, wh, wall_col))
+    parts.append(box_solid("wall_s_pharm_w", 0.95, -0.70, wz, 0.9, 0.12, wh, wall_col))
+    # [Door opening 1.2m at Pharmacy: x = 1.4 to 2.6]
+    parts.append(box_solid("wall_s_pharm_e", 2.95, -0.70, wz, 0.7, 0.12, wh, wall_col))
+    # [Open waiting area alcove: x = 3.3 to 5.7]
+    parts.append(box_solid("wall_s_icu_w", 6.05, -0.70, wz, 0.7, 0.12, wh, wall_col))
+    # [Door opening 1.2m at ICU: x = 6.4 to 7.6]
+    parts.append(box_solid("wall_s_icu_e", 8.40, -0.70, wz, 1.6, 0.12, wh, wall_col))
+
+    # Room partition dividers (South side)
+    parts.append(box_solid("div_pharm_w", 0.50, -1.75, wz, 0.12, 2.1, wh, wall_col))
+    parts.append(box_solid("div_pharm_e", 3.30, -1.75, wz, 0.12, 2.1, wh, wall_col))
+    parts.append(box_solid("div_icu_w", 5.70, -1.75, wz, 0.12, 2.1, wh, wall_col))
+
+    # North Corridor Wall along y = 3.70 with door gaps at Ward 2A (x=4) and Ward 3B (x=7)
+    parts.append(box_solid("wall_n_ward2a_w", 2.80, 3.70, wz, 1.2, 0.12, wh, wall_col))
+    # [Door opening 1.2m at Ward 2A: x = 3.4 to 4.6]
+    parts.append(box_solid("wall_n_middle", 5.50, 3.70, wz, 1.8, 0.12, wh, wall_col))
+    # [Door opening 1.2m at Ward 3B: x = 6.4 to 7.6]
+    parts.append(box_solid("wall_n_ward3b_e", 8.40, 3.70, wz, 1.6, 0.12, wh, wall_col))
+
+    # Room partition dividers (North side)
+    parts.append(box_solid("div_ward2a_w", 2.20, 4.45, wz, 0.12, 1.5, wh, wall_col))
+    parts.append(box_solid("div_wards_mid", 5.20, 4.45, wz, 0.12, 1.5, wh, wall_col))
+
+    # West alcove divider (Home / Reception wall)
+    parts.append(box_solid("wall_w_home_n", -1.55, 0.70, wz, 2.1, 0.12, wh, wall_col))
+
+    # Room Furniture and Models
+    # 1. HOME: Charging Station Dock
+    parts.append(charging_dock(-2.35, 0.0))
+
+    # 2. RECEPTION: Desk near Home
+    parts.append(box_solid("reception_desk", -1.0, 2.0, 0.42, 1.4, 0.6, 0.84, (0.85, 0.9, 0.95), collide=True))
+    parts.append(box_solid("reception_pc", -1.0, 2.0, 0.95, 0.05, 0.35, 0.22, (0.15, 0.15, 0.18), collide=False))
+    parts.append(wheelchair("wheelchair_reception", -0.5, 0.75, PI / 2))
+
+    # 3. PHARMACY: Counter, medicine shelves, fridge
+    parts.append(box_solid("pharm_counter", 1.9, -1.6, 0.42, 1.5, 0.5, 0.84, (0.9, 0.95, 0.98), collide=True))
+    parts.append(box_solid("pharm_shelves", 1.9, -2.65, 0.60, 2.2, 0.28, 1.2, (0.8, 0.85, 0.9), collide=True))
+    parts.append(box_solid("pharm_fridge", 0.85, -2.40, 0.55, 0.5, 0.5, 1.1, (0.95, 0.95, 0.98), collide=True))
+
+    # 4. WAITING AREA: Hospital Benches
+    parts.append(hospital_bench("waiting_bench_1", 3.9, -2.35, 0.0))
+    parts.append(hospital_bench("waiting_bench_2", 5.1, -2.35, 0.0))
+
+    # 5. ICU: 2 ICU Intensive Care Beds with Monitors
+    parts.append(hospital_bed("icu_bed_1", 6.4, -1.9, -PI / 2, has_monitor=True, is_icu=True))
+    parts.append(hospital_bed("icu_bed_2", 7.8, -1.9, -PI / 2, has_monitor=True, is_icu=True))
+
+    # 6. NURSE STATION: Central Island Desk & Monitors
+    parts.append(nurse_station_island(5.5, 1.5))
+
+    # 7. WARD 2A: 4 Hospital Beds + Bedside Tables + Curtains
+    for idx, bx in enumerate([2.7, 3.4, 4.1, 4.8]):
+        parts.append(hospital_bed(f"ward2a_bed_{idx}", bx, 4.5, -PI / 2))
+        # Privacy curtains between beds
+        if idx > 0:
+            parts.append(box_solid(f"ward2a_curtain_{idx}", bx - 0.35, 4.5, 0.75, 0.03, 1.2, 1.4,
+                                   (0.35, 0.7, 0.7), collide=False))
+
+    # 8. WARD 3B: 4 Hospital Beds + Bedside Tables + Curtains
+    for idx, bx in enumerate([5.8, 6.6, 7.4, 8.2]):
+        parts.append(hospital_bed(f"ward3b_bed_{idx}", bx, 4.5, -PI / 2))
+        if idx > 0:
+            parts.append(box_solid(f"ward3b_curtain_{idx}", bx - 0.4, 4.5, 0.75, 0.03, 1.2, 1.4,
+                                   (0.35, 0.7, 0.7), collide=False))
+
+    # 9. AprilTag boards (Automatic placement along edges and dead-ends)
+    boards = generate_boards()
+    tags = []
+    for i, (bx, by, byaw) in enumerate(boards):
+        parts.append(tag_board(i, bx, by, byaw))
+        tags.append({"id": 2 * i, "x": bx, "y": by, "yaw": byaw, "z": TAG_Z, "board": i})
+        yb = (byaw + PI + PI) % (2 * PI) - PI
+        tags.append({"id": 2 * i + 1, "x": bx, "y": by, "yaw": yb, "z": TAG_Z, "board": i})
+
+    # 10. Trolley Obstacle (DEF TROLLEY)
+    parts.append(box_solid("trolley", TROLLEY_PARK[0], TROLLEY_PARK[1], 0.35, 0.5, 0.45, 0.7,
+                           (0.95, 0.55, 0.1), def_name="TROLLEY"))
+
+    # 11. Robot (DEF MEDIBOT)
+    parts.append(robot_node())
+
+    return "".join(parts), tags
+
+
+def main():
+    os.makedirs(TEX_DIR, exist_ok=True)
+    os.makedirs(CTRL_DIR, exist_ok=True)
+
+    # 1. Generate sign textures with Pillow
+    make_sign_textures(TEX_DIR)
+
+    # 2. Build world and tags
+    world, tags = build_world()
+
+    # 3. Generate AprilTag markers
+    for t in tags:
+        cv2.imwrite(os.path.join(TEX_DIR, f"tag_{t['id']:02d}.png"), make_tag_image(t["id"]))
+
+    # 4. Write worlds/medibot.wbt
+    with open(os.path.join(WORLD_DIR, "medibot.wbt"), "w", encoding="utf-8") as f:
+        f.write(world)
+
+    # 5. Write controllers/medibot_controller/config.json
+    cfg = {
+        "nodes": {k: list(v) for k, v in NODES.items()},
+        "edges": [list(e) for e in EDGES],
+        "tags": tags,
+        "tag": {"size": TAG_SIZE},
+        "camera": CAM,
+        "robot": {"wheel_radius": WHEEL_R, "track": 2 * WHEEL_Y, "start": [0.0, 0.0, 0.0], "z": WHEEL_R},
+        "trolley_park": list(TROLLEY_PARK),
+    }
+    with open(os.path.join(CTRL_DIR, "config.json"), "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2)
+
+    print(f"Wrote worlds/medibot.wbt, {len(tags)} tag textures, 8 sign textures, controllers/medibot_controller/config.json")
+    print("Open worlds/medibot.wbt in Webots and press Run.")
+
+
+if __name__ == "__main__":
+    main()
