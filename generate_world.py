@@ -612,8 +612,8 @@ def make_face_image(person_id):
     seed = sum((i + 1) * ord(ch) for i, ch in enumerate(person_id))
     skin = (196 + seed % 45, 135 + (seed // 5) % 65, 105 + (seed // 11) % 55)
     hair = (30 + seed % 90, 22 + (seed // 7) % 55, 18 + (seed // 13) % 45)
-    img = Image.new("RGB", (256, 320), (226, 235, 241))
-    d = ImageDraw.Draw(img)
+    portrait = Image.new("RGB", (256, 320), (226, 235, 241))
+    d = ImageDraw.Draw(portrait)
     d.ellipse((26, 12, 230, 268), fill=hair)
     d.ellipse((47, 32, 209, 255), fill=skin)
     d.rectangle((50, 42, 206, 116), fill=hair)
@@ -622,7 +622,23 @@ def make_face_image(person_id):
     d.line((128, 144, 116, 186, 135, 188), fill=(115, 72, 61), width=6)
     d.arc((88, 174, 170, 230), start=10, end=170, fill=(115, 44, 48), width=6)
     d.rectangle((86, 257, 170, 319), fill=(36 + seed % 60, 90, 138))
-    return img
+    portrait = portrait.resize((384, 480), Image.Resampling.LANCZOS)
+    image = Image.new("RGB", (512, 512), (239, 243, 246))
+    image.paste(portrait, ((512 - portrait.width) // 2, (512 - portrait.height) // 2))
+    return image
+
+
+def make_compartment_image(number):
+    """Create a power-of-two compartment number badge for a textured quad."""
+    image = Image.new("RGB", (512, 512), (232, 240, 247))
+    draw = ImageDraw.Draw(image)
+    draw.rounded_rectangle((52, 52, 460, 460), radius=58, fill=(25, 67, 104))
+    try:
+        font = ImageFont.truetype("arial.ttf", 250)
+    except OSError:
+        font = ImageFont.load_default()
+    draw.text((256, 256), str(number), fill=(255, 255, 255), font=font, anchor="mm")
+    return image
 
 
 def visitor_nodes(people):
@@ -906,7 +922,11 @@ def compartment(n, x, anchor_x, cargo_col):
                   }}
                   Shape {{
                     appearance PBRAppearance {{ baseColor 0.05 0.08 0.12 roughness 0.4 }}
-                    geometry Text {{ string [ "{n}" ] fontStyle FontStyle {{ size 0.025 }} }}
+                    geometry Box {{ size 0.002 0.03 0.03 }}
+                  }}
+                  Pose {{
+                    rotation 0 1 0 -1.5708
+                    children [ {tag_face(f"compartment_{n}.png", 0.026)} ]
                   }}
                 ]
               }}
@@ -1159,9 +1179,8 @@ def build_world():
     # R2025a header
     parts.append("#VRML_SIM R2025a utf8\n\n")
 
-    # Named viewpoints: the default overhead view and a tracking shot preset.
+    # One named default overhead viewpoint; Follow Object can be selected in Webots.
     axis, ang = look_at((3.5, -8.0, 12.0), (3.5, 1.5, 0.0))
-    follow_axis, follow_ang = look_at((-3.5, -4.0, 3.0), (0.0, 0.0, 0.0))
     parts.append(f"""WorldInfo {{
   title "MediBot hospital delivery"
   basicTimeStep 32
@@ -1171,13 +1190,6 @@ DEF VIEW_OVERVIEW Viewpoint {{
   description "Overview - hospital floor"
   orientation {axis[0]:.5f} {axis[1]:.5f} {axis[2]:.5f} {ang:.5f}
   position 3.5 -8.0 12.0
-}}
-DEF VIEW_FOLLOW_ROBOT Viewpoint {{
-  description "Follow robot - tracking shot"
-  orientation {follow_axis[0]:.5f} {follow_axis[1]:.5f} {follow_axis[2]:.5f} {follow_ang:.5f}
-  position -3.5 -4.0 3.0
-  follow "MediBot"
-  followType "Tracking Shot"
 }}
 Background {{ skyColor [ 0.78 0.86 0.95 ] }}
 DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
@@ -1519,6 +1531,10 @@ def main():
     os.makedirs(face_dir, exist_ok=True)
     for person in people:
         make_face_image(person["id"]).save(os.path.join(face_dir, f"{person['id']}.png"))
+    for number in (1, 2, 3):
+        make_compartment_image(number).save(os.path.join(TEX_DIR, f"compartment_{number}.png"))
+    for number in (1, 2, 3):
+        make_compartment_image(number).save(os.path.join(TEX_DIR, f"compartment_{number}.png"))
 
     # 2. Build world and tags
     world, tags = build_world()

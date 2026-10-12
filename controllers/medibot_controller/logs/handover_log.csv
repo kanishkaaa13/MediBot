@@ -1,2 +1,10 @@
 time_s,patient_id,visitor_id,face_id,face_score,rfid_uid,attempt,outcome,reason
 84.00,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-1042,1,DELIVERED,
+222.11,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,1,DENIED,RFID belongs to someone else
+223.33,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,2,DENIED,RFID belongs to someone else
+224.54,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,3,DENIED,RFID belongs to someone else
+297.86,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,1,DENIED,RFID belongs to someone else
+299.17,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,2,DENIED,RFID belongs to someone else
+300.48,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,3,DENIED,RFID belongs to someone else
+157.18,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,2,DENIED,RFID belongs to someone else
+158.40,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,3,DENIED,RFID belongs to someone else

@@ -3,10 +3,9 @@
 MediBot Webots controller  (Phase 2 – 4WD, 3 compartments, face-cam, status LED)
 
 Keys (click the 3D view first so it has keyboard focus):
-  S  start delivery          B  put trolley on the route   U  remove trolley
-  V  choose next visitor      C  swap RFID card             X  reset robot to HOME
-  T  toggle AprilTag correction (only while IDLE) - turn OFF to show odometry drift
-  F/R/1/2/3 are disabled unless dev_mode.flag exists beside this controller.
+  S start  B block  U unblock  X reset
+  V visitor  C swap card  R tap RFID  T tags
+  F/1/2/3 developer overrides require dev_mode.flag.
 """
 import csv
 import datetime
@@ -88,6 +87,34 @@ LED_COLOURS = {
 }
 
 
+def safe_set(node, field_name, value):
+    """Validate Webots SF field values before calling the matching setter."""
+    vector_sizes = {"translation": (3, "setSFVec3f"),
+                    "rotation": (4, "setSFRotation"),
+                    "color": (3, "setSFColor")}
+    if field_name in vector_sizes:
+        size, setter_name = vector_sizes[field_name]
+        valid = (type(value) is list and len(value) == size and
+                 all(type(component) is float for component in value))
+    elif type(value) is bool:
+        setter_name, valid = "setSFBool", True
+    elif type(value) is int:
+        setter_name, valid = "setSFInt32", True
+    elif type(value) is float:
+        setter_name, valid = "setSFFloat", True
+    else:
+        setter_name, valid = "", False
+    if node is None or not valid:
+        print(f"[SETFIELD] node.{field_name} bad value {value!r}")
+        return False
+    try:
+        getattr(node.getField(field_name), setter_name)(value)
+    except (AttributeError, TypeError, ValueError) as exc:
+        print(f"[SETFIELD] node.{field_name} bad value {value!r}: {exc}")
+        return False
+    return True
+
+
 # ================================================================ Compartments
 class Compartments:
     """Manages the 3 lockable medicine compartments (hinged lids + lock LEDs + cargo)."""
@@ -142,7 +169,7 @@ class Compartments:
         node = self.led_nodes.get(n)
         if node:
             try:
-                node.getField("color").setSFColor(LED_COLOURS[colour])
+                safe_set(node, "color", list(LED_COLOURS[colour]))
             except (KeyError, AttributeError, TypeError):
                 pass
 
@@ -185,7 +212,7 @@ class Compartments:
         if node and n not in self.hidden:
             f = node.getField("translation")
             if f:
-                f.setSFVec3f([0.0, 0.0, -5.0])
+                safe_set(node, "translation", [0.0, 0.0, -5.0])
                 self.hidden.add(n)
         print(f"[CARGO] package {n} delivered")
 
@@ -204,7 +231,7 @@ class Compartments:
             if node:
                 f = node.getField("translation")
                 if f:
-                    f.setSFVec3f(list(pos))
+                    safe_set(node, "translation", [float(v) for v in pos])
         print("[CARGO] all packages reset")
 
 
@@ -224,9 +251,9 @@ class HandoverActors:
     def _set_pose(node, position, yaw=None):
         if node is None:
             return
-        node.getField("translation").setSFVec3f(list(position))
+        safe_set(node, "translation", [float(v) for v in position])
         if yaw is not None:
-            node.getField("rotation").setSFRotation([0, 0, 1, yaw])
+            safe_set(node, "rotation", [0.0, 0.0, 1.0, float(yaw)])
         try:
             node.resetPhysics()
         except AttributeError:
@@ -331,6 +358,7 @@ class MediBot:
         self.tags_enabled = True
         self.route, self.idx = [], 0
         self.blocked_edges = set()
+        self.blocked_nodes = set()
         self.blocked_edge_expiry = {}
         self.blocked_t = 0.0
         self.obst_printed = False
@@ -339,8 +367,9 @@ class MediBot:
         self.dev_override_steps = set()
         self.visitor_choice_index = 0
         self.card_swapped = False
-        self._visitor_key_armed = self._card_key_armed = True
-        self._visitor_key_last = self._card_key_last = -float("inf")
+        self._key_names = {"S", "B", "U", "X", "V", "C", "R", "T", "F", "1", "2", "3"}
+        self._key_armed = {key: True for key in self._key_names}
+        self._key_last_seen = {key: -float("inf") for key in self._key_names}
         self.active_visitor_id = None
         self.active_card_owner_id = None
         self.active_patient = None
@@ -353,6 +382,8 @@ class MediBot:
         self.handover_uid = None
         self.handover_reason = ""
         self.rfid_started_t = 0.0
+        self.rfid_tap_requested = False
+        self.rfid_tap_started_t = 0.0
         self.face_started_t = 0.0
         self.rfid_card_start = None
         self.rfid_card_target = None
@@ -391,8 +422,6 @@ class MediBot:
         self.nan_warning_printed = set()  # Track which sensors have warned about NaN
         self.last_tag_id = None
         self.last_tag_zone = None
-        self._block_key_armed = True
-        self._block_key_last_seen = -float("inf")
         self.obstacle_stops = 0
         self.replans = 0
         self.regression_route_via_icu = False
@@ -406,7 +435,8 @@ class MediBot:
         self.delivery_logged = False
 
         # Regression mode
-        self.regression_mode = os.path.exists(os.path.join(HERE, "regression.flag"))
+        self.regression_mode = (os.path.exists(os.path.join(HERE, "regression.flag")) and
+                                os.environ.get("MEDIBOT_REGRESSION") == "1")
         self.regression_scenario = None  # "A", "B", or "D"
         self.regression_start_t = 0.0
         self.regression_results = []
@@ -434,7 +464,7 @@ class MediBot:
               f"Devices found ({len(found_devices)}): {', '.join(found_devices)}")
         print(__doc__)
         if self.regression_mode:
-            print("[REGRESSION] Automatic regression mode enabled")
+            print("[REGRESSION] enabled")
             print("[REGRESSION] Automatic runs selected by MEDIBOT_REGRESSION_SCENARIOS")
             self.run_regression()
         else:
@@ -472,7 +502,7 @@ class MediBot:
         self.status_led.set(255)
         if self.status_led_node:
             try:
-                self.status_led_node.getField("color").setSFColor(LED_COLOURS[colour_name])
+                safe_set(self.status_led_node, "color", list(LED_COLOURS[colour_name]))
             except (AttributeError, TypeError):
                 pass
 
@@ -893,12 +923,12 @@ class MediBot:
             return False
         for _other_kind, other in self.obstacle_nodes:
             if other is not None:
-                other.getField("translation").setSFVec3f([-1.5, 1.8, -10.0])
+                safe_set(other, "translation", [-1.5, 1.8, -10.0])
         translation = obstacle.getField("translation")
         rotation = obstacle.getField("rotation")
-        translation.setSFVec3f([x, y, 0.10])
+        safe_set(obstacle, "translation", [float(x), float(y), 0.10])
         # The long axis spans the corridor for each obstacle shape.
-        rotation.setSFRotation([0, 0, 1, heading + math.pi / 2])
+        safe_set(obstacle, "rotation", [0.0, 0.0, 1.0, float(heading + math.pi / 2)])
         obstacle.resetPhysics()
         self.obstacle_cycle = (self.obstacle_cycle + 1) % len(self.obstacle_nodes)
         sonar_front = self.sonar()["front"]
@@ -912,7 +942,7 @@ class MediBot:
         for i, (_kind, obstacle) in enumerate(self.obstacle_nodes):
             if obstacle is not None:
                 z = 0.1 if i == 0 else -10.0
-                obstacle.getField("translation").setSFVec3f([px, py, z])
+                safe_set(obstacle, "translation", [float(px), float(py), float(z)])
         self.blocked_edges.clear()
         self.blocked_edge_expiry.clear()
         print("[TROLLEY] removed, blocked edges cleared")
@@ -1603,77 +1633,94 @@ class MediBot:
 
     # ------------------------------------------------------------ keys + state machine
     def keys(self):
-        saw_block_key = False
-        saw_visitor_key = saw_card_key = False
+        seen = set()
         while True:
             k = self.kb.getKey()
             if k == -1:
                 break
             c = chr(k & 0xFF).upper() if 0 < (k & 0xFF) < 128 else ""
-            if c == "S" and self.state == "IDLE":
+            if c not in self._key_names:
+                continue
+            seen.add(c)
+            self._key_last_seen[c] = self.now()
+            if not self._key_armed[c]:
+                continue
+            self._key_armed[c] = False
+            self._handle_key(c)
+
+        # Webots exposes key-down events rather than a separate release event.
+        # Rearm only after the key has been absent for a short release interval.
+        for key in self._key_names - seen:
+            if (not self._key_armed[key] and
+                    self.now() - self._key_last_seen[key] >= 0.25):
+                self._key_armed[key] = True
+
+    def _handle_key(self, key):
+        actions = {
+            "S": "start delivery" if self.state == "IDLE" else "ignored while mission active",
+            "B": "block route / spawn next obstacle",
+            "U": "remove obstacles and clear blocks",
+            "X": "stop mission and reset HOME",
+            "V": "choose next visitor",
+            "C": "swap RFID card",
+            "R": "tap RFID card" if self.state == "VERIFY" and self.handover_step == "RFID"
+            else "ignored outside RFID verification",
+            "T": "toggle tag correction" if self.state == "IDLE" else "ignored while mission active",
+            "F": "developer face override" if self.dev_mode and self.state == "VERIFY"
+            else "ignored (dev mode disabled or not verifying)",
+            "1": "developer compartment 1 override" if self.dev_mode else "ignored (dev mode disabled)",
+            "2": "developer compartment 2 override" if self.dev_mode else "ignored (dev mode disabled)",
+            "3": "developer compartment 3 override" if self.dev_mode else "ignored (dev mode disabled)",
+        }
+        print(f"[KEY] {key} -> {actions[key]}")
+        if key == "S":
+            if self.state == "IDLE":
                 self.start_mission()
-            elif c == "B":
-                saw_block_key = True
-                self._block_key_last_seen = self.now()
-                if self._block_key_armed:
-                    self._block_key_armed = False
-                    self.block_path()
-            elif c == "U":
-                self.unblock()
-            elif c == "V":
-                saw_visitor_key = True
-                self._visitor_key_last = self.now()
-                if self._visitor_key_armed:
-                    self._visitor_key_armed = False
-                    self.visitor_choice_index = (self.visitor_choice_index + 1) % 3
-                    print("[VISITOR] selection advanced")
-                    if self.state == "VERIFY" and self.active_patient:
-                        self._start_handover_attempt()
-            elif c == "C":
-                saw_card_key = True
-                self._card_key_last = self.now()
-                if self._card_key_armed:
-                    self._card_key_armed = False
-                    self.card_swapped = not self.card_swapped
-                    print(f"[RFID] card {'swapped' if self.card_swapped else 'restored'}")
-                    if self.state == "VERIFY" and self.active_patient:
-                        self._start_handover_attempt()
-            elif c in ("F", "R") and self.dev_mode and self.state == "VERIFY":
-                if c == "F":
-                    self.dev_override_steps.add("face")
-                else:
-                    self.dev_override_steps.add("rfid")
-                print(f"[DEV MODE] {c} verification override armed")
-            elif c == "T":
-                if self.state == "IDLE":
-                    self.tags_enabled = not self.tags_enabled
-                    print(f"[TAGS] AprilTag correction {'ON' if self.tags_enabled else 'OFF'}")
-                else:
-                    print("[TAGS] toggle only while IDLE")
-            elif c == "X":
-                self.reset()
-            elif c in ("1", "2", "3") and self.dev_mode:
-                n = int(c)
-                self.dev_override_steps.add(f"compartment_{n}")
-                if self.compartments.is_open(n):
-                    self.compartments.lock(n)
-                else:
-                    self.compartments.unlock(n)
-                self._handover_log("DEV_OVERRIDE", f"manual compartment {n}")
-            elif c == "K" and self.state == "IDLE":
-                # Odometry calibration: drive straight 3s at 0.2 m/s, then report
-                self.calibrating = True
-                self.calib_start_pose = self.true_pose()
-                self.calib_start_ekf = tuple(self.ekf.x)
-                self.calib_start_t = self.now()
-                print("[CAL] starting odometry calibration: driving straight 0.2 m/s for 3 s...")
-        if (not saw_block_key and not self._block_key_armed
-                and self.now() - self._block_key_last_seen >= 0.25):
-            self._block_key_armed = True
-        if not saw_visitor_key and not self._visitor_key_armed and self.now() - self._visitor_key_last >= 0.25:
-            self._visitor_key_armed = True
-        if not saw_card_key and not self._card_key_armed and self.now() - self._card_key_last >= 0.25:
-            self._card_key_armed = True
+        elif key == "B":
+            self.block_path()
+        elif key == "U":
+            self.unblock()
+        elif key == "X":
+            self.reset()
+        elif key == "V":
+            self.visitor_choice_index = (self.visitor_choice_index + 1) % 3
+            visitor, _card = self._selected_people()
+            print(f"[VISITOR] selected {visitor['name']}")
+            if self.state == "VERIFY" and self.active_patient:
+                self._start_handover_attempt()
+        elif key == "C":
+            self.card_swapped = not self.card_swapped
+            _visitor, card = self._selected_people()
+            print(f"[RFID] selected card owner {card['name']}")
+            if self.state == "VERIFY" and self.active_patient:
+                self._start_handover_attempt()
+        elif key == "R":
+            if self.state == "VERIFY" and self.handover_step == "RFID":
+                self.rfid_tap_requested = True
+                self.rfid_tap_started_t = self.now()
+                self.rfid_card_start = self.actors.card_position(self.active_card_owner_id)
+                if self.rfid_card_start is None:
+                    self.rfid_card_start = self.actors.present(
+                        self.active_visitor_id, self.active_card_owner_id,
+                        CFG["rooms"][self.mission_room]["handover"]["visitor"], self.true_pose())
+                print("[RFID] tap animation started")
+            elif self.state != "VERIFY":
+                print("[RFID] ignored outside VERIFY")
+        elif key == "T":
+            if self.state == "IDLE":
+                self.tags_enabled = not self.tags_enabled
+                print(f"[TAGS] AprilTag correction {'ON' if self.tags_enabled else 'OFF'}")
+        elif key == "F" and self.dev_mode and self.state == "VERIFY":
+            self.dev_override_steps.add("face")
+            print("[DEV MODE] face verification override armed")
+        elif key in ("1", "2", "3") and self.dev_mode:
+            number = int(key)
+            self.dev_override_steps.add(f"compartment_{number}")
+            if self.compartments.is_open(number):
+                self.compartments.lock(number)
+            else:
+                self.compartments.unlock(number)
+            self._handover_log("DEV_OVERRIDE", f"manual compartment {number}")
 
     def reset(self):
         if (self.mission_start_t is not None and not self.delivery_logged and
@@ -1689,8 +1736,8 @@ class MediBot:
         self.handover_step = "-"
         self.handover_started = False
         sx, sy, sth = CFG["robot"]["start"]
-        self.me.getField("translation").setSFVec3f([sx, sy, CFG["robot"]["z"]])
-        self.me.getField("rotation").setSFRotation([0, 0, 1, sth])
+        safe_set(self.me, "translation", [float(sx), float(sy), float(CFG["robot"]["z"])])
+        safe_set(self.me, "rotation", [0.0, 0.0, 1.0, float(sth)])
         self.me.resetPhysics()
         self.ekf = EKF([sx, sy, sth])
         self.compartments.lock_all()
@@ -1732,8 +1779,8 @@ class MediBot:
                 print(f"[CAL] odometry scale = {scale:.3f}, heading drift = {heading_drift:.1f} deg")
                 # Teleport back to HOME
                 sx, sy, sth = CFG["robot"]["start"]
-                self.me.getField("translation").setSFVec3f([sx, sy, CFG["robot"]["z"]])
-                self.me.getField("rotation").setSFRotation([0, 0, 1, sth])
+                safe_set(self.me, "translation", [float(sx), float(sy), float(CFG["robot"]["z"])])
+                safe_set(self.me, "rotation", [0.0, 0.0, 1.0, float(sth)])
                 self.me.resetPhysics()
                 self.ekf = EKF([sx, sy, sth])
                 self.calibrating = False
