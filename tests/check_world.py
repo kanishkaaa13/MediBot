@@ -48,6 +48,8 @@ checks = {
     "controller \"medibot_controller\"": "controller assigned",
     "supervisor TRUE": "supervisor mode",
     "name \"camera\"": "navigation camera",
+    "name \"dashboard\"": "robot dashboard Display",
+    "width 480\n      height 320": "480x320 dashboard resolution",
     "name \"face_cam\"": "face camera",
     "name \"status_led\"": "status LED",
     "name \"lid_1\"": "lid_1 motor",

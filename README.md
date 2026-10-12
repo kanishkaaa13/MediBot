@@ -17,12 +17,17 @@ You only open the world in Webots and press Run.
 | **S** | Start delivery HOME → WARD-3B (A* route is drawn as a blue line) |
 | **B** | Put the trolley on the route (press before or during the mission) |
 | **U** | Remove the trolley |
-| **F / R** | Confirm face / RFID at the ward (simulated; auto-confirms after 8 s) |
+| **V** | Cycle the visitor: patient's relative, another patient's relative, unknown visitor |
+| **C** | Swap the card to a different person's RFID card |
 | **T** | Turn AprilTag correction ON/OFF (only while IDLE) |
 | **X** | Reset robot to HOME |
 
+Face recognition is currently a clearly marked `FACE: STUB`: it returns the selected avatar's simulated identity with score 1.0. The RFID protocol is emulated in the Supervisor: a visible robot reader accepts a card moved into its 0.30 m, ±60° read zone. No Webots Emitter/Receiver is used. F/R/1/2/3 bypass keys are disabled unless `controllers\medibot_controller\dev_mode.flag` exists; bypass use is logged as `DEV_OVERRIDE`. Handover outcomes are appended to `controllers\medibot_controller\logs\handover_log.csv`.
+
+For the demo, start from IDLE. **S** with the default selection delivers to the authorized relative. Press **V** twice before **S** for an unauthorized visitor; the lid remains locked and the robot returns. Press **C** once before **S** for the right face with another person's card; that attempt is denied and the robot returns carrying the item. Press **X** between demonstrations to restore the default visitor and card.
+
 State machine: IDLE → NAVIGATE → APPROACH → VERIFY → DELIVER → RETURN.
-The on-screen overlay shows state, destination, ultrasonic readings, pose error and the last tag correction.
+The overlay shows patient, ward, compartment, FACE/RFID/DECISION step, stub face name and score, RFID UID, and handover result.
 The Webots console prints the `[EKF] ... error before / after` lines and `[REPLAN]` events.
 To see the camera: right-click the 3D view → *Overlays → Camera Devices → camera*.
 To follow the robot with the 3D view camera: right-click on the MediBot robot in the 3D view → *Follow Object* (or Ctrl+Shift+F).

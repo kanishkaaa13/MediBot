@@ -24,10 +24,13 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 WORLD_DIR = os.path.join(ROOT, "worlds")
 TEX_DIR = os.path.join(WORLD_DIR, "textures")
 CTRL_DIR = os.path.join(ROOT, "controllers", "medibot_controller")
+PATIENTS_PATH = os.path.join(CTRL_DIR, "patients.json")
 
 # ----------------------------------------------------------------------------
-# Waypoint graph (metres, 1 Webots unit = 1 m) - KEPT FIXED
+# Waypoint graph (metres, 1 Webots unit = 1 m); room nodes extend corridor map.
 # ----------------------------------------------------------------------------
+PI = math.pi
+DOOR_WIDTH = 1.25
 NODES = {
     "HOME": (0.0, 0.0),
     "PHARMACY": (2.0, 0.0),
@@ -35,6 +38,12 @@ NODES = {
     "WARD-2A": (4.0, 3.0),
     "ICU": (7.0, 0.0),
     "WARD-3B": (7.0, 3.0),
+    "WARD-2A-DOOR": (4.0, 3.7),
+    "WARD-2A-IN": (4.0, 5.2),
+    "WARD-3B-DOOR": (7.0, 3.7),
+    "WARD-3B-IN": (7.0, 5.2),
+    "ICU-DOOR": (7.0, -0.7),
+    "ICU-IN": (7.0, -2.2),
 }
 EDGES = [
     ("HOME", "PHARMACY"),
@@ -43,9 +52,43 @@ EDGES = [
     ("JUNCTION", "ICU"),
     ("WARD-2A", "WARD-3B"),
     ("ICU", "WARD-3B"),
+    ("WARD-2A", "WARD-2A-DOOR"),
+    ("WARD-2A-DOOR", "WARD-2A-IN"),
+    ("WARD-3B", "WARD-3B-DOOR"),
+    ("WARD-3B-DOOR", "WARD-3B-IN"),
+    ("ICU", "ICU-DOOR"),
+    ("ICU-DOOR", "ICU-IN"),
 ]
 
-PI = math.pi
+ROOMS = {
+    "WARD-2A": {
+        "door_node": "WARD-2A-DOOR", "in_node": "WARD-2A-IN",
+        "door_width": DOOR_WIDTH, "aisle_width": 1.2, "handover_area": [1.2, 1.2],
+        "bounds": [0.46, 5.14, 3.76, 9.44], "compartment": 2,
+        "handover": {"robot": [4.0, 5.2, -PI / 2],
+                     "visitor": [4.0, 4.2, PI / 2]},
+    },
+    "WARD-3B": {
+        "door_node": "WARD-3B-DOOR", "in_node": "WARD-3B-IN",
+        "door_width": DOOR_WIDTH, "aisle_width": 1.2, "handover_area": [1.2, 1.2],
+        "bounds": [5.26, 10.74, 3.76, 9.44], "compartment": 1,
+        "handover": {"robot": [7.0, 5.2, -PI / 2],
+                     "visitor": [7.0, 4.2, PI / 2]},
+    },
+    "ICU": {
+        "door_node": "ICU-DOOR", "in_node": "ICU-IN",
+        "door_width": DOOR_WIDTH, "aisle_width": 1.2, "handover_area": [1.2, 1.2],
+        "bounds": [4.86, 10.74, -5.54, -0.76], "compartment": 3,
+        "handover": {"robot": [7.0, -2.2, PI / 2],
+                     "visitor": [7.0, -1.2, -PI / 2]},
+    },
+}
+ROOM_BEDS = {
+    "WARD-2A": ((1.5, 6.3), (2.5, 6.3), (1.5, 8.3), (2.5, 8.3)),
+    "WARD-3B": ((8.2, 6.3), (9.2, 6.3), (8.2, 8.3), (9.2, 8.3)),
+    "ICU": ((6.0, -4.0), (8.0, -4.0)),
+}
+
 TAG_SIZE = 0.25      # black AprilTag square side, metres
 TAG_PAD = TAG_SIZE * (160 / 704)  # 160px margin on a 704px marker
 TAG_Z = 1.00         # centre height of each vertical wall marker
@@ -122,11 +165,24 @@ def generate_wall_tags():
     add_tag(-2.53, 0.0, 0.0, "home_end", "x", -2.54)
     add_tag(9.13, 0.0, PI, "east_corridor_end", "x", 9.14)
 
-    # One handover tag on the interior wall facing each room entrance.
+    # Room-facing approach tags at the door jambs, plus head-on tags on the
+    # opposite walls.  The room-facing tags support localization on entry.
     add_tag(1.9, -2.73, PI / 2, "pharmacy_room", "y", -2.74)
-    add_tag(7.0, -2.73, PI / 2, "icu_room", "y", -2.74)
-    add_tag(3.8, 5.13, -PI / 2, "ward2a_room", "y", 5.14)
-    add_tag(7.0, 5.13, -PI / 2, "ward3b_room", "y", 5.14)
+    add_tag(8.1, -0.77, -PI / 2, "icu_door_facing", "y", -0.76)
+    add_tag(3.1, 3.77, PI / 2, "ward2a_door_facing", "y", 3.76)
+    add_tag(8.1, 3.77, PI / 2, "ward3b_door_facing", "y", 3.76)
+    add_tag(7.0, -5.53, PI / 2, "icu_room", "y", -5.54)
+    add_tag(3.8, 9.43, -PI / 2, "ward2a_room", "y", 9.44)
+    add_tag(7.0, 9.43, -PI / 2, "ward3b_room", "y", 9.44)
+    # Room-side approach tags cover the short final aisle from either heading.
+    # These sit on the shared room divider walls, with their normals facing inward.
+    add_tag(5.13, 4.7, PI, "ward2a_entry_side", "x", 5.14)
+    add_tag(5.27, 4.7, 0.0, "ward3b_entry_side", "x", 5.26)
+
+    # Door-jamb tags are head-on from the graph's door nodes.
+    add_tag(3.39, 3.30, 0.0, "ward2a_door_jamb", "x", 3.40)
+    add_tag(6.39, 3.30, 0.0, "ward3b_door_jamb", "x", 6.40)
+    add_tag(6.39, -0.70, 0.0, "icu_door_jamb", "x", 6.40)
 
     return tags
 
@@ -355,7 +411,7 @@ def make_tag_image(tag_id):
     # Draw ID text centered below the tag
     text = str(tag_id)
     bbox = draw.textbbox((0, 0), text, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    tw = bbox[2] - bbox[0]
     x = (1024 - tw) / 2
     y = 884  # In the lower white margin (marker ends at y=864)
     draw.text((x, y), text, fill=(0, 0, 0), font=font)
@@ -536,17 +592,64 @@ def point_light(name, x, y, z, intensity=0.6, radius=4.5):
             f"}}\n")
 
 
-def tag_face(tex_name):
-    h = BOARD_W / 2
+def tag_face(tex_name, width=BOARD_W, height=None):
+    """Verified +X-facing textured quad; optional face-sized dimensions."""
+    height = width if height is None else height
+    hw, hh = width / 2, height / 2
     return (f"Shape {{\n"
             f"  appearance Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}\n"
             f"  geometry IndexedFaceSet {{\n"
-            f"    coord Coordinate {{ point [ 0.006 {-h:g} {-h:g}, 0.006 {h:g} {-h:g}, 0.006 {h:g} {h:g}, 0.006 {-h:g} {h:g} ] }}\n"
+            f"    coord Coordinate {{ point [ 0.006 {-hw:g} {-hh:g}, 0.006 {hw:g} {-hh:g}, 0.006 {hw:g} {hh:g}, 0.006 {-hw:g} {hh:g} ] }}\n"
             f"    texCoord TextureCoordinate {{ point [ 0 0, 1 0, 1 1, 0 1 ] }}\n"
             f"    coordIndex [ 0 1 2 3 -1 ]\n"
             f"    texCoordIndex [ 0 1 2 3 -1 ]\n"
             f"  }}\n"
             f"}}\n")
+
+
+def make_face_image(person_id):
+    """Generate a distinct, non-photographic face image for the simulation stub."""
+    seed = sum((i + 1) * ord(ch) for i, ch in enumerate(person_id))
+    skin = (196 + seed % 45, 135 + (seed // 5) % 65, 105 + (seed // 11) % 55)
+    hair = (30 + seed % 90, 22 + (seed // 7) % 55, 18 + (seed // 13) % 45)
+    img = Image.new("RGB", (256, 320), (226, 235, 241))
+    d = ImageDraw.Draw(img)
+    d.ellipse((26, 12, 230, 268), fill=hair)
+    d.ellipse((47, 32, 209, 255), fill=skin)
+    d.rectangle((50, 42, 206, 116), fill=hair)
+    d.ellipse((72, 128, 100, 146), fill=(28, 35, 43))
+    d.ellipse((156, 128, 184, 146), fill=(28, 35, 43))
+    d.line((128, 144, 116, 186, 135, 188), fill=(115, 72, 61), width=6)
+    d.arc((88, 174, 170, 230), start=10, end=170, fill=(115, 44, 48), width=6)
+    d.rectangle((86, 257, 170, 319), fill=(36 + seed % 60, 90, 138))
+    return img
+
+
+def visitor_nodes(people):
+    """Generate off-stage standing visitors and their individually identified RFID cards."""
+    nodes = []
+    for i, person in enumerate(people):
+        pid = person["id"]
+        x, y = -30.0 - i * 3.0, -20.0
+        face_path = person["face_image"].replace("\\", "/")
+        nodes.append(f'''DEF VISITOR_{pid} Solid {{
+  translation {x:g} {y:g} 0
+  name "visitor_{pid}"
+  children [
+    Shape {{ appearance PBRAppearance {{ baseColor 0.16 0.34 0.55 roughness 0.8 }} geometry Cylinder {{ radius 0.15 height 0.68 }} }}
+    Pose {{ translation 0 0 0.96 children [ Shape {{ appearance PBRAppearance {{ baseColor 0.82 0.72 0.62 roughness 0.8 }} geometry Sphere {{ radius 0.14 }} }} ] }}
+    Pose {{ translation 0.145 0 0.96 children [ {tag_face(face_path, 0.19, 0.25)} ] }}
+  ]
+}}
+DEF CARD_{pid} Solid {{
+  translation {x:g} {y:g} 0.7
+  name "card_{pid}"
+  children [ Shape {{ appearance PBRAppearance {{ baseColor 0.95 0.72 0.12 roughness 0.45 }} geometry Box {{ size 0.09 0.06 0.008 }} }} ]
+  boundingObject Box {{ size 0.09 0.06 0.008 }}
+  physics Physics {{ density -1 mass 0.02 }}
+}}
+''')
+    return "".join(nodes)
 
 
 def tag_board(i, x, y, yaw):
@@ -619,7 +722,7 @@ def floor_sign(name, tex_name, x, y, w, length, yaw=0.0):
 # ----------------------------------------------------------------------------
 # Procedural Hospital Prop Builders
 # ----------------------------------------------------------------------------
-def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False):
+def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False, lateral_side=-1):
     parts = []
     bed_col = (0.2, 0.45, 0.7) if is_icu else (0.85, 0.88, 0.92)
     parts.append(box_solid(f"{name}_frame", x, y, 0.15, 1.8, 0.85, 0.25, (0.25, 0.28, 0.3), collide=True, yaw=yaw))
@@ -633,15 +736,17 @@ def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False):
     px = x - 0.65 * math.cos(yaw)
     py = y - 0.65 * math.sin(yaw)
     parts.append(box_solid(f"{name}_pillow", px, py, 0.40, 0.35, 0.55, 0.08, (1, 1, 1), collide=False, yaw=yaw))
-    bx = x + 0.55 * math.sin(yaw)
-    by = y - 0.55 * math.cos(yaw)
+    side_x = -0.55 * math.sin(yaw) * lateral_side
+    side_y = 0.55 * math.cos(yaw) * lateral_side
+    bx = x + side_x
+    by = y + side_y
     parts.append(box_solid(f"{name}_cabinet", bx, by, 0.25, 0.4, 0.4, 0.5, (0.85, 0.9, 0.95), collide=True, yaw=yaw))
     parts.append(box_solid(f"{name}_bed_number", x + 0.45 * math.cos(yaw),
                            y + 0.45 * math.sin(yaw), 0.43, 0.30, 0.16, 0.012,
                            (0.95, 0.98, 1.0), collide=False, yaw=yaw))
     if has_monitor:
-        mx = x - 0.55 * math.sin(yaw) - 0.4 * math.cos(yaw)
-        my = y + 0.55 * math.cos(yaw) - 0.4 * math.sin(yaw)
+        mx = x + side_x - 0.4 * math.cos(yaw)
+        my = y + side_y - 0.4 * math.sin(yaw)
         parts.append(cylinder_solid(f"{name}_iv_stand", mx, my, 0.6, 0.02, 1.2, (0.8, 0.8, 0.85)))
         parts.append(box_solid(f"{name}_monitor", mx, my, 1.0, 0.1, 0.25, 0.2, (0.1, 0.15, 0.2), yaw=yaw))
         parts.append(box_solid(f"{name}_screen", mx + 0.05 * math.cos(yaw), my + 0.05 * math.sin(yaw), 1.0,
@@ -750,13 +855,14 @@ def compartment(n, x, anchor_x, cargo_col):
       ]
     }}
     # Lock Indicator LED {n} (red when locked, green when unlocked)
-    LED {{
+    DEF LOCK_LED_{n} LED {{
+      color [ 1 0 0 ]
       translation {x:g} 0.115 0.135
       name "led_lock_{n}"
       gradual TRUE
       children [
         Shape {{
-          appearance PBRAppearance {{ baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }}
+          appearance PBRAppearance {{ baseColor 1 1 1 roughness 0.2 emissiveColor 0.15 0.15 0.15 }}
           geometry Sphere {{ radius 0.008 }}
         }}
       ]
@@ -776,7 +882,7 @@ def compartment(n, x, anchor_x, cargo_col):
     HingeJoint {{
       jointParameters HingeJointParameters {{ axis 0 1 0 anchor {anchor_x:g} 0 0.13 }}
       device [
-        RotationalMotor {{ name "lid_{n}" minPosition -1.6 maxPosition 0 maxVelocity 3 }}
+        RotationalMotor {{ name "lid_{n}" minPosition -1.6 maxPosition 0 maxVelocity 3 maxTorque 2 }}
         PositionSensor {{ name "lid_{n}_ps" }}
       ]
       endPoint Solid {{
@@ -797,6 +903,10 @@ def compartment(n, x, anchor_x, cargo_col):
                   Shape {{
                     appearance PBRAppearance {{ baseColor 1 1 1 roughness 0.3 }}
                     geometry Box {{ size 0.03 0.03 0.002 }}
+                  }}
+                  Shape {{
+                    appearance PBRAppearance {{ baseColor 0.05 0.08 0.12 roughness 0.4 }}
+                    geometry Text {{ string [ "{n}" ] fontStyle FontStyle {{ size 0.025 }} }}
                   }}
                 ]
               }}
@@ -902,13 +1012,14 @@ def robot_node():
       ]
     }}
     # Front Status LED Strip
-    LED {{
+    DEF STATUS_LED LED {{
+      color [ 0 1 0 ]
       translation 0.236 0 0.038
       name "status_led"
       gradual TRUE
       children [
         Shape {{
-          appearance PBRAppearance {{ baseColor 0 1 0 roughness 0.2 emissiveColor 0 1 0 }}
+          appearance PBRAppearance {{ baseColor 1 1 1 roughness 0.2 emissiveColor 0.15 0.15 0.15 }}
           geometry Box {{ size 0.008 0.14 0.018 }}
         }}
       ]
@@ -976,6 +1087,22 @@ def robot_node():
       fieldOfView {CAM['fov']:g}
       near 0.05
     }}
+    # Live top-down navigation and handover dashboard
+    Display {{
+      translation 0.205 0 0.72
+      rotation 0 1 0 1.5708
+      name "dashboard"
+      width 480
+      height 320
+    }}
+    # Visible emulated RFID reader module on the front bumper
+    Pose {{
+      translation 0.242 0 0.15
+      children [
+        Shape {{ appearance PBRAppearance {{ baseColor 0.10 0.12 0.16 roughness 0.45 metalness 0.15 }} geometry Box {{ size 0.055 0.095 0.07 }} }}
+        Shape {{ appearance PBRAppearance {{ baseColor 0.12 0.72 0.92 emissiveColor 0.05 0.25 0.35 }} geometry Box {{ size 0.012 0.055 0.04 }} }}
+      ]
+    }}
     # Front Sonars
 {s_front}
 {s_left}
@@ -1024,6 +1151,11 @@ def look_at(pos, target):
 # ----------------------------------------------------------------------------
 def build_world():
     parts = []
+    with open(PATIENTS_PATH, encoding="utf-8") as patient_file:
+        patient_data = json.load(patient_file)
+    people = [relative for patient in patient_data["patients"]
+              for relative in patient["authorised_family"]]
+    people.extend(patient_data["unauthorised_visitors"])
     # R2025a header
     parts.append("#VRML_SIM R2025a utf8\n\n")
 
@@ -1059,7 +1191,7 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         parts.append(point_light(ln, lx, ly, lz, intensity=li))
 
     # Hospital Floor: 12.0m x 8.4m, top at z=0.0
-    parts.append(box_solid("floor", 3.3, 1.2, -0.05, 12.0, 8.4, 0.1, (0.86, 0.88, 0.90)))
+    parts.append(box_solid("floor", 4.1, 1.95, -0.05, 13.6, 15.1, 0.1, (0.86, 0.88, 0.90)))
 
     # Transit guide lines on corridor centre lines (blue line)
     parts.append(box_solid("line_south", 3.5, 0.0, 0.001, 7.5, 0.04, 0.002, (0.1, 0.45, 0.9), collide=False))
@@ -1109,13 +1241,15 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         '      }'
     )
     wall_appearance  = "USE WallAppearance"
-    floor_appearance = "USE FloorAppearance"
-
     # Outer perimeter boundary walls (first one carries the DEF, rest USE it)
-    parts.append(box_solid_textured("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_appearance_def))
-    parts.append(box_solid_textured("wall_north_outer", 3.3, 5.20, wz, 12.0, 0.12, wh, wall_appearance))
-    parts.append(box_solid_textured("wall_west_outer", -2.60, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
-    parts.append(box_solid_textured("wall_east_outer", 9.20, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
+    outer_x = 10.8
+    south_y, north_y = -5.6, 9.5
+    parts.append(box_solid_textured("wall_south_outer", 4.1, south_y, wz, 14.0, 0.12, wh, wall_appearance_def))
+    parts.append(box_solid_textured("wall_north_outer", 4.1, north_y, wz, 14.0, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_west_outer", -2.60, (south_y + north_y) / 2, wz,
+                                   0.12, north_y - south_y, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_east_outer", outer_x, (south_y + north_y) / 2, wz,
+                                   0.12, north_y - south_y, wh, wall_appearance))
 
     # South Corridor Wall along y = -0.70 with door gaps at Pharmacy (x=2) and ICU (x=7)
     parts.append(box_solid_textured("wall_s_alcove", -1.55, -0.70, wz, 2.1, 0.12, wh, wall_appearance))
@@ -1127,7 +1261,7 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     # Room partition dividers (South side)
     parts.append(box_solid_textured("div_pharm_w", 0.50, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
     parts.append(box_solid_textured("div_pharm_e", 3.30, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
-    parts.append(box_solid_textured("div_icu_w", 5.70, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
+    parts.append(box_solid_textured("div_icu_w", 4.80, -3.15, wz, 0.12, 4.9, wh, wall_appearance))
 
     # North Corridor Wall along y = 3.70 with door gaps at Ward 2A (x=4) and Ward 3B (x=7)
     parts.append(box_solid_textured("wall_n_ward2a_w", 2.80, 3.70, wz, 1.2, 0.12, wh, wall_appearance))
@@ -1135,14 +1269,14 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     parts.append(box_solid_textured("wall_n_ward3b_e", 8.40, 3.70, wz, 1.6, 0.12, wh, wall_appearance))
 
     # Room partition dividers (North side)
-    parts.append(box_solid_textured("div_ward2a_w", 2.20, 4.45, wz, 0.12, 1.5, wh, wall_appearance))
-    parts.append(box_solid_textured("div_wards_mid", 5.20, 4.45, wz, 0.12, 1.5, wh, wall_appearance))
+    parts.append(box_solid_textured("div_ward2a_w", 0.40, 6.60, wz, 0.12, 5.8, wh, wall_appearance))
+    parts.append(box_solid_textured("div_wards_mid", 5.20, 6.60, wz, 0.12, 5.8, wh, wall_appearance))
 
     # West alcove divider (Home / Reception wall)
     parts.append(box_solid_textured("wall_w_home_n", -1.55, 0.70, wz, 2.1, 0.12, wh, wall_appearance))
 
     # Floor with corridor texture
-    parts.append(box_solid_textured("floor_main", 3.3, 1.5, 0.01, 12.0, 8.0, 0.02, floor_appearance_def))
+    parts.append(box_solid_textured("floor_main", 4.1, 1.95, 0.01, 13.6, 15.1, 0.02, floor_appearance_def))
 
     # Floor markers (A at HOME, B at WARD-3B)
     parts.append(floor_marker("marker_a", 0.0, 0.0, "marker_a.png"))
@@ -1156,23 +1290,21 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     # Glass panel (semi-transparent)
     parts.append(box_solid("door_glass_pharm", 2.0, -0.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
 
-    # ICU door frame
-    parts.append(box_solid("door_frame_icu_l", 6.35, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_icu_r", 7.65, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_icu_t", 7.0, -0.64, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_glass_icu", 7.0, -0.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+    # ICU entrance has no leaf; the clear opening is the configured width.
+    frame_offset = (DOOR_WIDTH + 0.05) / 2
+    parts.append(box_solid("door_frame_icu_l", 7.0 - frame_offset, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_icu_r", 7.0 + frame_offset, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_icu_t", 7.0, -0.64, 1.35, DOOR_WIDTH + 0.05, 0.05, 0.1, (0.95, 0.95, 0.95)))
 
     # Ward 2A door frame
-    parts.append(box_solid("door_frame_ward2a_l", 3.35, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_ward2a_r", 4.65, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_ward2a_t", 4.0, 3.76, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_glass_ward2a", 4.0, 3.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+    parts.append(box_solid("door_frame_ward2a_l", 4.0 - frame_offset, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward2a_r", 4.0 + frame_offset, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward2a_t", 4.0, 3.76, 1.35, DOOR_WIDTH + 0.05, 0.05, 0.1, (0.95, 0.95, 0.95)))
 
     # Ward 3B door frame
-    parts.append(box_solid("door_frame_ward3b_l", 6.35, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_ward3b_r", 7.65, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_frame_ward3b_t", 7.0, 3.76, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
-    parts.append(box_solid("door_glass_ward3b", 7.0, 3.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+    parts.append(box_solid("door_frame_ward3b_l", 7.0 - frame_offset, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward3b_r", 7.0 + frame_offset, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward3b_t", 7.0, 3.76, 1.35, DOOR_WIDTH + 0.05, 0.05, 0.1, (0.95, 0.95, 0.95)))
 
     # Room Furniture and Models
     # 1. HOME: Charging Station Dock
@@ -1201,8 +1333,10 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
                            (0.88, 0.91, 0.94), collide=False))
 
     # 5. ICU: 2 ICU Intensive Care Beds with Monitors
-    parts.append(hospital_bed("icu_bed_1", 6.4, -1.9, -PI / 2, has_monitor=True, is_icu=True))
-    parts.append(hospital_bed("icu_bed_2", 7.8, -1.9, -PI / 2, has_monitor=True, is_icu=True))
+    parts.append(hospital_bed("icu_bed_1", 6.0, -4.0, PI / 2,
+                              has_monitor=True, is_icu=True, lateral_side=1))
+    parts.append(hospital_bed("icu_bed_2", 8.0, -4.0, -PI / 2,
+                              has_monitor=True, is_icu=True, lateral_side=1))
 
     # 6. NURSE STATION: Central Island Desk & Monitors
     parts.append(nurse_station_island(5.5, 1.5))
@@ -1210,26 +1344,28 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     parts.append(cylinder_solid("nurse_clock_rim", 5.5, 2.75, 1.12, 0.22, 0.06, (0.18, 0.22, 0.26)))
 
     # 7. WARD 2A: 4 Hospital Beds + Bedside Tables + Curtains
-    for idx, bx in enumerate([2.7, 3.4, 4.1, 4.8]):
-        parts.append(hospital_bed(f"ward2a_bed_{idx}", bx, 4.5, -PI / 2))
-        if idx > 0:
-            parts.append(box_solid(f"ward2a_curtain_{idx}", bx - 0.35, 4.5, 0.75, 0.03, 1.2, 1.4,
-                                   (0.35, 0.7, 0.7), collide=False))
-    parts.append(cylinder_solid("ward2a_curtain_rail", 3.75, 4.5, 1.48, 0.025, 2.6, (0.78, 0.82, 0.86), yaw=PI / 2))
+    for idx, (bx, by) in enumerate(ROOM_BEDS["WARD-2A"]):
+        parts.append(hospital_bed(f"ward2a_bed_{idx + 1}", bx, by, -PI / 2, lateral_side=-1))
+    for idx, by in enumerate((6.5, 8.3)):
+        parts.append(box_solid(f"ward2a_curtain_{idx + 1}", 2.0, by, 0.75, 0.03, 1.2, 1.4,
+                               (0.35, 0.7, 0.7), collide=False))
+    parts.append(cylinder_solid("ward2a_curtain_rail", 2.0, 7.4, 1.48, 0.025, 2.6,
+                                (0.78, 0.82, 0.86), yaw=PI / 2))
 
     # 8. WARD 3B: 4 Hospital Beds + Bedside Tables + Curtains
-    for idx, bx in enumerate([5.8, 6.6, 7.4, 8.2]):
-        parts.append(hospital_bed(f"ward3b_bed_{idx}", bx, 4.5, -PI / 2))
-        if idx > 0:
-            parts.append(box_solid(f"ward3b_curtain_{idx}", bx - 0.4, 4.5, 0.75, 0.03, 1.2, 1.4,
-                                   (0.35, 0.7, 0.7), collide=False))
-    parts.append(cylinder_solid("ward3b_curtain_rail", 7.0, 4.5, 1.48, 0.025, 2.8, (0.78, 0.82, 0.86), yaw=PI / 2))
+    for idx, (bx, by) in enumerate(ROOM_BEDS["WARD-3B"]):
+        parts.append(hospital_bed(f"ward3b_bed_{idx + 1}", bx, by, -PI / 2, lateral_side=1))
+    for idx, by in enumerate((6.5, 8.3)):
+        parts.append(box_solid(f"ward3b_curtain_{idx + 1}", 8.7, by, 0.75, 0.03, 1.2, 1.4,
+                               (0.35, 0.7, 0.7), collide=False))
+    parts.append(cylinder_solid("ward3b_curtain_rail", 8.7, 7.4, 1.48, 0.025, 2.8,
+                                (0.78, 0.82, 0.86), yaw=PI / 2))
 
     # High-set outer-wall glazing and contrasting lower privacy panels.
-    for name, wx in (("ward2a", 3.75), ("ward3b", 7.0)):
-        parts.append(box_solid(f"{name}_outer_window", wx, 5.08, 0.92, 1.75, 0.035, 0.72,
+    for name, wx in (("ward2a", 3.75), ("ward3b", 8.8)):
+        parts.append(box_solid(f"{name}_outer_window", wx, 9.32, 0.92, 1.75, 0.035, 0.72,
                                (0.48, 0.72, 0.84), collide=False, transparency=0.28, roughness=0.2))
-        parts.append(box_solid(f"{name}_window_sill", wx, 5.04, 0.53, 1.85, 0.12, 0.07,
+        parts.append(box_solid(f"{name}_window_sill", wx, 9.28, 0.53, 1.85, 0.12, 0.07,
                                (0.88, 0.90, 0.92), collide=False))
 
     # Medicine delivery counter and pharmacy stock in coded, colour-coded cartons.
@@ -1297,6 +1433,9 @@ DEF OBSTACLE_CART Solid {
 }
 """)
 
+    # Park every generated visitor and RFID card off-stage until a handover.
+    parts.append(visitor_nodes(people))
+
     # 11. Robot (DEF MEDIBOT)
     parts.append(robot_node())
 
@@ -1362,6 +1501,15 @@ def main():
 
     # 1. Generate sign textures and robot logo with Pillow
     make_sign_textures(TEX_DIR)
+    with open(PATIENTS_PATH, encoding="utf-8") as patient_file:
+        patient_data = json.load(patient_file)
+    people = [relative for patient in patient_data["patients"]
+              for relative in patient["authorised_family"]]
+    people.extend(patient_data["unauthorised_visitors"])
+    face_dir = os.path.join(TEX_DIR, "faces")
+    os.makedirs(face_dir, exist_ok=True)
+    for person in people:
+        make_face_image(person["id"]).save(os.path.join(face_dir, f"{person['id']}.png"))
 
     # 2. Build world and tags
     world, tags = build_world()
@@ -1390,6 +1538,7 @@ def main():
         "tags": [{"id": t["id"], "x": t["x"], "y": t["y"], "yaw": t["yaw"], "z": t["z"],
                   "zone": t["zone"], "wall_axis": t["wall_axis"], "wall_plane": t["wall_plane"]}
                  for t in tags],
+        "rooms": ROOMS,
         "tag": {"size": TAG_SIZE},
         "camera": CAM,
         "face_camera": FACE_CAM,
@@ -1399,6 +1548,8 @@ def main():
             "start": [0.0, 0.0, 0.0],
             "z": WHEEL_R,
             "footprint": list(CHASSIS),
+            "clearance_footprint": [0.46, 2 * (WHEEL_Y + 0.016)],
+            "mast_footprint": [0.045, 0.055],
         },
         "trolley_park": list(TROLLEY_PARK),
     }

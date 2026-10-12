@@ -38,6 +38,34 @@ print("A* WARD-3B->HOME:", astar("WARD-3B", "HOME"))
 check("graph edges are bidirectional", all(b in ADJ[a] and a in ADJ[b] for a, b in EDGES))
 check("config graph names match generator", set(NODES) == set(gw.NODES) and
       set(NODES) == {n for e in EDGES for n in e})
+for room_name, room in CFG["rooms"].items():
+    door, handover = room["door_node"], room["in_node"]
+    out_route = astar("HOME", handover)
+    back_route = astar(handover, "HOME")
+    check(f"{room_name} reachable through its door", out_route is not None and
+          out_route[-2:] == [door, handover] and back_route == list(reversed(out_route)),
+          f"out={out_route}, back={back_route}")
+    robot_pose = room["handover"]["robot"]
+    visitor_pose = room["handover"]["visitor"]
+    visitor_distance = math.hypot(visitor_pose[0] - robot_pose[0],
+                                  visitor_pose[1] - robot_pose[1])
+    check(f"{room_name} visitor spot is 1 m in front",
+          abs(visitor_distance - 1.0) < 1e-6 and
+          abs(wrap(visitor_pose[2] - wrap(robot_pose[2] + math.pi))) < 1e-6)
+    footprint = CFG["robot"]["clearance_footprint"]
+    mast = CFG["robot"]["mast_footprint"]
+    door_envelope = max(footprint[1], mast[1])
+    check(f"{room_name} door clears robot plus mast",
+          room["door_width"] >= 1.2 and room["door_width"] > door_envelope)
+    x0, x1, y0, y1 = room["bounds"]
+    hx, hy = room["handover_area"]
+    check(f"{room_name} has 1.2 m handover area",
+          x0 <= robot_pose[0] - hx / 2 and robot_pose[0] + hx / 2 <= x1 and
+          y0 <= robot_pose[1] - hy / 2 and robot_pose[1] + hy / 2 <= y1)
+    check(f"{room_name} aisle is at least 1.2 m", room["aisle_width"] >= 1.2)
+    blocked_door = astar("HOME", handover, {edge_key(room["door_node"], handover)})
+    check(f"{room_name} blocked doorway is unreachable", blocked_door is None)
+check("wall tag IDs are unique", len({tag["id"] for tag in CFG["tags"]}) == len(CFG["tags"]))
 check("obstacle removal restores route", astar("HOME", "WARD-3B", {edge_key("JUNCTION", "WARD-2A")}) !=
       astar("HOME", "WARD-3B"))
 

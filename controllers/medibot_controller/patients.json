@@ -1,0 +1,56 @@
+{
+  "patients": [
+    {
+      "id": "PAT_W3B_01",
+      "name": "Maya Patel",
+      "ward": "WARD-3B",
+      "bed": "3B-01",
+      "medicine_item": "antibiotic pack",
+      "compartment": 1,
+      "authorised_family": [
+        {"id": "FAM_W3B_01_A", "name": "Arjun Patel", "relation": "son", "rfid_uid": "UID-1042", "face_image": "faces/FAM_W3B_01_A.png"},
+        {"id": "FAM_W3B_01_B", "name": "Leela Patel", "relation": "daughter", "rfid_uid": "UID-1043", "face_image": "faces/FAM_W3B_01_B.png"}
+      ]
+    },
+    {
+      "id": "PAT_W3B_02",
+      "name": "Noah Brooks",
+      "ward": "WARD-3B",
+      "bed": "3B-02",
+      "medicine_item": "pain relief pack",
+      "compartment": 2,
+      "authorised_family": [
+        {"id": "FAM_W3B_02_A", "name": "Grace Brooks", "relation": "mother", "rfid_uid": "UID-2051", "face_image": "faces/FAM_W3B_02_A.png"},
+        {"id": "FAM_W3B_02_B", "name": "Owen Brooks", "relation": "brother", "rfid_uid": "UID-2052", "face_image": "faces/FAM_W3B_02_B.png"}
+      ]
+    },
+    {
+      "id": "PAT_W2A_01",
+      "name": "Aisha Khan",
+      "ward": "WARD-2A",
+      "bed": "2A-01",
+      "medicine_item": "insulin kit",
+      "compartment": 2,
+      "authorised_family": [
+        {"id": "FAM_W2A_01_A", "name": "Samir Khan", "relation": "husband", "rfid_uid": "UID-3061", "face_image": "faces/FAM_W2A_01_A.png"},
+        {"id": "FAM_W2A_01_B", "name": "Nadia Khan", "relation": "sister", "rfid_uid": "UID-3062", "face_image": "faces/FAM_W2A_01_B.png"}
+      ]
+    },
+    {
+      "id": "PAT_ICU_01",
+      "name": "Ethan Chen",
+      "ward": "ICU",
+      "bed": "ICU-01",
+      "medicine_item": "monitoring dose",
+      "compartment": 3,
+      "authorised_family": [
+        {"id": "FAM_ICU_01_A", "name": "Mei Chen", "relation": "wife", "rfid_uid": "UID-4071", "face_image": "faces/FAM_ICU_01_A.png"},
+        {"id": "FAM_ICU_01_B", "name": "Lin Chen", "relation": "father", "rfid_uid": "UID-4072", "face_image": "faces/FAM_ICU_01_B.png"}
+      ]
+    }
+  ],
+  "unauthorised_visitors": [
+    {"id": "VISITOR_UNKNOWN_01", "name": "Taylor Reed", "relation": "visitor", "rfid_uid": "UID-9001", "face_image": "faces/VISITOR_UNKNOWN_01.png"},
+    {"id": "VISITOR_UNKNOWN_02", "name": "Jordan Ellis", "relation": "visitor", "rfid_uid": "UID-9002", "face_image": "faces/VISITOR_UNKNOWN_02.png"}
+  ]
+}

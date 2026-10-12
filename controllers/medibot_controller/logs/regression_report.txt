@@ -4,18 +4,19 @@ REGRESSION REPORT
 Scenario A:
   Trial: 1
   Completed: False
-  Duration: 7.9 s
-  Final distance from HOME: 1.834 m
-  Final heading error: 0.0 deg
-  Mean pose error: 0.4 cm
-  Max pose error: 0.5 cm
-  Tag corrections: 1
+  Duration: 23.1 s
+  Final distance from HOME: 3.932 m
+  Final heading error: 82.2 deg
+  Mean pose error: 1.7 cm
+  Max pose error: 5.7 cm
+  Tag corrections: 44
   Obstacle stops: 0
   Replans: 0
   Route via ICU: False
   Delivered: False
   Mission result: Webots step returned -1
   Webots step ended: True
+  Timed out: False
   Destination: WARD-3B
   Result: FAIL
 

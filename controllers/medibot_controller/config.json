@@ -23,6 +23,30 @@
     "WARD-3B": [
       7.0,
       3.0
+    ],
+    "WARD-2A-DOOR": [
+      4.0,
+      3.7
+    ],
+    "WARD-2A-IN": [
+      4.0,
+      5.2
+    ],
+    "WARD-3B-DOOR": [
+      7.0,
+      3.7
+    ],
+    "WARD-3B-IN": [
+      7.0,
+      5.2
+    ],
+    "ICU-DOOR": [
+      7.0,
+      -0.7
+    ],
+    "ICU-IN": [
+      7.0,
+      -2.2
     ]
   },
   "edges": [
@@ -49,6 +73,30 @@
     [
       "ICU",
       "WARD-3B"
+    ],
+    [
+      "WARD-2A",
+      "WARD-2A-DOOR"
+    ],
+    [
+      "WARD-2A-DOOR",
+      "WARD-2A-IN"
+    ],
+    [
+      "WARD-3B",
+      "WARD-3B-DOOR"
+    ],
+    [
+      "WARD-3B-DOOR",
+      "WARD-3B-IN"
+    ],
+    [
+      "ICU",
+      "ICU-DOOR"
+    ],
+    [
+      "ICU-DOOR",
+      "ICU-IN"
     ]
   ],
   "tags": [
@@ -224,35 +272,204 @@
     },
     {
       "id": 17,
+      "x": 8.1,
+      "y": -0.77,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "icu_door_facing",
+      "wall_axis": "y",
+      "wall_plane": -0.76
+    },
+    {
+      "id": 18,
+      "x": 3.1,
+      "y": 3.77,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward2a_door_facing",
+      "wall_axis": "y",
+      "wall_plane": 3.76
+    },
+    {
+      "id": 19,
+      "x": 8.1,
+      "y": 3.77,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward3b_door_facing",
+      "wall_axis": "y",
+      "wall_plane": 3.76
+    },
+    {
+      "id": 20,
       "x": 7.0,
-      "y": -2.73,
+      "y": -5.53,
       "yaw": 1.5707963267948966,
       "z": 1.0,
       "zone": "icu_room",
       "wall_axis": "y",
-      "wall_plane": -2.74
+      "wall_plane": -5.54
     },
     {
-      "id": 18,
+      "id": 21,
       "x": 3.8,
-      "y": 5.13,
+      "y": 9.43,
       "yaw": -1.5707963267948966,
       "z": 1.0,
       "zone": "ward2a_room",
       "wall_axis": "y",
-      "wall_plane": 5.14
+      "wall_plane": 9.44
     },
     {
-      "id": 19,
+      "id": 22,
       "x": 7.0,
-      "y": 5.13,
+      "y": 9.43,
       "yaw": -1.5707963267948966,
       "z": 1.0,
       "zone": "ward3b_room",
       "wall_axis": "y",
+      "wall_plane": 9.44
+    },
+    {
+      "id": 23,
+      "x": 5.13,
+      "y": 4.7,
+      "yaw": 3.141592653589793,
+      "z": 1.0,
+      "zone": "ward2a_entry_side",
+      "wall_axis": "x",
       "wall_plane": 5.14
+    },
+    {
+      "id": 24,
+      "x": 5.27,
+      "y": 4.7,
+      "yaw": 0.0,
+      "z": 1.0,
+      "zone": "ward3b_entry_side",
+      "wall_axis": "x",
+      "wall_plane": 5.26
+    },
+    {
+      "id": 25,
+      "x": 3.39,
+      "y": 3.3,
+      "yaw": 0.0,
+      "z": 1.0,
+      "zone": "ward2a_door_jamb",
+      "wall_axis": "x",
+      "wall_plane": 3.4
+    },
+    {
+      "id": 26,
+      "x": 6.39,
+      "y": 3.3,
+      "yaw": 0.0,
+      "z": 1.0,
+      "zone": "ward3b_door_jamb",
+      "wall_axis": "x",
+      "wall_plane": 6.4
+    },
+    {
+      "id": 27,
+      "x": 6.39,
+      "y": -0.7,
+      "yaw": 0.0,
+      "z": 1.0,
+      "zone": "icu_door_jamb",
+      "wall_axis": "x",
+      "wall_plane": 6.4
     }
   ],
+  "rooms": {
+    "WARD-2A": {
+      "door_node": "WARD-2A-DOOR",
+      "in_node": "WARD-2A-IN",
+      "door_width": 1.25,
+      "aisle_width": 1.2,
+      "handover_area": [
+        1.2,
+        1.2
+      ],
+      "bounds": [
+        0.46,
+        5.14,
+        3.76,
+        9.44
+      ],
+      "compartment": 2,
+      "handover": {
+        "robot": [
+          4.0,
+          5.2,
+          -1.5707963267948966
+        ],
+        "visitor": [
+          4.0,
+          4.2,
+          1.5707963267948966
+        ]
+      }
+    },
+    "WARD-3B": {
+      "door_node": "WARD-3B-DOOR",
+      "in_node": "WARD-3B-IN",
+      "door_width": 1.25,
+      "aisle_width": 1.2,
+      "handover_area": [
+        1.2,
+        1.2
+      ],
+      "bounds": [
+        5.26,
+        10.74,
+        3.76,
+        9.44
+      ],
+      "compartment": 1,
+      "handover": {
+        "robot": [
+          7.0,
+          5.2,
+          -1.5707963267948966
+        ],
+        "visitor": [
+          7.0,
+          4.2,
+          1.5707963267948966
+        ]
+      }
+    },
+    "ICU": {
+      "door_node": "ICU-DOOR",
+      "in_node": "ICU-IN",
+      "door_width": 1.25,
+      "aisle_width": 1.2,
+      "handover_area": [
+        1.2,
+        1.2
+      ],
+      "bounds": [
+        4.86,
+        10.74,
+        -5.54,
+        -0.76
+      ],
+      "compartment": 3,
+      "handover": {
+        "robot": [
+          7.0,
+          -2.2,
+          1.5707963267948966
+        ],
+        "visitor": [
+          7.0,
+          -1.2,
+          -1.5707963267948966
+        ]
+      }
+    }
+  },
   "tag": {
     "size": 0.25
   },
@@ -283,6 +500,14 @@
       0.44,
       0.24,
       0.12
+    ],
+    "clearance_footprint": [
+      0.46,
+      0.31200000000000006
+    ],
+    "mast_footprint": [
+      0.045,
+      0.055
     ]
   },
   "trolley_park": [

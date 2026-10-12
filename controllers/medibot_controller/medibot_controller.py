@@ -4,11 +4,13 @@ MediBot Webots controller  (Phase 2 – 4WD, 3 compartments, face-cam, status LE
 
 Keys (click the 3D view first so it has keyboard focus):
   S  start delivery          B  put trolley on the route   U  remove trolley
-  F  confirm face            R  confirm RFID               X  reset robot to HOME
+  V  choose next visitor      C  swap RFID card             X  reset robot to HOME
   T  toggle AprilTag correction (only while IDLE) - turn OFF to show odometry drift
-  1/2/3  manually unlock compartment 1/2/3 (for demo)
+  F/R/1/2/3 are disabled unless dev_mode.flag exists beside this controller.
 """
 import csv
+import datetime
+import json
 import math
 import os
 import sys
@@ -27,8 +29,17 @@ except ImportError:
 from controller import Supervisor
 from medibot_core import (CFG, NODES, EKF, TagLocalizer, astar, edge_key, nearest_node, wrap,
                           rotate_drive_command)
+from handover import (face_verify, decide_handover, compartment_to_unlock,
+                      unlock_authorized_compartment)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(HERE, "patients.json"), encoding="utf-8") as _patient_file:
+    PATIENT_DATA = json.load(_patient_file)
+PATIENTS = PATIENT_DATA["patients"]
+PEOPLE = [relative for patient in PATIENTS for relative in patient["authorised_family"]]
+PEOPLE.extend(PATIENT_DATA["unauthorised_visitors"])
+PEOPLE_BY_ID = {person["id"]: person for person in PEOPLE}
+CARDS_BY_UID = {person["rfid_uid"]: person["id"] for person in PEOPLE}
 
 # ---------------------------------------------------------------- parameters
 TIME_STEP = 32
@@ -50,7 +61,8 @@ STOP_FRONT = 0.25               # m   stop if front sonar < 25 cm
 STOP_SIDE = 0.15
 BLOCK_TIME = 2.0                # s   still blocked after 2 s -> mark edge blocked, replan
 BLOCKED_EDGE_TTL = 180.0        # s   keep an obstacle blocked through outbound/return delivery
-AUTO_VERIFY_S = 8.0             # auto-confirm face/RFID after this many s (None = keys only)
+RFID_TIMEOUT_S = 10.0
+HANDOVER_MAX_ATTEMPTS = 3       # one initial attempt and two retries
 GATE_M = 1.2                    # deprecated: replaced by Mahalanobis test
 MAHALANOBIS_THRESH = 11.34      # chi-square 3 dof, 99% confidence
 MIN_ACCEPT_RADIUS = 0.02        # keep EKF tag corrections smooth, even for small drift
@@ -68,6 +80,12 @@ LED_BLUE   = 220
 LED_ORANGE = 220
 LED_RED    = 220
 LED_OFF    = 0
+LED_COLOURS = {
+    "green": [0.0, 1.0, 0.0],
+    "blue": [0.0, 0.25, 1.0],
+    "orange": [1.0, 0.35, 0.0],
+    "red": [1.0, 0.0, 0.0],
+}
 
 
 # ================================================================ Compartments
@@ -82,7 +100,11 @@ class Compartments:
         self.motors = {}
         self.sensors = {}
         self.leds = {}
+        self.led_nodes = {}
         self.cargos = {}
+        self.cargo_due = {}
+        self.close_due = {}
+        self.hidden = set()
 
         for n in (1, 2, 3):
             # Hinged lid motor
@@ -103,6 +125,8 @@ class Compartments:
             if led:
                 led.set(LED_RED)
             self.leds[n] = led
+            self.led_nodes[n] = robot.getFromDef(f"LOCK_LED_{n}")
+            self._set_indicator(n, "red")
 
             # Cargo solid (supervisor node for deliver-animation)
             self.cargos[n] = robot.getFromDef(f"CARGO_{n}")
@@ -111,21 +135,43 @@ class Compartments:
         for n in (1, 2, 3):
             self.lock(n)
 
+    def _set_indicator(self, n, colour):
+        led = self.leds.get(n)
+        if led:
+            led.set(255 if colour != "off" else 0)
+        node = self.led_nodes.get(n)
+        if node:
+            try:
+                node.getField("color").setSFColor(LED_COLOURS[colour])
+            except (KeyError, AttributeError, TypeError):
+                pass
+
     def unlock(self, n):
         """Open compartment n and light its LED green."""
         if self.motors.get(n):
             self.motors[n].setPosition(self.LID_OPEN)
-        if self.leds.get(n):
-            self.leds[n].set(LED_GREEN)
+        self._set_indicator(n, "green")
+        now = self.robot.getTime()
+        self.cargo_due[n] = now + 2.0
+        self.close_due[n] = now + 4.0
         print(f"[LOCK] compartment {n} UNLOCKED")
 
     def lock(self, n):
         """Close compartment n and light its LED red."""
         if self.motors.get(n):
             self.motors[n].setPosition(self.LID_CLOSE)
-        if self.leds.get(n):
-            self.leds[n].set(LED_RED)
+        self._set_indicator(n, "red")
+        self.close_due.pop(n, None)
         print(f"[LOCK] compartment {n} LOCKED")
+
+    def update(self):
+        now = self.robot.getTime()
+        for n in (1, 2, 3):
+            if now >= self.cargo_due.get(n, float("inf")):
+                self.cargo_due.pop(n, None)
+                self.deliver_cargo(n)
+            if now >= self.close_due.get(n, float("inf")):
+                self.lock(n)
 
     def is_open(self, n):
         ps = self.sensors.get(n)
@@ -136,10 +182,11 @@ class Compartments:
     def deliver_cargo(self, n):
         """Animate cargo box sliding out of the compartment (teleport below floor)."""
         node = self.cargos.get(n)
-        if node:
+        if node and n not in self.hidden:
             f = node.getField("translation")
             if f:
                 f.setSFVec3f([0.0, 0.0, -5.0])
+                self.hidden.add(n)
         print(f"[CARGO] package {n} delivered")
 
     def reset_cargo(self):
@@ -150,12 +197,62 @@ class Compartments:
             3: (-0.16, 0.0, 0.09),
         }
         for n, pos in init_positions.items():
+            self.hidden.discard(n)
+            self.cargo_due.pop(n, None)
+            self.close_due.pop(n, None)
             node = self.cargos.get(n)
             if node:
                 f = node.getField("translation")
                 if f:
                     f.setSFVec3f(list(pos))
         print("[CARGO] all packages reset")
+
+
+class HandoverActors:
+    """Supervisor-driven standing avatars and separately emulated RFID cards."""
+
+    PARK_Y = -20.0
+
+    def __init__(self, supervisor, people):
+        self.supervisor = supervisor
+        self.people = people
+        self.visitors = {p["id"]: supervisor.getFromDef(f"VISITOR_{p['id']}") for p in people}
+        self.cards = {p["id"]: supervisor.getFromDef(f"CARD_{p['id']}") for p in people}
+        self.park_all()
+
+    @staticmethod
+    def _set_pose(node, position, yaw=None):
+        if node is None:
+            return
+        node.getField("translation").setSFVec3f(list(position))
+        if yaw is not None:
+            node.getField("rotation").setSFRotation([0, 0, 1, yaw])
+        try:
+            node.resetPhysics()
+        except AttributeError:
+            pass
+
+    def park_all(self):
+        for i, person in enumerate(self.people):
+            x = -30.0 - i * 3.0
+            self._set_pose(self.visitors[person["id"]], (x, self.PARK_Y, 0.0), 0.0)
+            self._set_pose(self.cards[person["id"]], (x, self.PARK_Y, 0.7))
+
+    def present(self, visitor_id, card_owner_id, visitor_pose, robot_pose):
+        self.park_all()
+        vx, vy = visitor_pose[:2]
+        yaw = math.atan2(robot_pose[1] - vy, robot_pose[0] - vx)
+        self._set_pose(self.visitors[visitor_id], (vx, vy, 0.0), yaw)
+        hand = (vx + 0.22 * math.cos(yaw), vy + 0.22 * math.sin(yaw), 0.76)
+        self._set_pose(self.cards[card_owner_id], hand)
+        return hand
+
+    def move_card(self, owner_id, position):
+        self._set_pose(self.cards[owner_id], position)
+
+    def card_position(self, owner_id):
+        node = self.cards.get(owner_id)
+        return tuple(node.getPosition()) if node is not None else None
 
 
 # ================================================================ MediBot
@@ -178,6 +275,7 @@ class MediBot:
         # Navigation camera (at AprilTag level)
         self.cam = r.getDevice("camera")
         self.cam.enable(2 * TIME_STEP)
+        self.dashboard = r.getDevice("dashboard")
 
         # Face camera (on mast head)
         self.face_cam = r.getDevice("face_cam")
@@ -199,18 +297,21 @@ class MediBot:
 
         # Status LED strip (front of robot)
         self.status_led = r.getDevice("status_led")
+        self.status_led_node = r.getFromDef("STATUS_LED")
         if self.status_led:
-            self.status_led.set(LED_GREEN)
+            self.status_led.set(255)
 
         # 3-compartment manager
         self.compartments = Compartments(r)
 
         # Backwards-compat alias: self.lid -> compartment 1 motor
         self.lid = self.compartments.motors.get(1)
+        self.lid_motor = self.lid  # legacy compartment-1 motor alias
 
         self.kb = r.getKeyboard()
         self.kb.enable(TIME_STEP)
         self.me = r.getSelf()
+        self.actors = HandoverActors(r, PEOPLE)
         self.trolley = r.getFromDef("TROLLEY")
         self.obstacle_nodes = [
             ("trolley", self.trolley),
@@ -234,7 +335,27 @@ class MediBot:
         self.blocked_t = 0.0
         self.obst_printed = False
         self.turning = False
-        self.face_ok = self.rfid_ok = False
+        self.dev_mode = os.path.exists(os.path.join(HERE, "dev_mode.flag"))
+        self.dev_override_steps = set()
+        self.visitor_choice_index = 0
+        self.card_swapped = False
+        self._visitor_key_armed = self._card_key_armed = True
+        self._visitor_key_last = self._card_key_last = -float("inf")
+        self.active_visitor_id = None
+        self.active_card_owner_id = None
+        self.active_patient = None
+        self.handover_attempt = 0
+        self.handover_started = False
+        self.handover_result = "-"
+        self.handover_step = "-"
+        self.handover_face_id = None
+        self.handover_face_score = 0.0
+        self.handover_uid = None
+        self.handover_reason = ""
+        self.rfid_started_t = 0.0
+        self.face_started_t = 0.0
+        self.rfid_card_start = None
+        self.rfid_card_target = None
         self.state_t0 = 0.0
         self.tag_seen = False
         self.last_tag_msg = "-"
@@ -247,11 +368,17 @@ class MediBot:
         self.home_tag_seen_t = -float("inf")
         self.tag_last_detection_t = -float("inf")
         self.dock_position_locked = False
+        self.dock_stage = "idle"
+        self.dock_stage_t0 = 0.0
+        self.dock_stage_times = {}
+        self.dock_enter_t = 0.0
         self.dock_debug_t = -float("inf")
         self.route_nodes = []
         self.detour_nodes = []
         self.dest = "-"
-        self.mission_destination = "WARD-3B"
+        self.mission_destination = "WARD-3B-IN"
+        self.mission_room = "WARD-3B"
+        self.delivery_compartment = 1
         self.mission_no = 0
         self.step_no = 0
         self.last_ekf_print_t = -1.0
@@ -272,6 +399,11 @@ class MediBot:
         self.regression_trolley_placed = False
         self.mission_delivered = False
         self.last_mission_result = None
+        self.last_event = "Controller ready"
+        self.dashboard_last_t = -float("inf")
+        self.mission_start_t = None
+        self.mission_routes = []
+        self.delivery_logged = False
 
         # Regression mode
         self.regression_mode = os.path.exists(os.path.join(HERE, "regression.flag"))
@@ -307,6 +439,8 @@ class MediBot:
             self.run_regression()
         else:
             print("[MediBot] ready - state IDLE. Press S to start a delivery to WARD-3B.")
+        if self.dev_mode:
+            print("[DEV MODE] bypass keys enabled; all bypass outcomes are logged DEV_OVERRIDE")
 
         # Startup sonar check (in IDLE/open space)
         d = self.sonar()
@@ -321,24 +455,26 @@ class MediBot:
 
     def set_state(self, s):
         print(f"[STATE] {self.state} -> {s}")
+        self.last_event = f"State: {self.state} -> {s}"
         self.state = s
         self.state_t0 = self.now()
         self._update_status_led(s)
 
     def _update_status_led(self, state):
-        """Drive the front status LED strip to reflect the current state."""
+        """Set a state colour for the front status LED strip."""
         if self.status_led is None:
             return
-        colour = {
-            "IDLE":     LED_GREEN,
-            "DELIVER":  LED_GREEN,
-            "NAVIGATE": LED_BLUE,
-            "APPROACH": LED_BLUE,
-            "RETURN":   LED_BLUE,
-            "DOCK":     LED_BLUE,
-            "VERIFY":   LED_ORANGE,
-        }.get(state, LED_RED)    # BLOCKED / any other -> red
-        self.status_led.set(colour)
+        colour_name = {
+            "IDLE": "green", "DELIVER": "green",
+            "NAVIGATE": "blue", "APPROACH": "blue", "RETURN": "blue", "DOCK": "blue",
+            "VERIFY": "orange",
+        }.get(state, "red")
+        self.status_led.set(255)
+        if self.status_led_node:
+            try:
+                self.status_led_node.getField("color").setSFColor(LED_COLOURS[colour_name])
+            except (AttributeError, TypeError):
+                pass
 
     def true_pose(self):
         p = self.me.getPosition()
@@ -545,14 +681,15 @@ class MediBot:
             # Clean old rejected fixes
             self.rejected_fixes = [f for f in self.rejected_fixes if now - f["t"] < REJECT_BUFFER_TIME]
 
+        # Rejected fixes are diagnostic evidence only.  A cluster of rejected
+        # measurements can share the same camera/model bias, so it is unsafe to
+        # turn them into an EKF correction.
         relocal_delta = (0.0, 0.0)
-        if not accepted:
-            relocal_delta = self._maybe_relocalize()
         for diag in self.loc.last_diagnostics:
             if diag["id"] == m["id"]:
                 did_relocalize = math.hypot(*relocal_delta) > 0.0
                 self._write_tag_diagnostic(diag, accepted or did_relocalize,
-                                           "bounded relocalization" if did_relocalize else
+                                           "rejected fix" if did_relocalize else
                                            ("accepted" if accepted else reject_reason),
                                            relocal_delta[0] if did_relocalize else correction_m,
                                            relocal_delta[1] if did_relocalize else correction_deg)
@@ -615,6 +752,8 @@ class MediBot:
             print(f"[A*] no route {start} -> {goal}")
             return False
         self.route, self.idx, self.dest = path, 0, goal
+        if self.mission_start_t is not None:
+            self.mission_routes.append(list(path))
         print(f"[A*] route: {' -> '.join(path)}")
         self.draw_route()
         return True
@@ -801,7 +940,12 @@ class MediBot:
                 self.set_state("NAVIGATE")
         else:
             self.stop()
-            self.end_mission("no route available")
+            print("[A*] destination blocked; routing back to HOME")
+            if self.plan(prev, "HOME"):
+                self.mission_delivered = False
+                self.set_state("RETURN")
+            else:
+                self.end_mission("destination blocked; no safe route HOME")
         self.blocked_t = 0.0
         self.obst_printed = False
 
@@ -861,14 +1005,31 @@ class MediBot:
         self.blocked_edges.clear()
         self.blocked_edge_expiry.clear()
         start = nearest_node(self.ekf.x[0], self.ekf.x[1])
+        self.mission_room = next((room for room, info in CFG["rooms"].items()
+                                  if info["in_node"] == self.mission_destination), "WARD-3B")
+        self.active_patient = next(p for p in PATIENTS if p["ward"] == self.mission_room)
+        self.delivery_compartment = self.active_patient["compartment"]
+        self.handover_started = False
+        self.handover_attempt = 0
+        self.handover_result = "PENDING"
+        self.handover_reason = ""
+        self.handover_face_id = self.handover_uid = None
+        self.mission_start_t = self.now()
+        self.mission_routes = []
+        self.delivery_logged = False
+        self.replans = 0
+        self.last_event = "Mission started"
+        self.dev_override_steps.clear()
         if not self.plan(start, self.mission_destination):
+            self.mission_no += 1
+            self.errs = []
+            self._append_delivery_row("ABORTED_BLOCKED")
             return
         self.mission_no += 1
         self.mission_delivered = False
         self.last_mission_result = None
         self.errs = []
         self.n_corrections = 0
-        self.face_ok = self.rfid_ok = False
         self.compartments.lock_all()
         self.compartments.reset_cargo()
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"), exist_ok=True)
@@ -891,6 +1052,12 @@ class MediBot:
 
     def end_mission(self, why):
         self.last_mission_result = why
+        outcome = ("DELIVERED" if self.mission_delivered else
+                   "DENIED" if self.handover_result.startswith("DENIED") or
+                   self.handover_result.startswith("DEV_OVERRIDE: DENIED")
+                   else "ABORTED_BLOCKED")
+        self._append_delivery_row(outcome)
+        self.last_event = why
         if self.errs:
             print(f"[SUMMARY] {why} | tag correction {'ON' if self.tags_enabled else 'OFF'} | "
                   f"mean error {np.mean(self.errs):.1f} cm | max error {np.max(self.errs):.1f} cm | "
@@ -903,6 +1070,43 @@ class MediBot:
             self.tag_log_f = self.tag_log_w = None
         self.stop()
         self.set_state("IDLE")
+        self.actors.park_all()
+
+    def _append_delivery_row(self, outcome):
+        """Append exactly one result row for the current mission."""
+        if self.delivery_logged:
+            return
+        self.delivery_logged = True
+        log_dir = os.path.join(HERE, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        path = os.path.join(log_dir, "deliveries.csv")
+        fields = ["timestamp", "patient", "ward", "item", "compartment", "outcome",
+                  "face_name", "face_score", "rfid_ok", "route", "replans",
+                  "mission_time_s", "mean_pose_error_cm", "max_pose_error_cm",
+                  "final_distance_from_HOME_m"]
+        patient = self.active_patient or {}
+        tx, ty, _ = self.true_pose()
+        hx, hy, _ = CFG["robot"]["start"]
+        face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", "")
+        rfid_ok = outcome == "DELIVERED" and bool(self.handover_uid)
+        routes = json.dumps(self.mission_routes, separators=(",", ":"))
+        elapsed = max(0.0, self.now() - self.mission_start_t) if self.mission_start_t is not None else 0.0
+        row = [datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+               patient.get("id", ""), patient.get("ward", ""),
+               patient.get("medicine_item", patient.get("medicine", "")),
+               patient.get("compartment", ""), outcome, face_name,
+               f"{self.handover_face_score:.3f}", str(rfid_ok).lower(), routes,
+               self.replans, f"{elapsed:.2f}",
+               f"{float(np.mean(self.errs)):.2f}" if self.errs else "0.00",
+               f"{float(np.max(self.errs)):.2f}" if self.errs else "0.00",
+               f"{math.hypot(tx - hx, ty - hy):.3f}"]
+        needs_header = not os.path.exists(path) or os.path.getsize(path) == 0
+        with open(path, "a", newline="", encoding="utf-8") as deliveries:
+            writer = csv.writer(deliveries)
+            if needs_header:
+                writer.writerow(fields)
+            writer.writerow(row)
+        print(f"[MISSION LOG] {outcome} appended to {path}")
 
     def log_step(self):
         e = self.true_err() * 100
@@ -915,11 +1119,256 @@ class MediBot:
                 f"{tx:.3f}", f"{ty:.3f}",
                 f"{e:.1f}", int(self.tag_seen)])
 
+    def _visitor_candidates(self):
+        patient = self.active_patient
+        other_relative = next(person for p in PATIENTS if p["id"] != patient["id"]
+                              for person in p["authorised_family"])
+        return [patient["authorised_family"][0], other_relative,
+                PATIENT_DATA["unauthorised_visitors"][0]]
+
+    def _selected_people(self):
+        visitor = self._visitor_candidates()[self.visitor_choice_index % 3]
+        other_card = next(person for p in PATIENTS if p["id"] != self.active_patient["id"]
+                          for person in p["authorised_family"])
+        card_owner = other_card if self.card_swapped else visitor
+        return visitor, card_owner
+
+    def _show_selected_visitor(self):
+        visitor, card_owner = self._selected_people()
+        self.active_visitor_id = visitor["id"]
+        self.active_card_owner_id = card_owner["id"]
+        room = CFG["rooms"][self.mission_room]
+        self.rfid_card_start = self.actors.present(
+            self.active_visitor_id, self.active_card_owner_id,
+            room["handover"]["visitor"], self.true_pose())
+        print(f"[VISITOR] {visitor['name']} ({visitor['id']}); card={card_owner['name']}")
+
+    def _start_handover_attempt(self, retry=False):
+        if not retry:
+            self.handover_attempt += 1
+        self._show_selected_visitor()
+        self.handover_step = "FACE"
+        self.handover_face_id = None
+        self.handover_face_score = 0.0
+        self.handover_uid = None
+        self.handover_reason = ""
+        self.face_started_t = self.now()
+        self.handover_result = f"ATTEMPT {self.handover_attempt}/{HANDOVER_MAX_ATTEMPTS}"
+        print(f"[HANDOVER] FACE step started for {self.active_visitor_id}")
+
+    def _handover_log(self, outcome, reason=""):
+        os.makedirs(os.path.join(HERE, "logs"), exist_ok=True)
+        path = os.path.join(HERE, "logs", "handover_log.csv")
+        write_header = not os.path.exists(path) or os.path.getsize(path) == 0
+        with open(path, "a", newline="", encoding="utf-8") as handover_file:
+            writer = csv.writer(handover_file)
+            if write_header:
+                writer.writerow(["time_s", "patient_id", "visitor_id", "face_id",
+                                 "face_score", "rfid_uid", "attempt", "outcome", "reason"])
+            writer.writerow([f"{self.now():.2f}", self.active_patient["id"] if self.active_patient else "-",
+                             self.active_visitor_id or "", self.handover_face_id or "",
+                             f"{self.handover_face_score:.2f}", self.handover_uid or "",
+                             self.handover_attempt, outcome, reason])
+
+    def _read_emulated_rfid(self, card_position):
+        robot_pos = self.me.getPosition()
+        yaw = self.true_pose()[2]
+        reader = (robot_pos[0] + 0.242 * math.cos(yaw),
+                  robot_pos[1] + 0.242 * math.sin(yaw), robot_pos[2] + 0.15)
+        dx, dy = card_position[0] - reader[0], card_position[1] - reader[1]
+        distance = math.sqrt(dx * dx + dy * dy + (card_position[2] - reader[2]) ** 2)
+        bearing = math.atan2(dy, dx)
+        if distance <= 0.30 and abs(wrap(bearing - yaw)) <= math.radians(60):
+            return PEOPLE_BY_ID[self.active_card_owner_id]["rfid_uid"]
+        return None
+
+    def _finish_handover_attempt(self, timed_out=False, missing=False):
+        self.handover_step = "DECISION"
+        face_id, face_score = self.handover_face_id, self.handover_face_score
+        uid = self.handover_uid
+        if self.dev_mode and "face" in self.dev_override_steps:
+            face_id = self.active_patient["authorised_family"][0]["id"]
+            face_score = 1.0
+        if self.dev_mode and "rfid" in self.dev_override_steps:
+            uid = self.active_patient["authorised_family"][0]["rfid_uid"]
+        decision = decide_handover(self.active_patient, face_id, face_score, uid,
+                                   PEOPLE_BY_ID, CARDS_BY_UID,
+                                   rfid_timed_out=timed_out)
+        compartment = compartment_to_unlock(self.active_patient, decision)
+        if missing:
+            decision = (False, "RFID missing", None)
+            compartment = None
+        allowed, reason, _person_id = decision
+        self.handover_reason = reason
+        if allowed:
+            if self.dev_mode and self.dev_override_steps:
+                self.handover_result = "DEV_OVERRIDE"
+                self._handover_log("DEV_OVERRIDE", ",".join(sorted(self.dev_override_steps)))
+                print("[HANDOVER] DEV_OVERRIDE")
+            else:
+                self.handover_result = "DELIVERED"
+                self._handover_log("DELIVERED")
+                print(f"[HANDOVER] AUTHORIZED patient={self.active_patient['id']} "
+                      f"compartment={compartment}")
+            unlock_authorized_compartment(self.active_patient, decision, self.compartments)
+            self.mission_delivered = True
+            self.actors.park_all()
+            self.set_state("DELIVER")
+            return
+
+        self.handover_result = f"DENIED: {reason}"
+        print(f"[HANDOVER] DENIED attempt={self.handover_attempt}: {reason}")
+        if self.dev_mode and self.dev_override_steps:
+            self.handover_result = f"DEV_OVERRIDE: DENIED {reason}"
+            self._handover_log("DEV_OVERRIDE",
+                               f"{','.join(sorted(self.dev_override_steps))}; denied: {reason}")
+        else:
+            self._handover_log("DENIED", reason)
+        if self.handover_attempt < HANDOVER_MAX_ATTEMPTS:
+            self._start_handover_attempt()
+            return
+
+        self.mission_delivered = False
+        self.actors.park_all()
+        self.set_state("DENIED")
+
+    def _advance_handover(self):
+        if self.handover_step == "FACE":
+            if self.now() - self.face_started_t < 0.5:
+                return
+            frame = self.face_cam.getImage() if self.face_cam else None
+            # FACE RECOGNITION STUB: image plus supervisor-known actor identity.
+            self.handover_face_id, self.handover_face_score = face_verify(
+                [{"image": frame,
+                  "person_id": (self.active_visitor_id if
+                                self.actors.visitors.get(self.active_visitor_id) is not None
+                                else None)}])
+            print(f"[HANDOVER] FACE: STUB id={self.handover_face_id} "
+                  f"score={self.handover_face_score:.2f}")
+            self.handover_step = "RFID"
+            self.rfid_started_t = self.now()
+            root = self.me.getPosition()
+            yaw = self.true_pose()[2]
+            self.rfid_card_target = (root[0] + (0.242 + 0.15) * math.cos(yaw),
+                                     root[1] + (0.242 + 0.15) * math.sin(yaw),
+                                     root[2] + 0.15)
+            return
+        elapsed = self.now() - self.rfid_started_t
+        if self.active_card_owner_id not in self.actors.cards or not self.actors.cards[self.active_card_owner_id]:
+            print("[RFID] missing card")
+            self._finish_handover_attempt(missing=True)
+            return
+        fraction = min(1.0, max(0.0, elapsed / 1.0))
+        start = self.rfid_card_start
+        target = self.rfid_card_target
+        position = tuple(start[i] + fraction * (target[i] - start[i]) for i in range(3))
+        self.actors.move_card(self.active_card_owner_id, position)
+        # Query the node's world pose after Supervisor moved it; do not assume
+        # the commanded transform is the physical read position.
+        actual_position = self.actors.card_position(self.active_card_owner_id)
+        uid = self._read_emulated_rfid(actual_position) if actual_position else None
+        if uid:
+            self.handover_uid = uid
+            print(f"[RFID] UID={uid} read")
+            self._finish_handover_attempt()
+        elif elapsed >= RFID_TIMEOUT_S:
+            print("[RFID] timeout")
+            self._finish_handover_attempt(timed_out=True)
+
+    def dashboard_step(self):
+        """Draw the live map and mission summary to the robot's 480x320 Display."""
+        display = self.dashboard
+        if display is None or self.now() - self.dashboard_last_t < 0.5:
+            return
+        self.dashboard_last_t = self.now()
+
+        def color(rgb):
+            display.setColor(rgb)
+
+        def text(value, x, y, rgb=0xE8EEF5):
+            color(rgb)
+            display.drawText(str(value)[:48], int(x), int(y))
+
+        def line(x1, y1, x2, y2, rgb):
+            color(rgb)
+            display.drawLine(int(x1), int(y1), int(x2), int(y2))
+
+        # Background and header
+        color(0x15202B)
+        display.fillRectangle(0, 0, 480, 320)
+        text("MEDIBOT | LIVE DELIVERY", 10, 8, 0x72C7FF)
+
+        # Fit graph coordinates into a compact top-down map on the left.
+        map_box = (12, 38, 228, 160)
+        xs = [p[0] for p in NODES.values()]
+        ys = [p[1] for p in NODES.values()]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        sx = (map_box[2] - 28) / max(max_x - min_x, 1.0)
+        sy = (map_box[3] - 28) / max(max_y - min_y, 1.0)
+        scale = min(sx, sy)
+
+        def xy(point):
+            return (map_box[0] + 14 + (point[0] - min_x) * scale,
+                    map_box[1] + map_box[3] - 14 - (point[1] - min_y) * scale)
+
+        for a, b in CFG["edges"]:
+            p1, p2 = xy(NODES[a]), xy(NODES[b])
+            rgb = 0xE64B4B if edge_key(a, b) in self.blocked_edges else 0x657789
+            line(*p1, *p2, rgb)
+        for route in self.mission_routes:
+            for a, b in zip(route[:-1], route[1:]):
+                line(*xy(NODES[a]), *xy(NODES[b]), 0x1687FF)
+        for a, b in zip(self.route[:-1], self.route[1:]):
+            line(*xy(NODES[a]), *xy(NODES[b]), 0x1687FF)
+        for name, point in NODES.items():
+            px, py = xy(point)
+            color(0xB9C7D5)
+            display.fillRectangle(int(px - 2), int(py - 2), 4, 4)
+            text(name, px + 3, py - 5, 0xD5E0EA)
+
+        rx, ry, heading = self.true_pose()
+        px, py = xy((rx, ry))
+        color(0x42E88A)
+        display.fillRectangle(int(px - 4), int(py - 4), 8, 8)
+        line(px, py, px + 12 * math.cos(heading), py - 12 * math.sin(heading), 0x42E88A)
+
+        if self.trolley is not None:
+            ox, oy, oz = self.trolley.getPosition()
+            park_x, park_y = CFG.get("trolley_park", (-1.5, 1.8))
+            if oz > 0 and math.hypot(ox - park_x, oy - park_y) > 0.25:
+                tx, ty = xy((ox, oy))
+                color(0xFF4B45)
+                display.fillRectangle(int(tx - 4), int(ty - 4), 8, 8)
+
+        # Compact status panel; all rendering uses only Display text/line/rectangle calls.
+        patient = self.active_patient or {}
+        sonar = self.sonar()
+        info = [
+            (f"STATE: {self.state}", 0x72C7FF),
+            (f"DEST: {self.dest}", 0xE8EEF5),
+            (f"PATIENT: {patient.get('name', '-')}", 0xE8EEF5),
+            (f"WARD: {patient.get('ward', '-')}", 0xE8EEF5),
+            (f"COMPARTMENT: {patient.get('compartment', '-')}", 0xE8EEF5),
+            ("LIDS: " + "  ".join(
+                f"{n}:{'OPEN' if self.compartments.is_open(n) else 'LOCK'}" for n in (1, 2, 3)), 0xFFD166),
+            (f"SONAR m F {sonar['front']:.2f} L {sonar['left']:.2f} R {sonar['right']:.2f}", 0xE8EEF5),
+            (f"POSE ERROR {self.true_err() * 100:.1f} cm", 0xE8EEF5),
+            (f"EVENT: {self.last_event}", 0xAAB7C4),
+        ]
+        for index, (value, rgb) in enumerate(info):
+            text(value, 254, 36 + index * 25, rgb)
+        text("KEYS: S start | B block path | X reset", 12, 286, 0x72C7FF)
+        if self.dev_mode:
+            color(0xB82020)
+            display.fillRectangle(360, 8, 108, 20)
+            text("DEV MODE", 370, 11, 0xFFFFFF)
+
     def hud(self):
         d = self.sonar()
         r = self.robot
         # Clear all labels first to prevent overdraw
-        for i in range(7):
+        for i in range(10):
             r.setLabel(i, "", 0, 0, 0, 0, 0, "Arial")
         # Now set new labels
         r.setLabel(0, "MediBot - hospital delivery simulation", 0.01, 0.01, 0.07, 0x1F4E79, 0, "Arial")
@@ -935,8 +1384,20 @@ class MediBot:
             f"C{n}:{'OPEN' if self.compartments.is_open(n) else 'LOCK'}"
             for n in (1, 2, 3))
         r.setLabel(5, comp_status, 0.01, 0.21, 0.05, 0x003399, 0, "Arial")
-        r.setLabel(6, "S start | B block | U unblock | F face | R RFID | T tags | X reset | 1/2/3 unlock",
+        r.setLabel(6, "S start | B block | U unblock | V visitor | C swap card | T tags | X reset",
                    0.01, 0.95, 0.05, 0x555555, 0, "Arial")
+        if self.dev_mode:
+            r.setLabel(7, "DEV MODE", 0.42, 0.01, 0.09, 0xCC0000, 0, "Arial")
+        if self.active_patient:
+            r.setLabel(8, f"Patient: {self.active_patient['name']} ({self.active_patient['id']})  "
+                          f"Ward: {self.active_patient['ward']}  Bed: {self.active_patient['bed']}  "
+                          f"Compartment: {self.active_patient['compartment']}",
+                       0.01, 0.25, 0.05, 0x202020, 0, "Arial")
+        face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", "-")
+        rfid_text = self.handover_uid or "-"
+        r.setLabel(9, f"FACE: STUB | {self.handover_step} | face={face_name} "
+                      f"score={self.handover_face_score:.2f} | RFID={rfid_text} | {self.handover_result}",
+                   0.01, 0.29, 0.045, 0x202020, 0, "Arial")
 
     def run_regression(self):
         """Run selected scenarios; env vars permit separate/repeated Webots runs."""
@@ -965,12 +1426,14 @@ class MediBot:
             self.regression_trolley_placed = False
             self.mission_delivered = False
             self.last_mission_result = None
-            self.mission_destination = "WARD-2A" if scenario == "D" else "WARD-3B"
+            self.mission_destination = "WARD-2A-IN" if scenario == "D" else "WARD-3B-IN"
             self.tags_enabled = True
             self.tag_filter.clear()
             self.home_tag_pose = None
             self.home_tag_seen_t = -float("inf")
             self.tag_last_detection_t = -float("inf")
+            self.dock_stage_times = {}
+            self.dock_stage = "idle"
 
             # Setup for each scenario
             self.reset()
@@ -981,8 +1444,9 @@ class MediBot:
             # Start mission
             self.start_mission()
 
-            # Wait for mission completion (max 120 s)
+            # Allow time for the delivery route and the tag-guided docking pass.
             webots_stopped = False
+            trial_timed_out = False
             while self.state != "IDLE" and (self.now() - self.regression_start_t) < 180:
                 step_status = self.robot.step(TIME_STEP)
                 if step_status == -1:
@@ -1003,6 +1467,14 @@ class MediBot:
                     self.log_step()
                 if self.step_no % 4 == 0:
                     self.hud()
+
+            if self.state != "IDLE" and not webots_stopped:
+                trial_timed_out = True
+                print(f"[REGRESSION][ERROR] scenario {scenario} exceeded 180 s")
+
+            if self.dock_stage in {"acquire_home_tag", "rotate_home_yaw", "creep_to_HOME"}:
+                self.dock_stage_times[self.dock_stage] = max(
+                    0.0, self.now() - self.dock_stage_t0)
 
             # Collect results
             duration = self.now() - self.regression_start_t
@@ -1034,6 +1506,8 @@ class MediBot:
                 "replans": self.replans,
                 "route_via_icu": self.regression_route_via_icu,
                 "webots_stopped": webots_stopped,
+                "timed_out": trial_timed_out,
+                "dock_stage_times": dict(self.dock_stage_times),
             }
             results.append(result)
 
@@ -1065,25 +1539,28 @@ class MediBot:
                 f.write(f"  Delivered: {r['delivered']}\n")
                 f.write(f"  Mission result: {r['mission_result']}\n")
                 f.write(f"  Webots step ended: {r['webots_stopped']}\n")
+                f.write(f"  Timed out: {r['timed_out']}\n")
+                for stage, seconds in r["dock_stage_times"].items():
+                    f.write(f"  Dock {stage} stage: {seconds:.1f} s\n")
                 f.write(f"  Destination: {'WARD-2A' if r['scenario'] == 'D' else 'WARD-3B'}\n")
 
                 # Determine PASS/FAIL
                 passed = True
                 if r['scenario'] == "A":
-                    passed = (r['completed'] and
+                    passed = (r['completed'] and not r['timed_out'] and
                              r['mission_result'] == "mission complete - robot docked at HOME" and
                              r['final_dist_home'] < 0.15 and
                              r['final_heading_error_deg'] <= 10.0 and
                              r['mean_err'] < 8 and r['max_err'] < 25)
                 elif r['scenario'] == "B":
-                    passed = (r['completed'] and r['obstacle_stops'] >= 1 and
+                    passed = (r['completed'] and not r['timed_out'] and r['obstacle_stops'] >= 1 and
                               r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
                               r['mission_result'] == "mission complete - robot docked at HOME" and
                               r['final_dist_home'] < 0.15 and
                               r['final_heading_error_deg'] <= 10.0 and
                               r['mean_err'] < 8 and r['max_err'] < 25)
                 elif r['scenario'] == "D":
-                    passed = (r['completed'] and r['delivered'] and
+                    passed = (r['completed'] and not r['timed_out'] and r['delivered'] and
                               r['mission_result'] == "mission complete - robot docked at HOME" and
                               r['final_dist_home'] < 0.15 and
                               r['final_heading_error_deg'] <= 10.0)
@@ -1092,16 +1569,16 @@ class MediBot:
 
             # Overall summary
             all_passed = all(
-                (r['scenario'] == "A" and r['completed'] and
+                (r['scenario'] == "A" and r['completed'] and not r['timed_out'] and
                  r['mission_result'] == "mission complete - robot docked at HOME" and
                  r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0 and
                  r['mean_err'] < 8 and r['max_err'] < 25) or
-                (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and
+                (r['scenario'] == "B" and r['completed'] and not r['timed_out'] and r['obstacle_stops'] >= 1 and
                  r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
                  r['mission_result'] == "mission complete - robot docked at HOME" and
                  r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0 and
                  r['mean_err'] < 8 and r['max_err'] < 25) or
-                (r['scenario'] == "D" and r['completed'] and r['delivered'] and
+                (r['scenario'] == "D" and r['completed'] and not r['timed_out'] and r['delivered'] and
                  r['mission_result'] == "mission complete - robot docked at HOME" and
                  r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0)
                 for r in results)
@@ -1112,11 +1589,13 @@ class MediBot:
 
         # Quit only after writing the report; do not mask an earlier Webots stop.
         if not any(result["webots_stopped"] for result in results):
+            print("[REGRESSION] calling robot.simulationQuit(0) after all queued trials")
             self.robot.simulationQuit(0)
 
     # ------------------------------------------------------------ keys + state machine
     def keys(self):
         saw_block_key = False
+        saw_visitor_key = saw_card_key = False
         while True:
             k = self.kb.getKey()
             if k == -1:
@@ -1132,12 +1611,30 @@ class MediBot:
                     self.block_path()
             elif c == "U":
                 self.unblock()
-            elif c == "F" and self.state == "VERIFY":
-                self.face_ok = True
-                print("[VERIFY] face recognised (simulated)")
-            elif c == "R" and self.state == "VERIFY":
-                self.rfid_ok = True
-                print("[VERIFY] RFID accepted (simulated)")
+            elif c == "V":
+                saw_visitor_key = True
+                self._visitor_key_last = self.now()
+                if self._visitor_key_armed:
+                    self._visitor_key_armed = False
+                    self.visitor_choice_index = (self.visitor_choice_index + 1) % 3
+                    print("[VISITOR] selection advanced")
+                    if self.state == "VERIFY" and self.active_patient:
+                        self._start_handover_attempt()
+            elif c == "C":
+                saw_card_key = True
+                self._card_key_last = self.now()
+                if self._card_key_armed:
+                    self._card_key_armed = False
+                    self.card_swapped = not self.card_swapped
+                    print(f"[RFID] card {'swapped' if self.card_swapped else 'restored'}")
+                    if self.state == "VERIFY" and self.active_patient:
+                        self._start_handover_attempt()
+            elif c in ("F", "R") and self.dev_mode and self.state == "VERIFY":
+                if c == "F":
+                    self.dev_override_steps.add("face")
+                else:
+                    self.dev_override_steps.add("rfid")
+                print(f"[DEV MODE] {c} verification override armed")
             elif c == "T":
                 if self.state == "IDLE":
                     self.tags_enabled = not self.tags_enabled
@@ -1146,13 +1643,14 @@ class MediBot:
                     print("[TAGS] toggle only while IDLE")
             elif c == "X":
                 self.reset()
-            elif c in ("1", "2", "3"):
+            elif c in ("1", "2", "3") and self.dev_mode:
                 n = int(c)
-                print(f"[KEY] manually toggling compartment {n}")
+                self.dev_override_steps.add(f"compartment_{n}")
                 if self.compartments.is_open(n):
                     self.compartments.lock(n)
                 else:
                     self.compartments.unlock(n)
+                self._handover_log("DEV_OVERRIDE", f"manual compartment {n}")
             elif c == "K" and self.state == "IDLE":
                 # Odometry calibration: drive straight 3s at 0.2 m/s, then report
                 self.calibrating = True
@@ -1163,9 +1661,21 @@ class MediBot:
         if (not saw_block_key and not self._block_key_armed
                 and self.now() - self._block_key_last_seen >= 0.25):
             self._block_key_armed = True
+        if not saw_visitor_key and not self._visitor_key_armed and self.now() - self._visitor_key_last >= 0.25:
+            self._visitor_key_armed = True
+        if not saw_card_key and not self._card_key_armed and self.now() - self._card_key_last >= 0.25:
+            self._card_key_armed = True
 
     def reset(self):
         self.stop()
+        self.actors.park_all()
+        self.visitor_choice_index = 0
+        self.card_swapped = False
+        self.active_patient = None
+        self.active_visitor_id = self.active_card_owner_id = None
+        self.handover_result = "-"
+        self.handover_step = "-"
+        self.handover_started = False
         sx, sy, sth = CFG["robot"]["start"]
         self.me.getField("translation").setSFVec3f([sx, sy, CFG["robot"]["z"]])
         self.me.getField("rotation").setSFRotation([0, 0, 1, sth])
@@ -1192,6 +1702,7 @@ class MediBot:
 
     def state_machine(self):
         s, t = self.state, self.now()
+        self.compartments.update()
         # Calibration mode (only in IDLE)
         if self.calibrating:
             if t - self.calib_start_t < 3.0:
@@ -1226,27 +1737,39 @@ class MediBot:
         elif s == "APPROACH":
             if self.follow(0.06, APPROACH_V):
                 self.stop()
-                self.face_ok = self.rfid_ok = False
-                print("[VERIFY] arrived. Press F (face) and R (RFID) to confirm the recipient"
-                      + (f" (auto-confirms in {AUTO_VERIFY_S:.0f} s)" if AUTO_VERIFY_S else ""))
+                print(f"[VERIFY] arrived for patient {self.active_patient['name']} "
+                      f"in {self.active_patient['ward']}")
                 self.set_state("VERIFY")
 
         elif s == "VERIFY":
+            room = CFG["rooms"][self.mission_room]
+            target_yaw = room["handover"]["robot"][2]
+            heading_err = wrap(target_yaw - self.ekf.x[2])
+            if abs(heading_err) > math.radians(3.0):
+                self.drive(0.0, max(-0.3, min(0.3, 1.2 * heading_err)))
+            else:
+                self.stop()
+                if not self.handover_started:
+                    self.handover_started = True
+                    self._start_handover_attempt()
+                else:
+                    self._advance_handover()
+
+        elif s == "DENIED":
             self.stop()
-            if AUTO_VERIFY_S and t - self.state_t0 > AUTO_VERIFY_S:
-                self.face_ok = self.rfid_ok = True
-                print("[VERIFY] auto-confirmed")
-            if self.face_ok and self.rfid_ok:
-                print("[VERIFY] recipient verified -> unlocking compartment 1")
-                self.mission_delivered = True
-                self.compartments.unlock(1)
-                self.compartments.deliver_cargo(1)
-                self.set_state("DELIVER")
+            here = nearest_node(self.ekf.x[0], self.ekf.x[1])
+            if self.plan(here, "HOME"):
+                self.set_state("RETURN")
+            else:
+                self.blocked_edges.clear()
+                if self.plan(here, "HOME"):
+                    self.set_state("RETURN")
+                else:
+                    self.end_mission("denied; no route HOME")
 
         elif s == "DELIVER":
             self.stop()
             if t - self.state_t0 > 4.0:
-                self.compartments.lock(1)
                 here = nearest_node(self.ekf.x[0], self.ekf.x[1])
                 if self.plan(here, "HOME"):
                     self.set_state("RETURN")
@@ -1261,60 +1784,96 @@ class MediBot:
                     self.end_mission("cannot return")
 
         elif s == "RETURN":
-            if self.follow(0.25, CRUISE_V):
+            if self.follow(0.06, APPROACH_V):
                 self.dock_position_locked = False
+                self.dock_stage = "acquire_home_tag"
+                self.dock_stage_t0 = t
+                self.dock_enter_t = t
                 self.set_state("DOCK")
 
         elif s == "DOCK":
             sx, sy, home_yaw = CFG["robot"]["start"]
             x, y, heading = self.ekf.x
             home_tag = next(t for t in CFG["tags"] if t.get("zone") == "home_south")
-            tag_fresh = t - self.home_tag_seen_t < 20.0
+            tag_fresh = (self.home_tag_pose is not None and
+                         t - self.home_tag_seen_t <= 0.5)
             if t - self.dock_debug_t >= 2.0:
                 self.dock_debug_t = t
-                tag_err = (math.hypot(self.home_tag_pose["x"] - sx,
-                                      self.home_tag_pose["y"] - sy)
-                           if self.home_tag_pose is not None else float("inf"))
                 true_x, true_y, true_yaw = self.true_pose()
-                print(f"[DOCK] est={math.hypot(x-sx,y-sy):.3f} m, tag={tag_err:.3f} m, "
-                      f"tag age={t-self.home_tag_seen_t:.2f} s, locked={self.dock_position_locked}, "
+                print(f"[DOCK] stage={self.dock_stage} est={math.hypot(x-sx,y-sy):.3f} m, "
+                      f"tag age={t-self.home_tag_seen_t:.2f} s, "
                       f"true={math.hypot(true_x-sx,true_y-sy):.3f} m / "
                       f"{math.degrees(wrap(true_yaw-home_yaw)):.1f} deg")
-            if self.dock_position_locked:
+
+            if self.dock_stage == "acquire_home_tag":
+                if tag_fresh and self.home_tag_seen_t >= self.dock_enter_t:
+                    self.stop()
+                    elapsed = t - self.dock_stage_t0
+                    self.dock_stage_times["acquire_HOME_tag"] = elapsed
+                    print(f"[DOCK] HOME tag acquired; stage took {elapsed:.1f} s")
+                    self.dock_stage = "rotate_home_yaw"
+                    self.dock_stage_t0 = t
+                else:
+                    tag_bearing = math.atan2(home_tag["y"] - y,
+                                             home_tag["x"] - x)
+                    err = wrap(tag_bearing - heading)
+                    if abs(err) > math.radians(3.0):
+                        self.drive(0.0, max(-0.30, min(0.30, 1.2 * err)))
+                    else:
+                        self.stop()
+
+            elif self.dock_stage == "rotate_home_yaw":
                 heading_err = wrap(home_yaw - heading)
-                if abs(heading_err) > math.radians(10.0):
-                    self.drive(0.0, max(-0.35, min(0.35, 1.5 * heading_err)))
+                if abs(heading_err) > math.radians(2.0):
+                    self.drive(0.0, max(-0.30, min(0.30, 1.2 * heading_err)))
                 else:
                     self.stop()
-                    tx, ty, true_yaw = self.true_pose()
-                    actual_pos_err = math.hypot(tx - sx, ty - sy)
-                    actual_heading_err = abs(wrap(true_yaw - home_yaw))
-                    if actual_pos_err <= 0.15 and actual_heading_err <= math.radians(10.0):
-                        print(f"[DOCK] HOME tag aligned; position={actual_pos_err:.3f} m, "
+                    elapsed = t - self.dock_stage_t0
+                    self.dock_stage_times["rotate_home_yaw"] = elapsed
+                    print(f"[DOCK] aligned to HOME yaw; stage took {elapsed:.1f} s")
+                    self.dock_stage = "creep_to_HOME"
+                    self.dock_stage_t0 = t
+
+            elif self.dock_stage == "creep_to_HOME":
+                # HOME tag localization initializes/corrects the EKF; odometry
+                # bridges the short final creep when the tag leaves the camera FOV.
+                dx, dy = sx - x, sy - y
+                estimated_err = math.hypot(dx, dy)
+                actual_x, actual_y, actual_yaw = self.true_pose()
+                actual_err = math.hypot(actual_x - sx, actual_y - sy)
+                actual_heading_err = abs(wrap(actual_yaw - home_yaw))
+                heading_err = wrap(home_yaw - heading)
+                if estimated_err <= 0.10:
+                    self.stop()
+                    if actual_err <= 0.15 and actual_heading_err <= math.radians(10.0):
+                        elapsed = t - self.dock_stage_t0
+                        self.dock_stage_times["creep_to_HOME"] = elapsed
+                        print(f"[DOCK] docked within tolerance; stage took {elapsed:.1f} s; "
+                              f"position={actual_err:.3f} m, "
                               f"heading={math.degrees(actual_heading_err):.1f} deg")
                         self.end_mission("mission complete - robot docked at HOME")
-                    elif actual_pos_err > 0.15:
-                        self.dock_position_locked = False
-            elif tag_fresh and self.home_tag_pose is not None:
-                # Use the tag-derived pose when fresh, with the filtered EKF pose
-                # bridging intermittent camera frames between detections.
-                pose_x, pose_y = self.home_tag_pose["x"], self.home_tag_pose["y"]
-                if t - self.home_tag_seen_t > 0.5:
-                    pose_x, pose_y = x, y
-                dx, dy = sx - pose_x, sy - pose_y
-                pos_err = math.hypot(dx, dy)
-                if pos_err > 0.10:
-                    target_heading = math.atan2(dy, dx)
-                    v, w = rotate_drive_command(wrap(target_heading - heading), 0.08)
-                    self.drive(v, w)
-                else:
-                    if t - self.home_tag_seen_t <= 0.5:
-                        self.dock_position_locked = True
-                        self.stop()
+                    elif actual_err > 0.15:
+                        # Keep making small corrections if EKF is optimistic.
+                        target_heading = math.atan2(dy, dx)
+                        bearing_err = wrap(target_heading - heading)
+                        v = 0.025 if abs(bearing_err) < math.radians(20.0) else 0.0
+                        self.drive(v, max(-0.12, min(0.12, 1.0 * bearing_err)))
                     else:
-                        home_heading = math.atan2(home_tag["y"] - y, home_tag["x"] - x)
-                        self.drive(0.0, max(-0.25, min(0.25,
-                                                       1.5 * wrap(home_heading - heading))))
+                        self.drive(0.0, max(-0.12, min(0.12, 1.0 * heading_err)))
+                else:
+                    # The last HOME leg is collinear with the configured dock
+                    # heading. Reverse gently if the waypoint stop left the
+                    # robot just past the target.
+                    along_error = dx * math.cos(home_yaw) + dy * math.sin(home_yaw)
+                    lateral_error = -dx * math.sin(home_yaw) + dy * math.cos(home_yaw)
+                    if abs(lateral_error) > 0.10:
+                        target_heading = math.atan2(dy, dx)
+                        bearing_err = wrap(target_heading - heading)
+                        v = 0.025 if abs(bearing_err) < math.radians(20.0) else 0.0
+                        self.drive(v, max(-0.12, min(0.12, bearing_err)))
+                    else:
+                        v = max(-0.04, min(0.04, 0.6 * along_error))
+                        self.drive(v, max(-0.10, min(0.10, 1.0 * heading_err)))
             else:
                 tx_tag, ty_tag = home_tag["x"], home_tag["y"]
                 target_heading = math.atan2(ty_tag - y, tx_tag - x)
@@ -1326,7 +1885,10 @@ class MediBot:
 
     # ------------------------------------------------------------ main loop
     def run(self):
-        while self.robot.step(TIME_STEP) != -1:
+        while True:
+            status = self.robot.step(TIME_STEP)
+            if status == -1:
+                return "robot.step returned -1"
             self.step_no += 1
             self.localize_step()
             if self.step_no % 2 == 0:
@@ -1337,12 +1899,19 @@ class MediBot:
                 self.log_step()
             if self.step_no % 4 == 0:
                 self.hud()
+            self.dashboard_step()
 
 
 if __name__ == "__main__":
+    controller = None
+    exit_reason = "controller construction failed"
     try:
-        MediBot().run()
-    except BaseException:
+        controller = MediBot()
+        exit_reason = controller.run()
+    except BaseException as exc:
         traceback.print_exc(file=sys.stdout)
-        sys.stdout.flush()
+        exit_reason = f"uncaught {type(exc).__name__}: {exc}"
         raise
+    finally:
+        print(f"[CTRL] exiting: {exit_reason}")
+        sys.stdout.flush()

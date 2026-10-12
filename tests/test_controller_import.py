@@ -2,6 +2,8 @@
 import importlib
 import os
 import sys
+import csv
+import tempfile
 import types
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,6 +15,7 @@ class Device:
     def __init__(self, name=""):
         self.name = name
         self.value = 4.0 if name.startswith("us_") else 0.0
+        self.display_calls = 0
 
     def enable(self, *_args): pass
     def setPosition(self, *_args): pass
@@ -22,6 +25,10 @@ class Device:
     def getValues(self): return [0.0, 0.0, 0.0]
     def getImage(self): return None
     def getKey(self): return -1
+    def setColor(self, *_args): self.display_calls += 1
+    def drawLine(self, *_args): self.display_calls += 1
+    def fillRectangle(self, *_args): self.display_calls += 1
+    def drawText(self, *_args): self.display_calls += 1
 
 
 class Field:
@@ -76,6 +83,7 @@ try:
     bot = controller_module.MediBot()
 finally:
     os.path.exists = _exists
+assert bot.lid_motor is bot.compartments.motors[1], "legacy lid_motor must alias compartment 1"
 bot.route = ["HOME", "PHARMACY", "JUNCTION", "WARD-2A", "WARD-3B"]
 bot.idx = 3
 bot.ekf.x = [4.0, 0.0, 1.57]
@@ -87,6 +95,33 @@ for expected in (1, 2, 0):
     assert bot.block_path()
     assert bot.obstacle_cycle == expected
 bot.run()
+assert bot.dashboard is not None, "generated dashboard device must be acquired"
+assert bot.dashboard.display_calls > 0, "controller must draw to the dashboard"
+
+# Verify the mission summary schema and its exactly-once append behavior.
+bot.active_patient = controller_module.PATIENTS[0]
+bot.handover_face_id = bot.active_patient["authorised_family"][0]["id"]
+bot.handover_uid = bot.active_patient["authorised_family"][0]["rfid_uid"]
+bot.handover_face_score = 1.0
+bot.mission_routes = [["HOME", "PHARMACY", "JUNCTION"]]
+bot.mission_start_t = bot.now() - 2.0
+bot.errs = [2.0, 4.0]
+bot.delivery_logged = False
+old_here = controller_module.HERE
+try:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        controller_module.HERE = temp_dir
+        bot._append_delivery_row("DELIVERED")
+        bot._append_delivery_row("DENIED")
+        with open(os.path.join(temp_dir, "logs", "deliveries.csv"), newline="", encoding="utf-8") as log_file:
+            rows = list(csv.DictReader(log_file))
+        assert len(rows) == 1, "mission result must append exactly one row"
+        assert rows[0]["outcome"] == "DELIVERED"
+        assert rows[0]["patient"] == bot.active_patient["id"]
+        assert rows[0]["route"] == '[["HOME","PHARMACY","JUNCTION"]]'
+        assert rows[0]["mean_pose_error_cm"] == "3.00"
+finally:
+    controller_module.HERE = old_here
 assert bot.robot.steps == 201, f"expected 201 total steps, got {bot.robot.steps}"
 block_calls = []
 bot.block_path = lambda: block_calls.append(True)
