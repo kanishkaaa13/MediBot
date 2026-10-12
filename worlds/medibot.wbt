@@ -5,9 +5,17 @@ WorldInfo {
   basicTimeStep 32
   coordinateSystem "ENU"
 }
-Viewpoint {
+DEF VIEW_OVERVIEW Viewpoint {
+  description "Overview - hospital floor"
   orientation -0.39927 0.39927 0.82533 1.76160
   position 3.5 -8.0 12.0
+}
+DEF VIEW_FOLLOW_ROBOT Viewpoint {
+  description "Follow robot - tracking shot"
+  orientation -0.22171 0.48860 0.84387 0.98674
+  position -3.5 -4.0 3.0
+  follow "MediBot"
+  followType "Tracking Shot"
 }
 Background { skyColor [ 0.78 0.86 0.95 ] }
 DirectionalLight { ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }

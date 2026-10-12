@@ -1,0 +1,2 @@
+time_s,patient_id,visitor_id,face_id,face_score,rfid_uid,attempt,outcome,reason
+84.00,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-1042,1,DELIVERED,

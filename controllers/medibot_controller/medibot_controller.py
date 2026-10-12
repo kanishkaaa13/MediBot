@@ -902,6 +902,7 @@ class MediBot:
         obstacle.resetPhysics()
         self.obstacle_cycle = (self.obstacle_cycle + 1) % len(self.obstacle_nodes)
         sonar_front = self.sonar()["front"]
+        self.last_event = f"{kind} placed at ({x:.2f},{y:.2f})"
         print(f"[OBSTACLE] {kind} placed at ({x:.2f},{y:.2f}), d=1.00 m ahead")
         print(f"[TROLLEY] sonar front={sonar_front:.2f} m")
         return True
@@ -923,6 +924,7 @@ class MediBot:
         self.blocked_edges.add(edge_key(prev, tgt))
         self.blocked_edge_expiry[edge_key(prev, tgt)] = self.now() + BLOCKED_EDGE_TTL
         self.replans += 1
+        self.last_event = f"Replan: blocked {prev} - {tgt}"
         print(f"[REPLAN] corridor {prev} - {tgt} blocked for {BLOCK_TIME:.0f} s -> marking edge blocked")
         # A sharp stop and turn can accumulate enough wheel/gyro error to send
         # the detour into a wall. Supervisor pose is available in this Webots
@@ -1014,6 +1016,7 @@ class MediBot:
         self.handover_result = "PENDING"
         self.handover_reason = ""
         self.handover_face_id = self.handover_uid = None
+        self.handover_face_score = 0.0
         self.mission_start_t = self.now()
         self.mission_routes = []
         self.delivery_logged = False
@@ -1039,7 +1042,8 @@ class MediBot:
         self.log_f = open(fn, "w", newline="")
         self.log_w = csv.writer(self.log_f)
         self.log_w.writerow(["t", "state", "tags_on", "est_x", "est_y",
-                             "true_x", "true_y", "err_cm", "tag_seen"])
+                             "true_x", "true_y", "err_cm", "tag_seen",
+                             "planned_x", "planned_y"])
         print(f"[LOG] {fn}")
         tag_fn = os.path.join(os.path.dirname(fn), f"tag_corrections_{time.time_ns()}.csv")
         self.tag_log_f = open(tag_fn, "w", newline="")
@@ -1113,11 +1117,14 @@ class MediBot:
         self.errs.append(e)
         if self.log_w and self.step_no % 8 == 0:
             tx, ty, _ = self.true_pose()
+            target = NODES[self.route[self.idx]] if self.route and self.idx < len(self.route) else ("", "")
             self.log_w.writerow([
                 f"{self.now():.2f}", self.state, int(self.tags_enabled),
                 f"{self.ekf.x[0]:.3f}", f"{self.ekf.x[1]:.3f}",
                 f"{tx:.3f}", f"{ty:.3f}",
-                f"{e:.1f}", int(self.tag_seen)])
+                f"{e:.1f}", int(self.tag_seen),
+                f"{target[0]:.3f}" if target[0] != "" else "",
+                f"{target[1]:.3f}" if target[1] != "" else ""])
 
     def _visitor_candidates(self):
         patient = self.active_patient
@@ -1201,6 +1208,7 @@ class MediBot:
         allowed, reason, _person_id = decision
         self.handover_reason = reason
         if allowed:
+            self.last_event = f"Handover authorized: compartment {compartment}"
             if self.dev_mode and self.dev_override_steps:
                 self.handover_result = "DEV_OVERRIDE"
                 self._handover_log("DEV_OVERRIDE", ",".join(sorted(self.dev_override_steps)))
@@ -1217,6 +1225,7 @@ class MediBot:
             return
 
         self.handover_result = f"DENIED: {reason}"
+        self.last_event = f"Handover denied: {reason}"
         print(f"[HANDOVER] DENIED attempt={self.handover_attempt}: {reason}")
         if self.dev_mode and self.dev_override_steps:
             self.handover_result = f"DEV_OVERRIDE: DENIED {reason}"
@@ -1667,6 +1676,9 @@ class MediBot:
             self._card_key_armed = True
 
     def reset(self):
+        if (self.mission_start_t is not None and not self.delivery_logged and
+                self.state != "IDLE"):
+            self._append_delivery_row("ABORTED_BLOCKED")
         self.stop()
         self.actors.park_all()
         self.visitor_choice_index = 0

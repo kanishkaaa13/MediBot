@@ -3,6 +3,7 @@ import importlib
 import os
 import sys
 import csv
+import io
 import tempfile
 import types
 
@@ -122,6 +123,15 @@ try:
         assert rows[0]["mean_pose_error_cm"] == "3.00"
 finally:
     controller_module.HERE = old_here
+
+bot.step_no = 8
+log_buffer = io.StringIO()
+bot.log_w = csv.writer(log_buffer)
+bot.route = ["HOME", "PHARMACY", "JUNCTION", "WARD-2A"]
+bot.idx = 3
+bot.log_step()
+planned_fields = next(csv.reader(io.StringIO(log_buffer.getvalue())))
+assert planned_fields[-2:] == ["4.000", "3.000"], "step log must record the active planned waypoint"
 assert bot.robot.steps == 201, f"expected 201 total steps, got {bot.robot.steps}"
 block_calls = []
 bot.block_path = lambda: block_calls.append(True)

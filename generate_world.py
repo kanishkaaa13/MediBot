@@ -1159,16 +1159,25 @@ def build_world():
     # R2025a header
     parts.append("#VRML_SIM R2025a utf8\n\n")
 
-    # Viewpoint: steep overhead angle to see rooms clearly
+    # Named viewpoints: the default overhead view and a tracking shot preset.
     axis, ang = look_at((3.5, -8.0, 12.0), (3.5, 1.5, 0.0))
+    follow_axis, follow_ang = look_at((-3.5, -4.0, 3.0), (0.0, 0.0, 0.0))
     parts.append(f"""WorldInfo {{
   title "MediBot hospital delivery"
   basicTimeStep 32
   coordinateSystem "ENU"
 }}
-Viewpoint {{
+DEF VIEW_OVERVIEW Viewpoint {{
+  description "Overview - hospital floor"
   orientation {axis[0]:.5f} {axis[1]:.5f} {axis[2]:.5f} {ang:.5f}
   position 3.5 -8.0 12.0
+}}
+DEF VIEW_FOLLOW_ROBOT Viewpoint {{
+  description "Follow robot - tracking shot"
+  orientation {follow_axis[0]:.5f} {follow_axis[1]:.5f} {follow_axis[2]:.5f} {follow_ang:.5f}
+  position -3.5 -4.0 3.0
+  follow "MediBot"
+  followType "Tracking Shot"
 }}
 Background {{ skyColor [ 0.78 0.86 0.95 ] }}
 DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}

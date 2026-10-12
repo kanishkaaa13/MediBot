@@ -42,6 +42,14 @@ with open(wbt_path) as f:
 print("\n---- .wbt checks ----")
 checks = {
     "#VRML_SIM R2025a": "R2025a header",
+    "DEF VIEW_OVERVIEW Viewpoint": "overview viewpoint preset",
+    "DEF VIEW_FOLLOW_ROBOT Viewpoint": "follow-robot viewpoint preset",
+    'follow "MediBot"': "follow viewpoint tracks the robot",
+    'followType "Tracking Shot"': "tracking-shot follow mode",
+    "DEF VIEW_OVERVIEW Viewpoint": "overview viewpoint preset",
+    "DEF VIEW_FOLLOW_ROBOT Viewpoint": "follow-robot viewpoint preset",
+    'follow "MediBot"': "follow viewpoint tracks the robot",
+    'followType "Tracking Shot"': "tracking-shot follow mode",
     "coordinateSystem \"ENU\"": "ENU coordinate system",
     "DEF MEDIBOT Robot": "MEDIBOT robot node",
     "DEF TROLLEY": "TROLLEY solid",
