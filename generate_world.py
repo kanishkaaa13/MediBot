@@ -46,10 +46,10 @@ EDGES = [
 ]
 
 PI = math.pi
-TAG_SIZE = 0.30      # black square side, metres; large-format wall marker for 960x720 camera
-TAG_PAD = 0.05       # white margin per side, metres
-TAG_Z = 0.25         # tag centre height above floor (aligned with navigation camera)
-BOARD_W = TAG_SIZE + 2 * TAG_PAD   # 0.30 m
+TAG_SIZE = 0.25      # black AprilTag square side, metres
+TAG_PAD = TAG_SIZE * (160 / 704)  # 160px margin on a 704px marker
+TAG_Z = 1.00         # centre height of each vertical wall marker
+BOARD_W = TAG_SIZE + 2 * TAG_PAD  # 1024px board, 704px marker area
 BOARD_H = 0.50
 
 # Robot geometry (Phase 2 MediBot 4WD platform)
@@ -60,8 +60,8 @@ WHEEL_Y = 0.14
 TRACK = 2 * WHEEL_Y       # 0.28 m
 CHASSIS = (0.44, 0.24, 0.12)
 
-# Navigation Camera: mounted on lower mast at tag height (WHEEL_R + CAM['z'] = 0.06 + 0.19 = 0.25 m = TAG_Z)
-CAM = {"width": 960, "height": 720, "fov": 1.8, "x": 0.22, "z": 0.19}
+# Navigation Camera: forward and level, with optical centre at the wall tag height.
+CAM = {"width": 960, "height": 720, "fov": 1.6, "x": 0.22, "z": TAG_Z - WHEEL_R}
 
 # Face Camera: mounted on mast head at ~0.95 m height looking forward & slightly down
 FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.88}
@@ -89,73 +89,55 @@ def _indent(text, spaces=4):
 # Automatic Wall-Mounted AprilTag Placement
 # ----------------------------------------------------------------------------
 def generate_wall_tags():
-    """Generate wall-mounted tag plates based on graph edges and room geometry.
+    """Return unique surveyed vertical tag poses on corridor and room walls.
 
-    Returns list of (x, y, z, yaw, zone_name, tag_id) where:
-    - x, y, z: tag centre position
-    - yaw: direction of plate's outward normal (facing corridor)
-    - zone_name: descriptive location name
-    - tag_id: assigned ID
-    
-    Tags are placed on cross walls (perpendicular to corridor) to face head-on
-    to approaching robots, avoiding grazing-angle pose errors.
+    Pose fields are (x, y, z, yaw, zone, id, wall_axis, wall_plane). ``yaw``
+    points along the wall-normal from the wall into the visible space.
     """
     tags = []
     tag_id = 0
 
-    def add_tag(x, y, yaw, zone):
+    def add_tag(x, y, yaw, zone, wall_axis, wall_plane):
         nonlocal tag_id
-        tags.append((x, y, TAG_Z, yaw, zone, tag_id))
+        tags.append((x, y, TAG_Z, yaw, zone, tag_id, wall_axis, wall_plane))
         tag_id += 1
+    # Long south corridor wall; the face toward the corridor is y=-0.64.
+    # Long north wall tags are offset toward the corridor and alternate with these.
+    for x, zone in [(0.0, "home_south"), (2.95, "pharmacy_south"),
+                    (5.0, "junction_south"), (8.4, "icu_south")]:
+        add_tag(x, -0.63, PI / 2, zone, "y", -0.64)
+    for x, zone in [(1.0, "home_north"), (3.0, "junction_north"),
+                    (5.6, "ward2a_north_approach"), (8.5, "ward3b_north_approach")]:
+        add_tag(x, 3.63, -PI / 2, zone, "y", 3.64)
 
-    # Zone 0-9: HOME -> PHARMACY (eastbound corridor, y=1.5, x: 0 to 2)
-    # Tag on far end wall (x=2) facing west
-    add_tag(2.0, 1.5, -2.16, "pharmacy_end")
-    # Tag on near end wall (x=0) facing east
-    add_tag(0.0, 1.5, -0.98, "home_end")
+    # Door-adjacent markers on the corridor side, clear of the door openings.
+    for x, zone in [(1.0, "pharmacy_door_west"), (3.35, "pharmacy_door_east"),
+                    (5.65, "icu_door_west"), (8.0, "icu_door_east")]:
+        add_tag(x, -0.63, PI / 2, zone, "y", -0.64)
+    for x, zone in [(3.15, "ward2a_door_west"), (4.9, "ward2a_door_east"),
+                    (6.0, "ward3b_door_west"), (8.0, "ward3b_door_east")]:
+        add_tag(x, 3.63, -PI / 2, zone, "y", 3.64)
 
-    # Zone 10-19: PHARMACY -> JUNCTION (eastbound, y=1.5, x: 2 to 4)
-    add_tag(4.0, 1.5, -2.16, "junction_south")
-    add_tag(2.0, 1.5, -0.98, "pharmacy_start")
+    # Head-on tags at corridor ends/turns (on wall surfaces, not at graph nodes).
+    add_tag(0.07, 1.0, 0.0, "home_end", "x", 0.06)
+    add_tag(4.0, 3.63, -PI / 2, "ward2a_corridor_end", "y", 3.64)
+    add_tag(7.0, 3.63, -PI / 2, "ward3b_corridor_end", "y", 3.64)
 
-    # Zone 20-29: JUNCTION -> ICU (eastbound, y=1.5, x: 4 to 7)
-    add_tag(7.0, 1.5, -2.36, "icu_end")
-    add_tag(4.0, 1.5, -0.79, "junction_south_start")
-
-    # Zone 30-39: JUNCTION -> WARD-2A (northbound, x=4.0, y: 0 to 3.7)
-    # Tag on far end wall (y=3.7) facing south
-    add_tag(4.0, 3.7, -PI/2, "ward2a_end")
-    # Tag on near end wall (y=0) facing north
-    add_tag(4.0, 0.0, PI/2, "junction_north")
-
-    # Zone 40-49: ICU -> WARD-3B (northbound, x=7.0, y: 0 to 3.7)
-    add_tag(7.0, 3.7, -PI/2, "ward3b_end")
-    add_tag(7.0, 0.0, PI/2, "icu_north")
-
-    # Zone 50-59: WARD-2A -> WARD-3B (eastbound, y=3.7, x: 4 to 7)
-    add_tag(7.0, 3.7, -2.53, "ward3b_north")
-    add_tag(4.0, 3.7, -0.79, "ward2a_north")
-
-    # Zone 60-69: Room door frames (head-on tags facing corridor)
-    add_tag(2.0, -0.65, PI/2, "pharmacy_door")
-    add_tag(7.0, -0.65, PI/2, "icu_door")
-    add_tag(4.0, 3.65, -PI/2, "ward2a_door")
-    add_tag(7.0, 3.65, -PI/2, "ward3b_door")
-
-    # Zone 70-79: Inside rooms (tags facing entry)
-    add_tag(1.9, -1.55, 0.0, "pharmacy_room")
-    add_tag(7.1, -1.85, 0.0, "icu_room")
-    add_tag(3.8, 4.45, PI, "ward2a_room")
-    add_tag(7.0, 4.45, PI, "ward3b_room")
+    # One handover tag on the interior wall facing each room entrance.
+    add_tag(1.9, -2.73, PI / 2, "pharmacy_room", "y", -2.74)
+    add_tag(7.0, -2.73, PI / 2, "icu_room", "y", -2.74)
+    add_tag(3.8, 5.13, -PI / 2, "ward2a_room", "y", 5.14)
+    add_tag(7.0, 5.13, -PI / 2, "ward3b_room", "y", 5.14)
 
     return tags
 
 
 def tag_plate(tag_id, x, y, z, yaw):
-    """Thin wall-mounted tag plate (0.01 m thick) with AprilTag texture."""
+    """Vertical, thin tag plate with its outward normal at surveyed ``yaw``."""
+    rotation = yaw - PI / 2  # local +Y face becomes the surveyed horizontal normal
     return (f"Solid {{\n"
             f"  translation {x:g} {y:g} {z:g}\n"
-            f"  rotation 0 0 1 {yaw:g}\n"
+            f"  rotation 0 0 1 {rotation:g}\n"
             f"  children [\n"
             f"    Shape {{\n"
             f"      appearance PBRAppearance {{\n"
@@ -166,10 +148,10 @@ def tag_plate(tag_id, x, y, z, yaw):
             f"      }}\n"
             # The PNG includes its white border around the black marker, so
             # the physical plate must match BOARD_W, not just the black tag.
-            f"      geometry Box {{ size {BOARD_W} {BOARD_W} 0.01 }}\n"
+            f"      geometry Box {{ size {BOARD_W:g} 0.01 {BOARD_W:g} }}\n"
             f"    }}\n"
             f"  ]\n"
-            f"  boundingObject Box {{ size {BOARD_W} {BOARD_W} 0.01 }}\n"
+            f"  boundingObject Box {{ size {BOARD_W:g} 0.01 {BOARD_W:g} }}\n"
             f"  name \"tag_{tag_id}\"\n"
             f"}}\n")
 
@@ -180,7 +162,7 @@ def generate_tag_map(tags):
     md += "| ID | Location | Wall | Room | Position (x, y, z) | Yaw |\n"
     md += "|----|----------|------|------|-------------------|-----|\n"
 
-    for x, y, z, yaw, zone, tag_id in tags:
+    for x, y, z, yaw, zone, tag_id, wall_axis, wall_plane in tags:
         wall = "unknown"
         if "south" in zone:
             wall = "south"
@@ -376,7 +358,7 @@ def make_tag_image(tag_id):
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
     x = (1024 - tw) / 2
-    y = 840  # Below the tag (tag is at y=160 to 864)
+    y = 884  # In the lower white margin (marker ends at y=864)
     draw.text((x, y), text, fill=(0, 0, 0), font=font)
 
     return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
@@ -1266,9 +1248,10 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     # 9. Wall-mounted AprilTag plates (thin plates on walls)
     wall_tags = generate_wall_tags()
     tags = []
-    for x, y, z, yaw, zone, tag_id in wall_tags:
+    for x, y, z, yaw, zone, tag_id, wall_axis, wall_plane in wall_tags:
         parts.append(tag_plate(tag_id, x, y, z, yaw))
-        tags.append({"id": tag_id, "x": x, "y": y, "yaw": yaw, "z": z, "zone": zone})
+        tags.append({"id": tag_id, "x": x, "y": y, "yaw": yaw, "z": z,
+                     "zone": zone, "wall_axis": wall_axis, "wall_plane": wall_plane})
 
     # 10. Trolley Obstacle (DEF TROLLEY) - with physics for collision detection
     tx, ty = TROLLEY_PARK
@@ -1405,7 +1388,9 @@ def main():
     cfg = {
         "nodes": {k: list(v) for k, v in NODES.items()},
         "edges": EDGES,
-        "tags": [{"id": t["id"], "x": t["x"], "y": t["y"], "yaw": t["yaw"], "z": t["z"], "zone": t["zone"]} for t in tags],
+        "tags": [{"id": t["id"], "x": t["x"], "y": t["y"], "yaw": t["yaw"], "z": t["z"],
+                  "zone": t["zone"], "wall_axis": t["wall_axis"], "wall_plane": t["wall_plane"]}
+                 for t in tags],
         "tag": {"size": TAG_SIZE},
         "camera": CAM,
         "face_camera": FACE_CAM,

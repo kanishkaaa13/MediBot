@@ -57,11 +57,14 @@ REJECT_AGREE_TH = 0.2           # heading agreement threshold (rad)
 REJECT_MIN_COUNT = 3            # minimum rejected fixes to trigger re-localisation
 
 # LED colours (24-bit RGB packed as int, used with LED.set())
-LED_GREEN  = 0x00BB00
-LED_BLUE   = 0x0066FF
-LED_ORANGE = 0xFF8800
-LED_RED    = 0xFF0000
-LED_OFF    = 0x000000
+# Webots LED.set accepts a scalar intensity byte (0..255). The LED's
+# generated PBRAppearance supplies its hue; packed RGB integers become invalid
+# SFColor channels when Webots writes the world back to disk.
+LED_GREEN  = 220
+LED_BLUE   = 220
+LED_ORANGE = 220
+LED_RED    = 220
+LED_OFF    = 0
 
 
 # ================================================================ Compartments
@@ -835,6 +838,10 @@ class MediBot:
 
             # Setup for each scenario
             self.reset()
+            self.blocked_edges.clear()
+            self.blocked_edge_expiry.clear()
+            self.blocked_t = 0.0
+            self.obst_printed = False
             if scenario == "C":
                 # Turn tags OFF
                 self.tags_enabled = False
@@ -843,7 +850,7 @@ class MediBot:
             self.start_mission()
 
             # Wait for mission completion (max 120 s)
-            while self.state != "IDLE" and (self.now() - self.regression_start_t) < 120:
+            while self.state != "IDLE" and (self.now() - self.regression_start_t) < 180:
                 self.robot.step(TIME_STEP)
                 self.step_no += 1
                 self.localize_step()

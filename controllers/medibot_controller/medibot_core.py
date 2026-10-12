@@ -134,7 +134,8 @@ class TagLocalizer:
         self.w, self.h = cam["width"], cam["height"]
         self.cam_x = cam["x"]
         fx = self.w / (2 * math.tan(cam["fov"] / 2))
-        self.K = np.array([[fx, 0, self.w / 2], [0, fx, self.h / 2], [0, 0, 1]], np.float64)
+        fy = fx  # Webots camera pixels are square; fieldOfView is horizontal.
+        self.K = np.array([[fx, 0, self.w / 2], [0, fy, self.h / 2], [0, 0, 1]], np.float64)
         self.tags = {t["id"]: t for t in cfg["tags"]}
         s = cfg["tag"]["size"] / 2
         self.obj = np.array([[-s, s, 0], [s, s, 0], [s, -s, 0], [-s, -s, 0]], np.float32)
@@ -168,7 +169,9 @@ class TagLocalizer:
             t = tvec.reshape(3)
             f = t[2] + self.cam_x     # tag position in robot frame: forward
             l = -t[0]                 # ... and left
-            phi = math.atan2(-n[0], n[2])
+            # Vertical tag normal is horizontal in world coordinates. In camera
+            # coordinates n=(right, down, forward); solve its relative yaw.
+            phi = math.atan2(-n[0], -n[2])
             yaw = wrap(tag["yaw"] - phi)
             cs, sn = math.cos(yaw), math.sin(yaw)
             entry = {
@@ -176,6 +179,7 @@ class TagLocalizer:
                 "y": tag["y"] - (f * sn + l * cs),
                 "yaw": yaw,
                 "dist": float(np.linalg.norm(t)),
+                "bearing": math.atan2(l, f),
                 "reproj": float(np.ravel(err)[0]),
                 "_nz": float(n[2]),   # tag normal z; should be < -0.25 for valid (facing camera)
             }
@@ -193,7 +197,7 @@ class TagLocalizer:
             c.pop("_nz", None)
         return cands
 
-    def measure(self, gray, hint=None, max_dist=3.3, max_reproj=8.0):
+    def measure(self, gray, hint=None, max_dist=4.0, max_reproj=8.0):
         """Return list of {id, x, y, yaw, dist, incidence}: robot-pose estimates from visible tags.
 
         `hint` = current (x, y, yaw) estimate used to:
@@ -234,6 +238,11 @@ class TagLocalizer:
             if corners_for_tag is None:
                 continue
 
+            pix = corners_for_tag.reshape(4, 2)
+            edge_px = min(float(np.linalg.norm(pix[(i + 1) % 4] - pix[i])) for i in range(4))
+            if edge_px < 20.0:
+                continue
+
             # --- 3. Solve for pose (both IPPE solutions) ---
             tag_cands = self._candidates(corners_for_tag, tag)
 
@@ -267,11 +276,17 @@ class TagLocalizer:
                 dot = cam_to_tag[0] * tag_normal[0] + cam_to_tag[1] * tag_normal[1]
                 inc = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))
 
-            if inc > 55.0:
+            if inc > 60.0:
+                continue
+
+            # Discard isolated pose jumps before the EKF blend. A later stable
+            # observation can still relocalize through the controller buffer.
+            if hint and math.hypot(cand["x"] - hint[0], cand["y"] - hint[1]) > 0.5:
                 continue
 
             cand["id"] = tag["id"]
             cand["incidence"] = inc
+            cand["pixel_size"] = edge_px
             results.append(cand)
 
         return results

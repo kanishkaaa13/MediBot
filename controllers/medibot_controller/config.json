@@ -54,174 +54,244 @@
   "tags": [
     {
       "id": 0,
-      "x": 2.0,
-      "y": 1.5,
-      "yaw": -2.16,
-      "z": 0.25,
-      "zone": "pharmacy_end"
+      "x": 0.0,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "home_south",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 1,
-      "x": 0.0,
-      "y": 1.5,
-      "yaw": -0.98,
-      "z": 0.25,
-      "zone": "home_end"
+      "x": 2.95,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "pharmacy_south",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 2,
-      "x": 4.0,
-      "y": 1.5,
-      "yaw": -2.16,
-      "z": 0.25,
-      "zone": "junction_south"
+      "x": 5.0,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "junction_south",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 3,
-      "x": 2.0,
-      "y": 1.5,
-      "yaw": -0.98,
-      "z": 0.25,
-      "zone": "pharmacy_start"
+      "x": 8.4,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "icu_south",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 4,
-      "x": 7.0,
-      "y": 1.5,
-      "yaw": -2.36,
-      "z": 0.25,
-      "zone": "icu_end"
+      "x": 1.0,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "home_north",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 5,
-      "x": 4.0,
-      "y": 1.5,
-      "yaw": -0.79,
-      "z": 0.25,
-      "zone": "junction_south_start"
+      "x": 3.0,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "junction_north",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 6,
-      "x": 4.0,
-      "y": 3.7,
+      "x": 5.6,
+      "y": 3.63,
       "yaw": -1.5707963267948966,
-      "z": 0.25,
-      "zone": "ward2a_end"
+      "z": 1.0,
+      "zone": "ward2a_north_approach",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 7,
-      "x": 4.0,
-      "y": 0.0,
-      "yaw": 1.5707963267948966,
-      "z": 0.25,
-      "zone": "junction_north"
+      "x": 8.5,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward3b_north_approach",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 8,
-      "x": 7.0,
-      "y": 3.7,
-      "yaw": -1.5707963267948966,
-      "z": 0.25,
-      "zone": "ward3b_end"
+      "x": 1.0,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "pharmacy_door_west",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 9,
-      "x": 7.0,
-      "y": 0.0,
+      "x": 3.35,
+      "y": -0.63,
       "yaw": 1.5707963267948966,
-      "z": 0.25,
-      "zone": "icu_north"
+      "z": 1.0,
+      "zone": "pharmacy_door_east",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 10,
-      "x": 7.0,
-      "y": 3.7,
-      "yaw": -2.53,
-      "z": 0.25,
-      "zone": "ward3b_north"
+      "x": 5.65,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "icu_door_west",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 11,
-      "x": 4.0,
-      "y": 3.7,
-      "yaw": -0.79,
-      "z": 0.25,
-      "zone": "ward2a_north"
+      "x": 8.0,
+      "y": -0.63,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "icu_door_east",
+      "wall_axis": "y",
+      "wall_plane": -0.64
     },
     {
       "id": 12,
-      "x": 2.0,
-      "y": -0.65,
-      "yaw": 1.5707963267948966,
-      "z": 0.25,
-      "zone": "pharmacy_door"
+      "x": 3.15,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward2a_door_west",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 13,
-      "x": 7.0,
-      "y": -0.65,
-      "yaw": 1.5707963267948966,
-      "z": 0.25,
-      "zone": "icu_door"
+      "x": 4.9,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward2a_door_east",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 14,
-      "x": 4.0,
-      "y": 3.65,
+      "x": 6.0,
+      "y": 3.63,
       "yaw": -1.5707963267948966,
-      "z": 0.25,
-      "zone": "ward2a_door"
+      "z": 1.0,
+      "zone": "ward3b_door_west",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 15,
-      "x": 7.0,
-      "y": 3.65,
+      "x": 8.0,
+      "y": 3.63,
       "yaw": -1.5707963267948966,
-      "z": 0.25,
-      "zone": "ward3b_door"
+      "z": 1.0,
+      "zone": "ward3b_door_east",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 16,
-      "x": 1.9,
-      "y": -1.55,
+      "x": 0.07,
+      "y": 1.0,
       "yaw": 0.0,
-      "z": 0.25,
-      "zone": "pharmacy_room"
+      "z": 1.0,
+      "zone": "home_end",
+      "wall_axis": "x",
+      "wall_plane": 0.06
     },
     {
       "id": 17,
-      "x": 7.1,
-      "y": -1.85,
-      "yaw": 0.0,
-      "z": 0.25,
-      "zone": "icu_room"
+      "x": 4.0,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward2a_corridor_end",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 18,
-      "x": 3.8,
-      "y": 4.45,
-      "yaw": 3.141592653589793,
-      "z": 0.25,
-      "zone": "ward2a_room"
+      "x": 7.0,
+      "y": 3.63,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward3b_corridor_end",
+      "wall_axis": "y",
+      "wall_plane": 3.64
     },
     {
       "id": 19,
+      "x": 1.9,
+      "y": -2.73,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "pharmacy_room",
+      "wall_axis": "y",
+      "wall_plane": -2.74
+    },
+    {
+      "id": 20,
       "x": 7.0,
-      "y": 4.45,
-      "yaw": 3.141592653589793,
-      "z": 0.25,
-      "zone": "ward3b_room"
+      "y": -2.73,
+      "yaw": 1.5707963267948966,
+      "z": 1.0,
+      "zone": "icu_room",
+      "wall_axis": "y",
+      "wall_plane": -2.74
+    },
+    {
+      "id": 21,
+      "x": 3.8,
+      "y": 5.13,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward2a_room",
+      "wall_axis": "y",
+      "wall_plane": 5.14
+    },
+    {
+      "id": 22,
+      "x": 7.0,
+      "y": 5.13,
+      "yaw": -1.5707963267948966,
+      "z": 1.0,
+      "zone": "ward3b_room",
+      "wall_axis": "y",
+      "wall_plane": 5.14
     }
   ],
   "tag": {
-    "size": 0.3
+    "size": 0.25
   },
   "camera": {
     "width": 960,
     "height": 720,
-    "fov": 1.8,
+    "fov": 1.6,
     "x": 0.22,
-    "z": 0.19
+    "z": 0.94
   },
   "face_camera": {
     "width": 640,

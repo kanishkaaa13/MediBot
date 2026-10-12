@@ -74,6 +74,10 @@ bot.ekf.x = [4.0, 0.0, 1.57]
 placement = bot._point_ahead_on_route(1.0)
 assert placement is not None and abs(placement[0] - 4.0) < 1e-9 and abs(placement[1] - 1.0) < 1e-9
 assert placement[3] == 2
+bot.sonar = lambda: {"front": 1.0, "left": 4.0, "right": 4.0}
+for expected in (1, 2, 0):
+    assert bot.block_path()
+    assert bot.obstacle_cycle == expected
 bot.run()
 assert bot.robot.steps == 201, f"expected 201 total steps, got {bot.robot.steps}"
 block_calls = []

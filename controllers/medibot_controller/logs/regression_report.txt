@@ -3,44 +3,44 @@ REGRESSION REPORT
 
 Scenario A:
   Completed: True
-  Duration: 100.2 s
-  Final distance from HOME: 1.696 m
-  Mean pose error: 51.5 cm
-  Max pose error: 173.3 cm
+  Duration: 105.5 s
+  Final distance from HOME: 0.255 m
+  Mean pose error: 24.3 cm
+  Max pose error: 44.0 cm
   Tag corrections: 0
-  Obstacle stops: 1
-  Replans: 1
+  Obstacle stops: 0
+  Replans: 0
   Route via ICU: False
   Delivered: True
-  Mission result: no route available
+  Mission result: mission complete - robot back at HOME
   Result: FAIL
 
 Scenario B:
-  Completed: True
-  Duration: 85.6 s
-  Final distance from HOME: 6.844 m
-  Mean pose error: 46.3 cm
-  Max pose error: 96.3 cm
+  Completed: False
+  Duration: 180.0 s
+  Final distance from HOME: 3.992 m
+  Mean pose error: 94.7 cm
+  Max pose error: 251.7 cm
   Tag corrections: 0
   Obstacle stops: 2
-  Replans: 2
+  Replans: 1
   Route via ICU: True
   Delivered: True
-  Mission result: no route available
+  Mission result: 
   Result: FAIL
 
 Scenario C:
   Completed: True
-  Duration: 100.2 s
-  Final distance from HOME: 1.696 m
-  Mean pose error: 51.5 cm
-  Max pose error: 173.3 cm
+  Duration: 105.5 s
+  Final distance from HOME: 0.255 m
+  Mean pose error: 24.3 cm
+  Max pose error: 44.0 cm
   Tag corrections: 0
-  Obstacle stops: 1
-  Replans: 1
+  Obstacle stops: 0
+  Replans: 0
   Route via ICU: False
   Delivered: True
-  Mission result: no route available
+  Mission result: mission complete - robot back at HOME
   Result: FAIL
 
 OVERALL: SOME TESTS FAILED
