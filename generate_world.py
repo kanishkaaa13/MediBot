@@ -461,6 +461,9 @@ def make_sign_textures(tex_dir):
 # ----------------------------------------------------------------------------
 def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=None, roughness=1.0, metalness=0.0):
     d = f"DEF {def_name} " if def_name else ""
+    # SFColor is exactly three normalized channels; alpha belongs in
+    # transparency, never as a fourth baseColor component.
+    rgb = tuple(max(0.0, min(1.0, float(c))) for c in rgb[:3])
     s = (f"{d}Solid {{\n"
          f"  translation {x:g} {y:g} {z:g}\n"
          f"  rotation 0 0 1 {yaw:g}\n"
@@ -522,6 +525,7 @@ def floor_marker(name, x, y, texture):
 
 
 def cylinder_solid(name, x, y, z, r, h, rgb, collide=False, yaw=0.0):
+    rgb = tuple(max(0.0, min(1.0, float(c))) for c in rgb[:3])
     s = (f"Solid {{\n"
          f"  translation {x:g} {y:g} {z:g}\n"
          f"  rotation 0 0 1 {yaw:g}\n"
@@ -675,12 +679,18 @@ def hospital_bench(name, x, y, yaw):
 
 def nurse_station_island(x, y):
     parts = []
-    parts.append(box_solid("nurse_counter", x, y, 0.42, 1.5, 0.9, 0.84, (0.92, 0.95, 0.98), collide=True))
-    parts.append(box_solid("nurse_counter_top", x, y, 0.85, 1.54, 0.94, 0.04, (0.2, 0.35, 0.5), collide=False))
-    parts.append(box_solid("nurse_pc_1", x - 0.35, y, 0.97, 0.05, 0.35, 0.22, (0.15, 0.15, 0.18), collide=False))
-    parts.append(box_solid("nurse_pc_2", x + 0.35, y, 0.97, 0.05, 0.35, 0.22, (0.15, 0.15, 0.18), collide=False))
-    parts.append(box_solid("nurse_screen_1", x - 0.35, y - 0.03, 0.97, 0.01, 0.32, 0.19, (0.2, 0.7, 1.0), collide=False))
-    parts.append(box_solid("nurse_screen_2", x + 0.35, y - 0.03, 0.97, 0.01, 0.32, 0.19, (0.2, 0.7, 1.0), collide=False))
+    # Ten angled counter modules form a shallow curved reception desk.
+    for i, angle_deg in enumerate(range(-100, 101, 20)):
+        angle = math.radians(angle_deg)
+        px, py = x + 0.58 * math.sin(angle), y + 0.58 * math.cos(angle)
+        yaw = -angle
+        parts.append(box_solid(f"nurse_counter_{i}", px, py, 0.43, 0.36, 0.25, 0.86,
+                               (0.2, 0.35, 0.5), collide=True, yaw=yaw))
+    for i, px in enumerate((x - 0.32, x + 0.32)):
+        parts.append(box_solid(f"nurse_pc_{i}", px, y + 0.48, 0.98, 0.06, 0.28, 0.22,
+                               (0.12, 0.14, 0.18), collide=False))
+        parts.append(box_solid(f"nurse_screen_{i}", px, y + 0.45, 0.98, 0.015, 0.23, 0.16,
+                               (0.12, 0.62, 0.88), collide=False))
     return "".join(parts)
 
 

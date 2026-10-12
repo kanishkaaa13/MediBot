@@ -76,4 +76,18 @@ assert placement is not None and abs(placement[0] - 4.0) < 1e-9 and abs(placemen
 assert placement[3] == 2
 bot.run()
 assert bot.robot.steps == 201, f"expected 201 total steps, got {bot.robot.steps}"
-print("PASS  controller import, initialization, route-ahead trolley placement, and 200 simulation steps")
+block_calls = []
+bot.block_path = lambda: block_calls.append(True)
+
+def send_keys(*keys):
+    queue = iter(keys)
+    bot.kb.getKey = lambda: next(queue, -1)
+    bot.keys()
+
+send_keys(ord("B"), -1)
+send_keys(ord("B"), -1)  # held-key repeat is ignored
+bot.robot.time += 0.3
+send_keys(-1)             # release rearms the key
+send_keys(ord("B"), -1)
+assert len(block_calls) == 2, f"expected one action per press, got {len(block_calls)}"
+print("PASS  controller import, initialization, placement, B-key debounce, and 200 simulation steps")

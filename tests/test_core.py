@@ -18,7 +18,8 @@ sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "controllers", "medibot_controller"))
 
 import generate_world as gw          # noqa: E402
-from medibot_core import CFG, EKF, TagLocalizer, astar, edge_key, wrap   # noqa: E402
+from medibot_core import (CFG, EKF, TagLocalizer, astar, edge_key, wrap,
+                          rotate_drive_command)  # noqa: E402
 
 fails = 0
 
@@ -30,6 +31,29 @@ def check(name, ok, info=""):
 
 
 # ---------------------------------------------------------------- 1. A*
+from medibot_core import ADJ, EDGES, NODES  # noqa: E402
+print("A* HOME->WARD-3B:", astar("HOME", "WARD-3B"))
+print("A* WARD-3B->HOME:", astar("WARD-3B", "HOME"))
+check("graph edges are bidirectional", all(b in ADJ[a] and a in ADJ[b] for a, b in EDGES))
+check("config graph names match generator", set(NODES) == set(gw.NODES) and
+      set(NODES) == {n for e in EDGES for n in e})
+check("obstacle removal restores route", astar("HOME", "WARD-3B", {edge_key("JUNCTION", "WARD-2A")}) !=
+      astar("HOME", "WARD-3B"))
+
+# Exercise the same rotate-then-drive control used by the Webots controller.
+x, y, heading = 0.0, 0.08, 0.18
+max_cross_track = abs(y)
+for _ in range(3000):
+    error = wrap(math.atan2(-y, 3.0 - x) - heading)
+    v, w = rotate_drive_command(error, 0.30)
+    x += v * math.cos(heading) * 0.032
+    y += v * math.sin(heading) * 0.032
+    heading = wrap(heading + w * 0.032)
+    max_cross_track = max(max_cross_track, abs(y))
+    if x >= 3.0 and abs(y) < 0.12:
+        break
+print(f"Straight corridor max cross-track error: {max_cross_track:.3f} m")
+check("straight corridor cross-track error <= 0.10 m", max_cross_track <= 0.10)
 r = astar("HOME", "WARD-3B")
 check("A* default route via WARD-2A", r == ["HOME", "PHARMACY", "JUNCTION", "WARD-2A", "WARD-3B"], str(r))
 r = astar("JUNCTION", "WARD-3B", {edge_key("JUNCTION", "WARD-2A")})
@@ -222,7 +246,7 @@ with open(wbt_path, "r") as f:
 # Check wheel radius in .wbt matches config
 wheel_radius_cfg = CFG["robot"]["wheel_radius"]
 import re
-wheel_radii = re.findall(r"boundingObject Cylinder.*radius ([\d.]+)", wbt_content)
+wheel_radii = re.findall(r"boundingObject\s+Cylinder\s*\{[^}]*radius\s+([\d.]+)", wbt_content)
 if wheel_radii:
     for wr in wheel_radii:
         check(f"wheel radius {wr} matches config {wheel_radius_cfg}", abs(float(wr) - wheel_radius_cfg) < 1e-6)
@@ -249,7 +273,7 @@ else:
 
 # Check camera translation matches config
 cam_cfg = CFG["camera"]
-cam_translation = re.search(r'Camera.*translation ([\d.-]+) ([\d.-]+) ([\d.-]+).*name "camera"', wbt_content, re.DOTALL)
+cam_translation = re.search(r'Camera[\s\S]*?translation ([\d.-]+) ([\d.-]+) ([\d.-]+)[\s\S]*?name "camera"', wbt_content)
 if cam_translation:
     cam_x = float(cam_translation.group(1))
     cam_z = float(cam_translation.group(3))

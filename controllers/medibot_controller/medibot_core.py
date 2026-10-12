@@ -27,10 +27,22 @@ for _a, _b in EDGES:
 # ICU is a restricted zone: driving through it costs a little extra, so equal-length
 # routes prefer the Ward 2A corridor and the ICU corridor is the fallback.
 ICU_PENALTY = 0.25
+HEADING_TOL = math.radians(10)
+HEADING_KP = 2.5
+MAX_ANGULAR_SPEED = 1.0
 
 
 def wrap(a):
     return (a + math.pi) % (2 * math.pi) - math.pi
+
+
+def rotate_drive_command(error, vmax):
+    """Rotate first, then drive with bounded proportional heading correction."""
+    error = wrap(error)
+    angular = max(-MAX_ANGULAR_SPEED, min(MAX_ANGULAR_SPEED, HEADING_KP * error))
+    if abs(error) > HEADING_TOL:
+        return 0.0, angular
+    return vmax, angular
 
 
 def edge_key(a, b):
