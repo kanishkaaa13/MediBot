@@ -185,29 +185,57 @@ class TagLocalizer:
         """Return list of {id, x, y, yaw, dist}: one robot-pose estimate per visible known tag.
 
         `hint` = current (x, y, yaw) estimate. A square tag seen almost head-on has two valid
-        solutions, so we keep the one that agrees best with the hint (the other is the mirror
-        tilt). Without a hint the lowest reprojection error wins.
+        interpretations (front/back). The hint disambiguates by picking the one closer to the hint.
+        Rejects detections with incidence angle > 55 deg to avoid grazing-angle pose errors.
         """
-        corners, ids, _ = self._detect(gray)
-        out = []
-        if ids is None:
-            return out
-        for c, i in zip(corners, ids.flatten()):
-            tag = self.tags.get(int(i))
-            if tag is None:
+        cands = []
+        for tag in self.tags.values():
+            tx, ty, tyaw = tag["x"], tag["y"], tag["yaw"]
+            # Quick distance check
+            if hint:
+                dx, dy = hint[0] - tx, hint[1] - ty
+                if math.hypot(dx, dy) > max_dist:
+                    continue
+            # Detect tag
+            corners, ids, _ = self._detect(gray)
+            if ids is None:
                 continue
-            cands = self._candidates(c.reshape(4, 2).astype(np.float32), tag)
-            cands = [k for k in cands if k["dist"] <= max_dist]
-            if not cands:
-                continue
-            if hint is None:
-                best = min(cands, key=lambda k: k["reproj"])
-            else:
-                best = min(cands, key=lambda k: math.hypot(k["x"] - hint[0], k["y"] - hint[1])
-                           + 0.5 * abs(wrap(k["yaw"] - hint[2])))
-            best["id"] = int(i)
-            out.append(best)
-        return out
+            for i, cid in enumerate(ids):
+                if int(cid) == tag["id"]:
+                    # Recover pose
+                    rvec, tvec, _ = cv2.solvePnPGeneric(
+                        self.obj, corners[i], self.K, None, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+                    if rvec is None:
+                        continue
+                    # Convert to robot pose
+                    rot, _ = cv2.Rodrigues(rvec)
+                    yaw = math.atan2(rot[1, 0], rot[0, 0])
+                    # Two interpretations: front and back
+                    for sign in [1, -1]:
+                        rx = tx + sign * tvec[0] * math.cos(tyaw) - sign * tvec[1] * math.sin(tyaw)
+                        ry = ty + sign * tvec[0] * math.sin(tyaw) + sign * tvec[1] * math.cos(tyaw)
+                        # Disambiguate with hint
+                        if hint:
+                            d0 = math.hypot(rx - hint[0], ry - hint[1])
+                            d1 = math.hypot(rx - hint[0] - 2 * tvec[0], ry - hint[1] - 2 * tvec[1])
+                            if d1 < d0:
+                                continue
+                        # Compute incidence angle (angle between camera line of sight and tag normal)
+                        dx = tx - rx
+                        dy = ty - ry
+                        dist = math.hypot(dx, dy)
+                        if dist < 0.01:
+                            inc = 0.0
+                        else:
+                            cam_to_tag = (dx / dist, dy / dist)
+                            tag_normal = (math.cos(tyaw), math.sin(tyaw))
+                            dot = cam_to_tag[0] * tag_normal[0] + cam_to_tag[1] * tag_normal[1]
+                            inc = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))
+                        # Reject if incidence > 55 deg (grazing angle causes large pose errors)
+                        if inc > 55.0:
+                            continue
+                        cands.append({"id": tag["id"], "x": rx, "y": ry, "yaw": yaw, "dist": tvec[2], "incidence": inc})
+        return cands
 
     @staticmethod
     def noise(dist):

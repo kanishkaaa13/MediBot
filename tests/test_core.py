@@ -58,8 +58,8 @@ def project(px, py, pz, rx, ry, rth, cam_world_z):
 
 
 def render(rx, ry, rth, tag):
-    """Render the tag texture as seen from the robot."""
-    img = np.full((H, W), 120, np.uint8)
+    """Render the tag texture as seen from the robot (returns grayscale)."""
+    img = np.full((H, W, 3), 120, np.uint8)  # BGR image
     tex = gw.make_tag_image(tag["id"])
     tag_size = CFG["tag"]["size"]
     hw = tag_size / 2
@@ -78,7 +78,8 @@ def render(rx, ry, rth, tag):
     src = np.float32([[0, 599], [599, 599], [599, 0], [0, 0]])
     M = cv2.getPerspectiveTransform(src, np.float32(pts))
     cv2.warpPerspective(tex, M, (W, H), dst=img, borderMode=cv2.BORDER_TRANSPARENT)
-    return img
+    # Convert BGR to grayscale for AprilTag detector
+    return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
 def incidence_angle(rx, ry, rth, tag):
@@ -101,6 +102,31 @@ def incidence_angle(rx, ry, rth, tag):
 # Test coverage along each edge
 edges = CFG["edges"]
 coverage_results = []
+
+# Debug: test single tag detection first
+print("\n=== DEBUG: Single tag detection test ===")
+test_tag = CFG["tags"][0] if CFG["tags"] else None
+if test_tag:
+    # Position robot 1.5m in front of tag, head-on
+    # Tag faces along its yaw, so robot should be in front (opposite direction) facing the tag
+    rx = test_tag["x"] + 1.5 * math.cos(test_tag["yaw"])
+    ry = test_tag["y"] + 1.5 * math.sin(test_tag["yaw"])
+    rth = wrap(test_tag["yaw"] + math.pi)  # Robot faces toward tag
+    print(f"Testing tag {test_tag['id']} at ({test_tag['x']}, {test_tag['y']}) yaw={test_tag['yaw']:.2f}")
+    print(f"Robot at ({rx:.2f}, {ry:.2f}) yaw={rth:.2f}")
+    
+    img = render(rx, ry, rth, test_tag)
+    if img is not None:
+        print(f"Rendered image shape: {img.shape}")
+        meas = loc.measure(img, hint=(rx, ry, rth))
+        print(f"Detection result: {len(meas) if meas else 0} measurements")
+        if meas:
+            for m in meas[:3]:  # Print first 3
+                print(f"  id={m['id']}, dist={m['dist']:.2f}, pos=({m['x']:.2f}, {m['y']:.2f})")
+    else:
+        print("Render failed - tag not in view")
+
+print("\n=== Starting full coverage test ===")
 
 for edge in edges:
     start_node, end_node = edge

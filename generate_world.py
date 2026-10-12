@@ -90,58 +90,46 @@ def generate_wall_tags():
         tags.append((x, y, TAG_Z, yaw, zone, tag_id))
         tag_id += 1
 
-    # Zone 0-9: HOME -> PHARMACY corridor
-    # Head-on tag at PHARMACY end wall (facing west, yaw=PI)
-    add_tag(2.0, -0.70, PI, "pharmacy_end")
-    # Side wall tag at HOME end (angled 40 deg toward approaching robot)
-    add_tag(-0.5, -0.70, 0.0, "home_side")
+    # Zone 0-9: HOME -> PHARMACY corridor (y = -0.70, x: 0 to 2)
+    # Head-on tags at both ends facing the corridor
+    add_tag(0.0, -0.70, 0.0, "home_end")  # Facing east (toward PHARMACY)
+    add_tag(2.0, -0.70, PI, "pharmacy_end")  # Facing west (toward HOME)
+    # Middle tag for coverage
+    add_tag(1.0, -0.70, 0.0, "home_pharmacy_mid")
 
-    # Zone 10-19: PHARMACY -> JUNCTION corridor
-    # Head-on tag at JUNCTION (facing west, yaw=PI)
-    add_tag(4.0, -0.70, PI, "junction_south")
-    # Side wall tag (angled)
-    add_tag(3.0, -0.70, 0.0, "pharmacy_side")
+    # Zone 10-19: PHARMACY -> JUNCTION corridor (y = -0.70, x: 2 to 4)
+    add_tag(2.0, -0.70, 0.0, "pharmacy_junction_start")  # Facing east
+    add_tag(4.0, -0.70, PI, "junction_south")  # Facing west
+    add_tag(3.0, -0.70, 0.0, "pharmacy_junction_mid")
 
-    # Zone 20-29: JUNCTION -> ICU corridor
-    # Head-on tag at ICU end (facing west, yaw=PI)
-    add_tag(7.0, -0.70, PI, "icu_end")
-    # Side wall tag (angled)
-    add_tag(5.5, -0.70, 0.0, "junction_side")
+    # Zone 20-29: JUNCTION -> ICU corridor (y = -0.70, x: 4 to 7)
+    add_tag(4.0, -0.70, 0.0, "junction_icu_start")  # Facing east
+    add_tag(7.0, -0.70, PI, "icu_end")  # Facing west
+    add_tag(5.5, -0.70, 0.0, "junction_icu_mid")
 
-    # Zone 30-39: JUNCTION -> WARD-2A vertical corridor
-    # Head-on tag at WARD-2A end (facing south, yaw=PI)
-    add_tag(4.0, 3.70, PI, "ward2a_end")
-    # Head-on tag at JUNCTION end (facing north, yaw=0)
-    add_tag(4.0, 0.0, 0.0, "junction_north")
-    # Side wall tags (angled 40 deg)
-    add_tag(3.88, 1.5, 0.0, "junction_west")
-    add_tag(3.88, 2.5, 0.0, "junction_west2")
+    # Zone 30-39: JUNCTION -> WARD-2A vertical corridor (x = 4.0, y: 0 to 3.7)
+    # Tags on end walls facing the corridor
+    add_tag(4.0, 0.0, 0.0, "junction_north")  # Facing north (toward WARD-2A)
+    add_tag(4.0, 3.70, PI, "ward2a_end")  # Facing south (toward JUNCTION)
+    # Middle tags on cross walls
+    add_tag(3.5, 1.5, 0.0, "junction_cross_1")
+    add_tag(3.5, 2.5, 0.0, "junction_cross_2")
 
-    # Zone 40-49: ICU -> WARD-3B vertical corridor
-    # Head-on tag at WARD-3B end (facing south, yaw=PI)
-    add_tag(7.0, 3.70, PI, "ward3b_end")
-    # Head-on tag at ICU end (facing north, yaw=0)
-    add_tag(7.0, 0.0, 0.0, "icu_north")
-    # Side wall tags (angled 40 deg)
-    add_tag(6.88, 1.5, 0.0, "icu_west")
-    add_tag(6.88, 2.5, 0.0, "icu_west2")
+    # Zone 40-49: ICU -> WARD-3B vertical corridor (x = 7.0, y: 0 to 3.7)
+    add_tag(7.0, 0.0, 0.0, "icu_north")  # Facing north
+    add_tag(7.0, 3.70, PI, "ward3b_end")  # Facing south
+    add_tag(6.5, 1.5, 0.0, "icu_cross_1")
+    add_tag(6.5, 2.5, 0.0, "icu_cross_2")
 
-    # Zone 50-59: WARD-2A -> WARD-3B horizontal corridor
-    # Head-on tag at WARD-3B end (facing west, yaw=PI)
-    add_tag(7.0, 3.70, PI, "ward3b_north")
-    # Head-on tag at WARD-2A end (facing east, yaw=0)
-    add_tag(4.0, 3.70, 0.0, "ward2a_north")
-    # Side wall tag (angled)
-    add_tag(5.5, 3.70, PI, "ward_side")
+    # Zone 50-59: WARD-2A -> WARD-3B horizontal corridor (y = 3.70, x: 4 to 7)
+    add_tag(4.0, 3.70, 0.0, "ward2a_north")  # Facing east
+    add_tag(7.0, 3.70, PI, "ward3b_north")  # Facing west
+    add_tag(5.5, 3.70, 0.0, "ward_mid")
 
     # Zone 60-69: Room door frames (head-on tags facing corridor)
-    # Pharmacy door (facing south)
     add_tag(2.0, -0.65, -PI/2, "pharmacy_door")
-    # ICU door (facing south)
     add_tag(7.0, -0.65, -PI/2, "icu_door")
-    # Ward 2A door (facing north)
     add_tag(4.0, 3.65, PI/2, "ward2a_door")
-    # Ward 3B door (facing north)
     add_tag(7.0, 3.65, PI/2, "ward3b_door")
 
     # Zone 70-79: Inside rooms (tags facing entry)
