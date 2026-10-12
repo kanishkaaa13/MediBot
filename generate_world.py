@@ -11,13 +11,14 @@ Generates:
 
 Run from the project root:   py generate_world.py
 """
-import json
-import math
 import os
-
-import cv2
+import sys
+import math
+import json
 import numpy as np
+import cv2
 from PIL import Image, ImageDraw, ImageFont
+rng = np.random.default_rng(42)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 WORLD_DIR = os.path.join(ROOT, "worlds")
@@ -246,6 +247,131 @@ def generate_tag_map(tags):
 
 
 # ----------------------------------------------------------------------------
+# Procedural Texture Generation (Pillow)
+# ----------------------------------------------------------------------------
+def make_floor_texture_corridor():
+    """Light blue-grey vinyl floor with faint tile lines."""
+    img = Image.new("RGB", (512, 512), (200, 205, 210))
+    draw = ImageDraw.Draw(img)
+
+    # Faint tile lines (1m tiles = 128px at 512px for 4m coverage)
+    tile_color = (190, 195, 200)
+    for i in range(0, 513, 128):
+        draw.line([(i, 0), (i, 512)], fill=tile_color, width=1)
+        draw.line([(0, i), (512, i)], fill=tile_color, width=1)
+
+    return img
+
+
+def make_floor_texture_ward():
+    """Warm light grey ward floor."""
+    img = Image.new("RGB", (512, 512), (220, 220, 215))
+    draw = ImageDraw.Draw(img)
+
+    # Subtle pattern
+    tile_color = (210, 210, 205)
+    for i in range(0, 513, 64):
+        draw.line([(i, 0), (i, 512)], fill=tile_color, width=1)
+        draw.line([(0, i), (512, i)], fill=tile_color, width=1)
+
+    return img
+
+
+def make_floor_texture_pharmacy():
+    """Pharmacy floor - slightly different pattern."""
+    img = Image.new("RGB", (512, 512), (215, 225, 230))
+    draw = ImageDraw.Draw(img)
+
+    # Checker pattern
+    tile_color = (205, 215, 220)
+    for x in range(0, 512, 128):
+        for y in range(0, 512, 128):
+            if ((x // 128) + (y // 128)) % 2 == 0:
+                draw.rectangle([x, y, x + 128, y + 128], fill=tile_color)
+
+    return img
+
+
+def make_wall_texture():
+    """White plaster wall with grey skirting band."""
+    img = Image.new("RGB", (512, 512), (245, 245, 245))
+    draw = ImageDraw.Draw(img)
+
+    # Grey skirting band at bottom (0.1m = 64px at 512px for 0.8m height scaled)
+    draw.rectangle([0, 448, 512, 512], fill=(180, 180, 180))
+
+    # Subtle plaster texture
+    for _ in range(500):
+        x = rng.integers(0, 512)
+        y = rng.integers(0, 448)
+        img.putpixel((x, y), (240, 240, 240))
+
+    return img
+
+
+def make_monitor_texture():
+    """Monitor screen with green heartbeat line."""
+    img = Image.new("RGB", (256, 256), (20, 20, 30))
+    draw = ImageDraw.Draw(img)
+
+    # Green heartbeat line
+    points = []
+    for x in range(20, 236, 5):
+        y = 128 + int(20 * math.sin(x * 0.1))
+        points.append((x, y))
+    draw.line(points, fill=(0, 255, 0), width=2)
+
+    # Grid lines
+    for i in range(0, 256, 32):
+        draw.line([(i, 0), (i, 256)], fill=(0, 50, 0), width=1)
+        draw.line([(0, i), (256, i)], fill=(0, 50, 0), width=1)
+
+    return img
+
+
+def make_curtain_texture():
+    """Teal curtain fold texture."""
+    img = Image.new("RGB", (256, 256), (70, 130, 130))
+    draw = ImageDraw.Draw(img)
+
+    # Fold lines
+    for x in range(0, 256, 32):
+        shade = 60 + (x % 32) * 2
+        draw.line([(x, 0), (x, 256)], fill=(shade, shade + 60, shade + 60), width=32)
+
+    return img
+
+
+def make_floor_marker(color, letter):
+    """Floor marker texture (green A or blue B)."""
+    img = Image.new("RGB", (256, 256), color)
+    draw = ImageDraw.Draw(img)
+
+    # White circle
+    draw.ellipse([28, 28, 228, 228], fill=(255, 255, 255))
+
+    # Letter
+    font = None
+    for font_path in ["C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf"]:
+        if os.path.exists(font_path):
+            try:
+                font = ImageFont.truetype(font_path, 150)
+                break
+            except Exception:
+                pass
+    if font is None:
+        font = ImageFont.load_default()
+
+    bbox = draw.textbbox((0, 0), letter, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (256 - tw) / 2
+    y = (256 - th) / 2 - bbox[1]
+    draw.text((x, y), letter, fill=color, font=font)
+
+    return img
+
+
+# ----------------------------------------------------------------------------
 # Signage and Texture Generation (Pillow + OpenCV)
 # ----------------------------------------------------------------------------
 def make_tag_image(tag_id):
@@ -289,30 +415,46 @@ def make_tag_image(tag_id):
 
 
 def make_sign_textures(tex_dir):
-    """Generate high-resolution PNG textures for hospital signs and robot logo using Pillow."""
+    """Generate high-resolution PNG textures for hospital signs, floors, walls, and markers."""
+    # Floor textures
+    make_floor_texture_corridor().save(os.path.join(tex_dir, "floor_corridor.png"))
+    make_floor_texture_ward().save(os.path.join(tex_dir, "floor_ward.png"))
+    make_floor_texture_pharmacy().save(os.path.join(tex_dir, "floor_pharmacy.png"))
+
+    # Wall texture
+    make_wall_texture().save(os.path.join(tex_dir, "wall_plaster.png"))
+
+    # Monitor texture
+    make_monitor_texture().save(os.path.join(tex_dir, "monitor_screen.png"))
+
+    # Curtain texture
+    make_curtain_texture().save(os.path.join(tex_dir, "curtain_teal.png"))
+
+    # Floor markers
+    make_floor_marker((0, 180, 0), "A").save(os.path.join(tex_dir, "marker_a.png"))
+    make_floor_marker((0, 100, 200), "B").save(os.path.join(tex_dir, "marker_b.png"))
+
+    # Door signs (white plaques with dark text, >= 1.2m wide = 768px at 64px/m)
     signs = [
-        ("sign_ward_2a.png", "WARD 2A", (16, 128, 128)),
-        ("sign_ward_3b.png", "WARD 3B", (16, 128, 128)),
-        ("sign_icu.png", "ICU", (180, 24, 32)),
-        ("sign_pharmacy.png", "PHARMACY", (24, 72, 160)),
-        ("sign_nurse_station.png", "NURSE STATION", (18, 96, 136)),
-        ("sign_home_charging.png", "HOME / CHARGING", (20, 130, 60)),
-        ("sign_junction_dir.png", "<- PHARMACY  |  ICU ->", (28, 64, 120)),
-        ("sign_reception.png", "RECEPTION", (50, 70, 100)),
+        ("sign_ward_2a.png", "WARD 2A"),
+        ("sign_ward_3b.png", "WARD 3B"),
+        ("sign_icu.png", "ICU"),
+        ("sign_pharmacy.png", "PHARMACY"),
+        ("sign_nurse_station.png", "NURSE STATION"),
+        ("sign_home_charging.png", "HOME / CHARGING"),
+        ("sign_medicine_delivery.png", "MEDICINE DELIVERY"),
     ]
-    for fn, text, bg in signs:
-        img = Image.new("RGB", (1024, 256), bg)
+    for fn, text in signs:
+        img = Image.new("RGB", (768, 128), (255, 255, 255))
         draw = ImageDraw.Draw(img)
-        draw.rectangle([10, 10, 1013, 245], outline=(255, 255, 255), width=8)
-        draw.rectangle([20, 20, 1003, 235], outline=(255, 255, 255), width=2)
+        draw.rectangle([4, 4, 764, 124], outline=(50, 50, 50), width=4)
+        draw.rectangle([8, 8, 760, 120], outline=(200, 200, 200), width=2)
+
         font = None
-        for font_path in [
-            "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf",
-            "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/calibrib.ttf",
-        ]:
+        for font_path in ["C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf"]:
             if os.path.exists(font_path):
                 try:
-                    font = ImageFont.truetype(font_path, 110)
+                    font = ImageFont.truetype(font_path, 60)
                     break
                 except Exception:
                     pass
@@ -321,9 +463,9 @@ def make_sign_textures(tex_dir):
 
         bbox = draw.textbbox((0, 0), text, font=font)
         tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        x = (1024 - tw) / 2
-        y = (256 - th) / 2 - bbox[1]
-        draw.text((x, y), text, fill=(255, 255, 255), font=font)
+        x = (768 - tw) / 2
+        y = (128 - th) / 2 - bbox[1]
+        draw.text((x, y), text, fill=(30, 30, 30), font=font)
         img.save(os.path.join(tex_dir, fn))
 
     # MediBot Robot Brand Logo with red cross
@@ -367,6 +509,42 @@ def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=No
     if collide:
         s += f"  boundingObject Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
     return s + "}\n"
+
+
+def box_solid_textured(name, x, y, z, sx, sy, sz, appearance, yaw=0.0):
+    """Box with custom appearance string (for textured walls/floors)."""
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} {z:g}\n"
+            f"  rotation 0 0 1 {yaw:g}\n"
+            f"  name \"{name}\"\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      {appearance}\n"
+            f"      geometry Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"  boundingObject Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
+            f"  locked TRUE\n"
+            f"}}\n")
+
+
+def floor_marker(name, x, y, texture):
+    """Floor marker (A or B) - decorative only, no collision."""
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} 0.005\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      appearance PBRAppearance {{\n"
+            f"        baseColor 1 1 1\n"
+            f"        roughness 0.9\n"
+            f"        metalness 0\n"
+            f"        texture ImageTexture {{ url \"../worlds/textures/{texture}\" }}\n"
+            f"      }}\n"
+            f"      geometry Box {{ size 0.5 0.5 0.01 }}\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"  name \"{name}\"\n"
+            f"}}\n")
 
 
 def cylinder_solid(name, x, y, z, r, h, rgb, collide=False, yaw=0.0):
@@ -859,9 +1037,8 @@ def build_world():
     # R2025a header
     parts.append("#VRML_SIM R2025a utf8\n\n")
 
-    # Viewpoint: top-down overview of the entire hospital
-    # Follow-robot tip: in Webots 3D view, right-click robot -> Follow Object
-    axis, ang = look_at((3.5, -5.2, 8.8), (3.5, 1.2, 0.0))
+    # Viewpoint: steep overhead angle to see rooms clearly
+    axis, ang = look_at((3.5, -8.0, 12.0), (3.5, 1.5, 0.0))
     parts.append(f"""WorldInfo {{
   title "MediBot hospital delivery"
   basicTimeStep 32
@@ -869,7 +1046,7 @@ def build_world():
 }}
 Viewpoint {{
   orientation {axis[0]:.5f} {axis[1]:.5f} {axis[2]:.5f} {ang:.5f}
-  position 3.5 -5.2 8.8
+  position 3.5 -8.0 12.0
 }}
 Background {{ skyColor [ 0.78 0.86 0.95 ] }}
 DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
@@ -917,46 +1094,88 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     parts.append(wall_sign("sign_dir_junction", "sign_junction_dir.png", 4.0, -2.75, 1.15, 1.1, 0.28, PI / 2))
     parts.append(wall_sign("sign_reception_wall", "sign_reception.png", -1.2, 2.65, 1.15, 0.9, 0.25, -PI / 2))
 
-    # Perimeter and Room Walls (height 0.8m)
-    wall_col = (0.92, 0.92, 0.90)
-    wh = 0.8
+    # Perimeter and Room Walls (height 1.4m with texture)
+    wh = 1.4
     wz = wh / 2
 
+    # Wall appearance with texture
+    wall_appearance = f"""PBRAppearance {{
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture {{ url "../worlds/textures/wall_plaster.png" repeat TRUE }}
+    }}"""
+
+    # Floor appearance with corridor texture
+    floor_appearance = f"""PBRAppearance {{
+      baseColor 0.78 0.8 0.82
+      roughness 0.6
+      metalness 0
+      texture ImageTexture {{ url "../worlds/textures/floor_corridor.png" repeat TRUE }}
+    }}"""
+
     # Outer perimeter boundary walls
-    parts.append(box_solid("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_col))
-    parts.append(box_solid("wall_north_outer", 3.3, 5.20, wz, 12.0, 0.12, wh, wall_col))
-    parts.append(box_solid("wall_west_outer", -2.60, 1.2, wz, 0.12, 8.4, wh, wall_col))
-    parts.append(box_solid("wall_east_outer", 9.20, 1.2, wz, 0.12, 8.4, wh, wall_col))
+    parts.append(box_solid_textured("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_north_outer", 3.3, 5.20, wz, 12.0, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_west_outer", -2.60, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_east_outer", 9.20, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
 
     # South Corridor Wall along y = -0.70 with door gaps at Pharmacy (x=2) and ICU (x=7)
-    # Open waiting area alcove: x = 3.3 to 5.7 gives 2.8m clearance south of JUNCTION
-    parts.append(box_solid("wall_s_alcove", -1.55, -0.70, wz, 2.1, 0.12, wh, wall_col))
-    parts.append(box_solid("wall_s_pharm_w", 0.95, -0.70, wz, 0.9, 0.12, wh, wall_col))
-    # [Door opening 1.2m at Pharmacy: x = 1.4 to 2.6]
-    parts.append(box_solid("wall_s_pharm_e", 2.95, -0.70, wz, 0.7, 0.12, wh, wall_col))
-    # [Open waiting area alcove: x = 3.3 to 5.7]
-    parts.append(box_solid("wall_s_icu_w", 6.05, -0.70, wz, 0.7, 0.12, wh, wall_col))
-    # [Door opening 1.2m at ICU: x = 6.4 to 7.6]
-    parts.append(box_solid("wall_s_icu_e", 8.40, -0.70, wz, 1.6, 0.12, wh, wall_col))
+    parts.append(box_solid_textured("wall_s_alcove", -1.55, -0.70, wz, 2.1, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_s_pharm_w", 0.95, -0.70, wz, 0.9, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_s_pharm_e", 2.95, -0.70, wz, 0.7, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_s_icu_w", 6.05, -0.70, wz, 0.7, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_s_icu_e", 8.40, -0.70, wz, 1.6, 0.12, wh, wall_appearance))
 
     # Room partition dividers (South side)
-    parts.append(box_solid("div_pharm_w", 0.50, -1.75, wz, 0.12, 2.1, wh, wall_col))
-    parts.append(box_solid("div_pharm_e", 3.30, -1.75, wz, 0.12, 2.1, wh, wall_col))
-    parts.append(box_solid("div_icu_w", 5.70, -1.75, wz, 0.12, 2.1, wh, wall_col))
+    parts.append(box_solid_textured("div_pharm_w", 0.50, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
+    parts.append(box_solid_textured("div_pharm_e", 3.30, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
+    parts.append(box_solid_textured("div_icu_w", 5.70, -1.75, wz, 0.12, 2.1, wh, wall_appearance))
 
     # North Corridor Wall along y = 3.70 with door gaps at Ward 2A (x=4) and Ward 3B (x=7)
-    parts.append(box_solid("wall_n_ward2a_w", 2.80, 3.70, wz, 1.2, 0.12, wh, wall_col))
-    # [Door opening 1.2m at Ward 2A: x = 3.4 to 4.6]
-    parts.append(box_solid("wall_n_middle", 5.50, 3.70, wz, 1.8, 0.12, wh, wall_col))
-    # [Door opening 1.2m at Ward 3B: x = 6.4 to 7.6]
-    parts.append(box_solid("wall_n_ward3b_e", 8.40, 3.70, wz, 1.6, 0.12, wh, wall_col))
+    parts.append(box_solid_textured("wall_n_ward2a_w", 2.80, 3.70, wz, 1.2, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_n_middle", 5.50, 3.70, wz, 1.8, 0.12, wh, wall_appearance))
+    parts.append(box_solid_textured("wall_n_ward3b_e", 8.40, 3.70, wz, 1.6, 0.12, wh, wall_appearance))
 
     # Room partition dividers (North side)
-    parts.append(box_solid("div_ward2a_w", 2.20, 4.45, wz, 0.12, 1.5, wh, wall_col))
-    parts.append(box_solid("div_wards_mid", 5.20, 4.45, wz, 0.12, 1.5, wh, wall_col))
+    parts.append(box_solid_textured("div_ward2a_w", 2.20, 4.45, wz, 0.12, 1.5, wh, wall_appearance))
+    parts.append(box_solid_textured("div_wards_mid", 5.20, 4.45, wz, 0.12, 1.5, wh, wall_appearance))
 
     # West alcove divider (Home / Reception wall)
-    parts.append(box_solid("wall_w_home_n", -1.55, 0.70, wz, 2.1, 0.12, wh, wall_col))
+    parts.append(box_solid_textured("wall_w_home_n", -1.55, 0.70, wz, 2.1, 0.12, wh, wall_appearance))
+
+    # Floor with corridor texture
+    parts.append(box_solid_textured("floor_main", 3.3, 1.5, 0.01, 12.0, 8.0, 0.02, floor_appearance))
+
+    # Floor markers (A at HOME, B at WARD-3B)
+    parts.append(floor_marker("marker_a", 0.0, 0.0, "marker_a.png"))
+    parts.append(floor_marker("marker_b", 7.0, 3.0, "marker_b.png"))
+
+    # Door frames (white) and glass panels for room entrances
+    # Pharmacy door frame
+    parts.append(box_solid("door_frame_pharm_l", 1.35, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_pharm_r", 2.65, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_pharm_t", 2.0, -0.64, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
+    # Glass panel (semi-transparent)
+    parts.append(box_solid("door_glass_pharm", 2.0, -0.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+
+    # ICU door frame
+    parts.append(box_solid("door_frame_icu_l", 6.35, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_icu_r", 7.65, -0.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_icu_t", 7.0, -0.64, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_glass_icu", 7.0, -0.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+
+    # Ward 2A door frame
+    parts.append(box_solid("door_frame_ward2a_l", 3.35, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward2a_r", 4.65, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward2a_t", 4.0, 3.76, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_glass_ward2a", 4.0, 3.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
+
+    # Ward 3B door frame
+    parts.append(box_solid("door_frame_ward3b_l", 6.35, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward3b_r", 7.65, 3.70, 0.7, 0.05, 0.12, 1.4, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_frame_ward3b_t", 7.0, 3.76, 1.35, 1.3, 0.05, 0.1, (0.95, 0.95, 0.95)))
+    parts.append(box_solid("door_glass_ward3b", 7.0, 3.70, 0.7, 1.2, 0.05, 1.2, (0.8, 0.9, 1.0, 0.3)))
 
     # Room Furniture and Models
     # 1. HOME: Charging Station Dock

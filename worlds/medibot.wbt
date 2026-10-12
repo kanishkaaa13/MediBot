@@ -6,8 +6,8 @@ WorldInfo {
   coordinateSystem "ENU"
 }
 Viewpoint {
-  orientation -0.41322 0.41322 0.81148 1.77819
-  position 3.5 -5.2 8.8
+  orientation -0.39927 0.39927 0.82533 1.76160
+  position 3.5 -8.0 12.0
 }
 Background { skyColor [ 0.78 0.86 0.95 ] }
 DirectionalLight { ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }
@@ -404,292 +404,632 @@ Solid {
   ]
 }
 Solid {
-  translation 3.3 -2.8 0.4
+  translation 3.3 -2.8 0.7
   rotation 0 0 1 0
   name "wall_south_outer"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 12 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 12 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 12 0.12 0.8 }
+  boundingObject Box { size 12 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 3.3 5.2 0.4
+  translation 3.3 5.2 0.7
   rotation 0 0 1 0
   name "wall_north_outer"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 12 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 12 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 12 0.12 0.8 }
+  boundingObject Box { size 12 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation -2.6 1.2 0.4
+  translation -2.6 1.2 0.7
   rotation 0 0 1 0
   name "wall_west_outer"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 8.4 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 8.4 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 8.4 0.8 }
+  boundingObject Box { size 0.12 8.4 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 9.2 1.2 0.4
+  translation 9.2 1.2 0.7
   rotation 0 0 1 0
   name "wall_east_outer"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 8.4 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 8.4 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 8.4 0.8 }
+  boundingObject Box { size 0.12 8.4 1.4 }
+  locked TRUE
 }
 Solid {
-  translation -1.55 -0.7 0.4
+  translation -1.55 -0.7 0.7
   rotation 0 0 1 0
   name "wall_s_alcove"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 2.1 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 2.1 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 2.1 0.12 0.8 }
+  boundingObject Box { size 2.1 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 0.95 -0.7 0.4
+  translation 0.95 -0.7 0.7
   rotation 0 0 1 0
   name "wall_s_pharm_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.9 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.9 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 0.9 0.12 0.8 }
+  boundingObject Box { size 0.9 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 2.95 -0.7 0.4
+  translation 2.95 -0.7 0.7
   rotation 0 0 1 0
   name "wall_s_pharm_e"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.7 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.7 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 0.7 0.12 0.8 }
+  boundingObject Box { size 0.7 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 6.05 -0.7 0.4
+  translation 6.05 -0.7 0.7
   rotation 0 0 1 0
   name "wall_s_icu_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.7 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.7 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 0.7 0.12 0.8 }
+  boundingObject Box { size 0.7 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 8.4 -0.7 0.4
+  translation 8.4 -0.7 0.7
   rotation 0 0 1 0
   name "wall_s_icu_e"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 1.6 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 1.6 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 1.6 0.12 0.8 }
+  boundingObject Box { size 1.6 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 0.5 -1.75 0.4
+  translation 0.5 -1.75 0.7
   rotation 0 0 1 0
   name "div_pharm_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 2.1 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 2.1 0.8 }
+  boundingObject Box { size 0.12 2.1 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 3.3 -1.75 0.4
+  translation 3.3 -1.75 0.7
   rotation 0 0 1 0
   name "div_pharm_e"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 2.1 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 2.1 0.8 }
+  boundingObject Box { size 0.12 2.1 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 5.7 -1.75 0.4
+  translation 5.7 -1.75 0.7
   rotation 0 0 1 0
   name "div_icu_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 2.1 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 2.1 0.8 }
+  boundingObject Box { size 0.12 2.1 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 2.8 3.7 0.4
+  translation 2.8 3.7 0.7
   rotation 0 0 1 0
   name "wall_n_ward2a_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 1.2 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 1.2 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 1.2 0.12 0.8 }
+  boundingObject Box { size 1.2 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 5.5 3.7 0.4
+  translation 5.5 3.7 0.7
   rotation 0 0 1 0
   name "wall_n_middle"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 1.8 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 1.8 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 1.8 0.12 0.8 }
+  boundingObject Box { size 1.8 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 8.4 3.7 0.4
+  translation 8.4 3.7 0.7
   rotation 0 0 1 0
   name "wall_n_ward3b_e"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 1.6 0.12 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 1.6 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 1.6 0.12 0.8 }
+  boundingObject Box { size 1.6 0.12 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 2.2 4.45 0.4
+  translation 2.2 4.45 0.7
   rotation 0 0 1 0
   name "div_ward2a_w"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 1.5 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 1.5 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 1.5 0.8 }
+  boundingObject Box { size 0.12 1.5 1.4 }
+  locked TRUE
 }
 Solid {
-  translation 5.2 4.45 0.4
+  translation 5.2 4.45 0.7
   rotation 0 0 1 0
   name "div_wards_mid"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
-        roughness 1
-        metalness 0
-      }
-      geometry Box { size 0.12 1.5 0.8 }
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 0.12 1.5 1.4 }
     }
   ]
-  boundingObject Box { size 0.12 1.5 0.8 }
+  boundingObject Box { size 0.12 1.5 1.4 }
+  locked TRUE
 }
 Solid {
-  translation -1.55 0.7 0.4
+  translation -1.55 0.7 0.7
   rotation 0 0 1 0
   name "wall_w_home_n"
   children [
     Shape {
+      PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+      geometry Box { size 2.1 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 2.1 0.12 1.4 }
+  locked TRUE
+}
+Solid {
+  translation 3.3 1.5 0.01
+  rotation 0 0 1 0
+  name "floor_main"
+  children [
+    Shape {
+      PBRAppearance {
+      baseColor 0.78 0.8 0.82
+      roughness 0.6
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
+    }
+      geometry Box { size 12 8 0.02 }
+    }
+  ]
+  boundingObject Box { size 12 8 0.02 }
+  locked TRUE
+}
+Solid {
+  translation 0 0 0.005
+  children [
+    Shape {
       appearance PBRAppearance {
-        baseColor 0.92 0.92 0.9
+        baseColor 1 1 1
+        roughness 0.9
+        metalness 0
+        texture ImageTexture { url "../worlds/textures/marker_a.png" }
+      }
+      geometry Box { size 0.5 0.5 0.01 }
+    }
+  ]
+  name "marker_a"
+}
+Solid {
+  translation 7 3 0.005
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 1 1
+        roughness 0.9
+        metalness 0
+        texture ImageTexture { url "../worlds/textures/marker_b.png" }
+      }
+      geometry Box { size 0.5 0.5 0.01 }
+    }
+  ]
+  name "marker_b"
+}
+Solid {
+  translation 1.35 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_pharm_l"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
       }
-      geometry Box { size 2.1 0.12 0.8 }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  boundingObject Box { size 2.1 0.12 0.8 }
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 2.65 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_pharm_r"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 2 -0.64 1.35
+  rotation 0 0 1 0
+  name "door_frame_pharm_t"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.3 0.05 0.1 }
+    }
+  ]
+  boundingObject Box { size 1.3 0.05 0.1 }
+}
+Solid {
+  translation 2 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_pharm"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.9 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.2 0.05 1.2 }
+    }
+  ]
+  boundingObject Box { size 1.2 0.05 1.2 }
+}
+Solid {
+  translation 6.35 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_icu_l"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 7.65 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_icu_r"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 7 -0.64 1.35
+  rotation 0 0 1 0
+  name "door_frame_icu_t"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.3 0.05 0.1 }
+    }
+  ]
+  boundingObject Box { size 1.3 0.05 0.1 }
+}
+Solid {
+  translation 7 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_icu"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.9 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.2 0.05 1.2 }
+    }
+  ]
+  boundingObject Box { size 1.2 0.05 1.2 }
+}
+Solid {
+  translation 3.35 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward2a_l"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 4.65 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward2a_r"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 4 3.76 1.35
+  rotation 0 0 1 0
+  name "door_frame_ward2a_t"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.3 0.05 0.1 }
+    }
+  ]
+  boundingObject Box { size 1.3 0.05 0.1 }
+}
+Solid {
+  translation 4 3.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_ward2a"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.9 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.2 0.05 1.2 }
+    }
+  ]
+  boundingObject Box { size 1.2 0.05 1.2 }
+}
+Solid {
+  translation 6.35 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward3b_l"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 7.65 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward3b_r"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 0.05 0.12 1.4 }
+    }
+  ]
+  boundingObject Box { size 0.05 0.12 1.4 }
+}
+Solid {
+  translation 7 3.76 1.35
+  rotation 0 0 1 0
+  name "door_frame_ward3b_t"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.95 0.95 0.95
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.3 0.05 0.1 }
+    }
+  ]
+  boundingObject Box { size 1.3 0.05 0.1 }
+}
+Solid {
+  translation 7 3.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_ward3b"
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.9 1
+        roughness 1
+        metalness 0
+      }
+      geometry Box { size 1.2 0.05 1.2 }
+    }
+  ]
+  boundingObject Box { size 1.2 0.05 1.2 }
 }
 Solid {
   translation -2.35 0 0.45
