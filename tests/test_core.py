@@ -140,7 +140,7 @@ for tag in CFG["tags"]:
           f"horizontal normal={horizontal_normal:.3f}, wall offset={wall_delta:.3f}m")
     name_at = surveyed_world.find(f'name "tag_{tag["id"]}"')
     solid_at = surveyed_world.rfind("Solid {", 0, name_at)
-    plate = re.search(r'geometry Box \{ size ([^}]+) \}',
+    plate = re.search(r'geometry Box\s*\{\s*size ([^}]+)\s*\}',
                       surveyed_world[solid_at:name_at]) if name_at >= 0 else None
     check(f"tag {tag['id']} world plate vertical", bool(plate and "0.01" in plate.group(1)),
           plate.group(1) if plate else "plate missing")
@@ -288,7 +288,7 @@ else:
 cam_cfg = CFG["camera"]
 camera_start = wbt_content.find('name "camera"')
 camera_open = wbt_content.rfind("Camera {", 0, camera_start)
-camera_close = wbt_content.find("\n    }", camera_start)
+camera_close = wbt_content.find("\n      }", camera_start)
 camera_node = wbt_content[camera_open:camera_close] if camera_start >= 0 and camera_open >= 0 and camera_close >= 0 else ""
 cam_translation = re.search(r'translation ([\d.-]+) ([\d.-]+) ([\d.-]+)', camera_node)
 if cam_translation:

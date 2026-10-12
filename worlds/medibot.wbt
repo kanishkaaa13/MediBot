@@ -2,1091 +2,667 @@
 
 WorldInfo {
   title "MediBot hospital delivery"
+  basicTimeStep 32
+  coordinateSystem "ENU"
 }
 Viewpoint {
-  orientation -0.49903015660631894 0.5656602868607566 0.6565038786374986 1.8620859115773136
-  position 2.497508896085912 -6.142094710759691 16.937100518704867
+  orientation -0.39927 0.39927 0.82533 1.76160
+  position 3.5 -8.0 12.0
 }
-Background {
-  skyColor [
-    0.78 0.86 0.95
-  ]
-}
-DirectionalLight {
-  ambientIntensity 0.75
-  direction -0.3 0.4 -1
-  intensity 0.8
-}
+Background { skyColor [ 0.78 0.86 0.95 ] }
+DirectionalLight { ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 0 0 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 2 -1.8 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 4 0 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 4.5 -2 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 7 -1.8 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 4 1.5 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 5.5 1.5 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 7 1.5 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 3.8 4.4 2.3
   radius 4.5
 }
 PointLight {
   attenuation 0 0 1
-  color 1 0.98 0.94
+  castShadows FALSE
+  color 1.0 0.98 0.94
   intensity 0.7
   location 7 4.4 2.3
   radius 4.5
 }
 Solid {
   translation 3.3 1.2 -0.05
+  rotation 0 0 1 0
+  name "floor"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.86 0.88 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 12 8.4 0.1
-      }
+      geometry Box { size 12 8.4 0.1 }
     }
   ]
-  name "floor"
-  boundingObject Box {
-    size 12 8.4 0.1
-  }
+  boundingObject Box { size 12 8.4 0.1 }
 }
 Solid {
   translation 3.5 0 0.001
+  rotation 0 0 1 0
+  name "line_south"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.45 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 7.5 0.04 0.002
-      }
+      geometry Box { size 7.5 0.04 0.002 }
     }
   ]
-  name "line_south"
 }
 Solid {
   translation 4 1.5 0.001
+  rotation 0 0 1 0
+  name "line_west"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.45 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.04 3 0.002
-      }
+      geometry Box { size 0.04 3 0.002 }
     }
   ]
-  name "line_west"
 }
 Solid {
   translation 5.5 3 0.001
+  rotation 0 0 1 0
+  name "line_north"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.45 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 3 0.04 0.002
-      }
+      geometry Box { size 3 0.04 0.002 }
     }
   ]
-  name "line_north"
 }
 Solid {
   translation 7 1.5 0.001
+  rotation 0 0 1 0
+  name "line_east"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.45 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.04 3 0.002
-      }
+      geometry Box { size 0.04 3 0.002 }
     }
   ]
-  name "line_east"
 }
 Solid {
   translation 0 0 0.002
+  rotation 0 0 1 0.00000
+  name "zone_HOME"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_home_charging.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_home_charging.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.55 -0.425 0
-            0.55 -0.425 0
-            0.55 0.425 0
-            -0.55 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.55 -0.425 0, 0.55 -0.425 0, 0.55 0.425 0, -0.55 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_HOME"
 }
 Solid {
   translation 2 0 0.002
+  rotation 0 0 1 0.00000
+  name "zone_PHARMACY"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_pharmacy.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_pharmacy.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.55 -0.425 0
-            0.55 -0.425 0
-            0.55 0.425 0
-            -0.55 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.55 -0.425 0, 0.55 -0.425 0, 0.55 0.425 0, -0.55 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_PHARMACY"
 }
 Solid {
   translation 4 0 0.002
+  rotation 0 0 1 0.00000
+  name "zone_JUNCTION"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_junction_dir.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_junction_dir.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.6 -0.425 0
-            0.6 -0.425 0
-            0.6 0.425 0
-            -0.6 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.6 -0.425 0, 0.6 -0.425 0, 0.6 0.425 0, -0.6 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_JUNCTION"
 }
 Solid {
   translation 4 3 0.002
+  rotation 0 0 1 0.00000
+  name "zone_WARD2A"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_ward_2a.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_ward_2a.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.55 -0.425 0
-            0.55 -0.425 0
-            0.55 0.425 0
-            -0.55 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.55 -0.425 0, 0.55 -0.425 0, 0.55 0.425 0, -0.55 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_WARD2A"
 }
 Solid {
   translation 7 0 0.002
+  rotation 0 0 1 0.00000
+  name "zone_ICU"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_icu.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_icu.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.55 -0.425 0
-            0.55 -0.425 0
-            0.55 0.425 0
-            -0.55 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.55 -0.425 0, 0.55 -0.425 0, 0.55 0.425 0, -0.55 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_ICU"
 }
 Solid {
   translation 7 3 0.002
+  rotation 0 0 1 0.00000
+  name "zone_WARD3B"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_ward_3b.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_ward_3b.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            -0.55 -0.425 0
-            0.55 -0.425 0
-            0.55 0.425 0
-            -0.55 0.425 0
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ -0.55 -0.425 0, 0.55 -0.425 0, 0.55 0.425 0, -0.55 0.425 0 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
   ]
-  name "zone_WARD3B"
 }
 Solid {
   translation 2 -0.72 1.05
-  rotation 0 0 1 1.5708
+  rotation 0 0 1 1.57080
+  name "header_pharmacy"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_pharmacy.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_pharmacy.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.125
-            0.005 0.45 -0.125
-            0.005 0.45 0.125
-            0.005 -0.45 0.125
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.125, 0.005 0.45 -0.125, 0.005 0.45 0.125, 0.005 -0.45 0.125 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.29
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.29 }
     }
   ]
-  name "header_pharmacy"
 }
 Solid {
   translation 7 -0.72 1.05
-  rotation 0 0 1 1.5708
+  rotation 0 0 1 1.57080
+  name "header_icu"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_icu.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_icu.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.125
-            0.005 0.45 -0.125
-            0.005 0.45 0.125
-            0.005 -0.45 0.125
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.125, 0.005 0.45 -0.125, 0.005 0.45 0.125, 0.005 -0.45 0.125 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.29
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.29 }
     }
   ]
-  name "header_icu"
 }
 Solid {
   translation 4 3.72 1.05
-  rotation 0 0 1 -1.5708
+  rotation 0 0 1 -1.57080
+  name "header_ward2a"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_ward_2a.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_ward_2a.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.125
-            0.005 0.45 -0.125
-            0.005 0.45 0.125
-            0.005 -0.45 0.125
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.125, 0.005 0.45 -0.125, 0.005 0.45 0.125, 0.005 -0.45 0.125 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.29
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.29 }
     }
   ]
-  name "header_ward2a"
 }
 Solid {
   translation 7 3.72 1.05
-  rotation 0 0 1 -1.5708
+  rotation 0 0 1 -1.57080
+  name "header_ward3b"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_ward_3b.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_ward_3b.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.125
-            0.005 0.45 -0.125
-            0.005 0.45 0.125
-            0.005 -0.45 0.125
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.125, 0.005 0.45 -0.125, 0.005 0.45 0.125, 0.005 -0.45 0.125 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.29
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.29 }
     }
   ]
-  name "header_ward3b"
 }
 Solid {
   translation 5.5 1.02 0.72
-  rotation 0 0 1 -1.5708
+  rotation 0 0 1 -1.57080
+  name "sign_nurse_front"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_nurse_station.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_nurse_station.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.12
-            0.005 0.45 -0.12
-            0.005 0.45 0.12
-            0.005 -0.45 0.12
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.12, 0.005 0.45 -0.12, 0.005 0.45 0.12, 0.005 -0.45 0.12 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.28
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.28 }
     }
   ]
-  name "sign_nurse_front"
 }
 Solid {
   translation 4 -2.75 1.15
-  rotation 0 0 1 1.5708
+  rotation 0 0 1 1.57080
+  name "sign_dir_junction"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_junction_dir.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_junction_dir.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.55 -0.14
-            0.005 0.55 -0.14
-            0.005 0.55 0.14
-            0.005 -0.55 0.14
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.55 -0.14, 0.005 0.55 -0.14, 0.005 0.55 0.14, 0.005 -0.55 0.14 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 1.14 0.32
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 1.14 0.32 }
     }
   ]
-  name "sign_dir_junction"
 }
 Solid {
   translation -1.2 2.65 1.15
-  rotation 0 0 1 -1.5708
+  rotation 0 0 1 -1.57080
+  name "sign_reception_wall"
   children [
     Shape {
-      appearance Appearance {
-        texture ImageTexture {
-          url [
-            "textures/sign_reception.png"
-          ]
-          filtering 2
-        }
-      }
+      appearance Appearance { texture ImageTexture { url [ "textures/sign_reception.png" ] filtering 2 } }
       geometry IndexedFaceSet {
-        coord Coordinate {
-          point [
-            0.005 -0.45 -0.125
-            0.005 0.45 -0.125
-            0.005 0.45 0.125
-            0.005 -0.45 0.125
-          ]
-        }
-        texCoord TextureCoordinate {
-          point [
-            0 0
-            1 0
-            1 1
-            0 1
-          ]
-        }
-        coordIndex [
-          0, 1, 2, 3, -1
-        ]
-        texCoordIndex [
-          0, 1, 2, 3, -1
-        ]
+        coord Coordinate { point [ 0.005 -0.45 -0.125, 0.005 0.45 -0.125, 0.005 0.45 0.125, 0.005 -0.45 0.125 ] }
+        texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+        coordIndex [ 0 1 2 3 -1 ]
+        texCoordIndex [ 0 1 2 3 -1 ]
       }
     }
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.5
-      }
-      geometry Box {
-        size 0.008 0.94 0.29
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.5 }
+      geometry Box { size 0.008 0.94 0.29 }
     }
   ]
-  name "sign_reception_wall"
 }
 Solid {
   translation 3.3 -2.8 0.7
+  rotation 0 0 1 0
+  name "wall_south_outer"
   children [
     Shape {
       appearance DEF WallAppearance PBRAppearance {
         baseColor 0.96 0.96 0.96
-        baseColorMap ImageTexture {
-          url [
-            "textures/wall_plaster.png"
-          ]
-        }
         roughness 0.8
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/wall_plaster.png" ] }
       }
-      geometry Box {
-        size 12 0.12 1.4
-      }
+      geometry Box { size 12 0.12 1.4 }
     }
   ]
-  name "wall_south_outer"
-  boundingObject Box {
-    size 12 0.12 1.4
-  }
+  boundingObject Box { size 12 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 3.3 5.2 0.7
+  rotation 0 0 1 0
+  name "wall_north_outer"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 12 0.12 1.4
-      }
+      geometry Box { size 12 0.12 1.4 }
     }
   ]
-  name "wall_north_outer"
-  boundingObject Box {
-    size 12 0.12 1.4
-  }
+  boundingObject Box { size 12 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation -2.6 1.2 0.7
+  rotation 0 0 1 0
+  name "wall_west_outer"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 8.4 1.4
-      }
+      geometry Box { size 0.12 8.4 1.4 }
     }
   ]
-  name "wall_west_outer"
-  boundingObject Box {
-    size 0.12 8.4 1.4
-  }
+  boundingObject Box { size 0.12 8.4 1.4 }
   locked TRUE
 }
 Solid {
   translation 9.2 1.2 0.7
+  rotation 0 0 1 0
+  name "wall_east_outer"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 8.4 1.4
-      }
+      geometry Box { size 0.12 8.4 1.4 }
     }
   ]
-  name "wall_east_outer"
-  boundingObject Box {
-    size 0.12 8.4 1.4
-  }
+  boundingObject Box { size 0.12 8.4 1.4 }
   locked TRUE
 }
 Solid {
   translation -1.55 -0.7 0.7
+  rotation 0 0 1 0
+  name "wall_s_alcove"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 2.1 0.12 1.4
-      }
+      geometry Box { size 2.1 0.12 1.4 }
     }
   ]
-  name "wall_s_alcove"
-  boundingObject Box {
-    size 2.1 0.12 1.4
-  }
+  boundingObject Box { size 2.1 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 0.95 -0.7 0.7
+  rotation 0 0 1 0
+  name "wall_s_pharm_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.9 0.12 1.4
-      }
+      geometry Box { size 0.9 0.12 1.4 }
     }
   ]
-  name "wall_s_pharm_w"
-  boundingObject Box {
-    size 0.9 0.12 1.4
-  }
+  boundingObject Box { size 0.9 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 2.95 -0.7 0.7
+  rotation 0 0 1 0
+  name "wall_s_pharm_e"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.7 0.12 1.4
-      }
+      geometry Box { size 0.7 0.12 1.4 }
     }
   ]
-  name "wall_s_pharm_e"
-  boundingObject Box {
-    size 0.7 0.12 1.4
-  }
+  boundingObject Box { size 0.7 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 6.05 -0.7 0.7
+  rotation 0 0 1 0
+  name "wall_s_icu_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.7 0.12 1.4
-      }
+      geometry Box { size 0.7 0.12 1.4 }
     }
   ]
-  name "wall_s_icu_w"
-  boundingObject Box {
-    size 0.7 0.12 1.4
-  }
+  boundingObject Box { size 0.7 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 8.4 -0.7 0.7
+  rotation 0 0 1 0
+  name "wall_s_icu_e"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 1.6 0.12 1.4
-      }
+      geometry Box { size 1.6 0.12 1.4 }
     }
   ]
-  name "wall_s_icu_e"
-  boundingObject Box {
-    size 1.6 0.12 1.4
-  }
+  boundingObject Box { size 1.6 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 0.5 -1.75 0.7
+  rotation 0 0 1 0
+  name "div_pharm_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 2.1 1.4
-      }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  name "div_pharm_w"
-  boundingObject Box {
-    size 0.12 2.1 1.4
-  }
+  boundingObject Box { size 0.12 2.1 1.4 }
   locked TRUE
 }
 Solid {
   translation 3.3 -1.75 0.7
+  rotation 0 0 1 0
+  name "div_pharm_e"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 2.1 1.4
-      }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  name "div_pharm_e"
-  boundingObject Box {
-    size 0.12 2.1 1.4
-  }
+  boundingObject Box { size 0.12 2.1 1.4 }
   locked TRUE
 }
 Solid {
   translation 5.7 -1.75 0.7
+  rotation 0 0 1 0
+  name "div_icu_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 2.1 1.4
-      }
+      geometry Box { size 0.12 2.1 1.4 }
     }
   ]
-  name "div_icu_w"
-  boundingObject Box {
-    size 0.12 2.1 1.4
-  }
+  boundingObject Box { size 0.12 2.1 1.4 }
   locked TRUE
 }
 Solid {
   translation 2.8 3.7 0.7
+  rotation 0 0 1 0
+  name "wall_n_ward2a_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 1.2 0.12 1.4
-      }
+      geometry Box { size 1.2 0.12 1.4 }
     }
   ]
-  name "wall_n_ward2a_w"
-  boundingObject Box {
-    size 1.2 0.12 1.4
-  }
+  boundingObject Box { size 1.2 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 5.5 3.7 0.7
+  rotation 0 0 1 0
+  name "wall_n_middle"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 1.8 0.12 1.4
-      }
+      geometry Box { size 1.8 0.12 1.4 }
     }
   ]
-  name "wall_n_middle"
-  boundingObject Box {
-    size 1.8 0.12 1.4
-  }
+  boundingObject Box { size 1.8 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 8.4 3.7 0.7
+  rotation 0 0 1 0
+  name "wall_n_ward3b_e"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 1.6 0.12 1.4
-      }
+      geometry Box { size 1.6 0.12 1.4 }
     }
   ]
-  name "wall_n_ward3b_e"
-  boundingObject Box {
-    size 1.6 0.12 1.4
-  }
+  boundingObject Box { size 1.6 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 2.2 4.45 0.7
+  rotation 0 0 1 0
+  name "div_ward2a_w"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 1.5 1.4
-      }
+      geometry Box { size 0.12 1.5 1.4 }
     }
   ]
-  name "div_ward2a_w"
-  boundingObject Box {
-    size 0.12 1.5 1.4
-  }
+  boundingObject Box { size 0.12 1.5 1.4 }
   locked TRUE
 }
 Solid {
   translation 5.2 4.45 0.7
+  rotation 0 0 1 0
+  name "div_wards_mid"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 0.12 1.5 1.4
-      }
+      geometry Box { size 0.12 1.5 1.4 }
     }
   ]
-  name "div_wards_mid"
-  boundingObject Box {
-    size 0.12 1.5 1.4
-  }
+  boundingObject Box { size 0.12 1.5 1.4 }
   locked TRUE
 }
 Solid {
   translation -1.55 0.7 0.7
+  rotation 0 0 1 0
+  name "wall_w_home_n"
   children [
     Shape {
       appearance USE WallAppearance
-      geometry Box {
-        size 2.1 0.12 1.4
-      }
+      geometry Box { size 2.1 0.12 1.4 }
     }
   ]
-  name "wall_w_home_n"
-  boundingObject Box {
-    size 2.1 0.12 1.4
-  }
+  boundingObject Box { size 2.1 0.12 1.4 }
   locked TRUE
 }
 Solid {
   translation 3.3 1.5 0.01
+  rotation 0 0 1 0
+  name "floor_main"
   children [
     Shape {
       appearance DEF FloorAppearance PBRAppearance {
         baseColor 0.78 0.8 0.82
-        baseColorMap ImageTexture {
-          url [
-            "textures/floor_corridor.png"
-          ]
-        }
         roughness 0.6
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/floor_corridor.png" ] }
       }
-      geometry Box {
-        size 12 8 0.02
-      }
+      geometry Box { size 12 8 0.02 }
     }
   ]
-  name "floor_main"
-  boundingObject Box {
-    size 12 8 0.02
-  }
+  boundingObject Box { size 12 8 0.02 }
   locked TRUE
 }
 Solid {
@@ -1094,17 +670,12 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/marker_a.png"
-          ]
-        }
+        baseColor 1 1 1
         roughness 0.9
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/marker_a.png" ] }
       }
-      geometry Box {
-        size 0.5 0.5 0.01
-      }
+      geometry Box { size 0.5 0.5 0.01 }
     }
   ]
   name "marker_a"
@@ -1114,3101 +685,2684 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/marker_b.png"
-          ]
-        }
+        baseColor 1 1 1
         roughness 0.9
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/marker_b.png" ] }
       }
-      geometry Box {
-        size 0.5 0.5 0.01
-      }
+      geometry Box { size 0.5 0.5 0.01 }
     }
   ]
   name "marker_b"
 }
 Solid {
   translation 1.35 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_pharm_l"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_pharm_l"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 2.65 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_pharm_r"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_pharm_r"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 2 -0.64 1.35
+  rotation 0 0 1 0
+  name "door_frame_pharm_t"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.3 0.05 0.1
-      }
+      geometry Box { size 1.3 0.05 0.1 }
     }
   ]
-  name "door_frame_pharm_t"
-  boundingObject Box {
-    size 1.3 0.05 0.1
-  }
+  boundingObject Box { size 1.3 0.05 0.1 }
 }
 Solid {
   translation 2 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_pharm"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.8 0.9 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.2 0.05 1.2
-      }
+      geometry Box { size 1.2 0.05 1.2 }
     }
   ]
-  name "door_glass_pharm"
-  boundingObject Box {
-    size 1.2 0.05 1.2
-  }
+  boundingObject Box { size 1.2 0.05 1.2 }
 }
 Solid {
   translation 6.35 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_icu_l"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_icu_l"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 7.65 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_icu_r"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_icu_r"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 7 -0.64 1.35
+  rotation 0 0 1 0
+  name "door_frame_icu_t"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.3 0.05 0.1
-      }
+      geometry Box { size 1.3 0.05 0.1 }
     }
   ]
-  name "door_frame_icu_t"
-  boundingObject Box {
-    size 1.3 0.05 0.1
-  }
+  boundingObject Box { size 1.3 0.05 0.1 }
 }
 Solid {
   translation 7 -0.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_icu"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.8 0.9 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.2 0.05 1.2
-      }
+      geometry Box { size 1.2 0.05 1.2 }
     }
   ]
-  name "door_glass_icu"
-  boundingObject Box {
-    size 1.2 0.05 1.2
-  }
+  boundingObject Box { size 1.2 0.05 1.2 }
 }
 Solid {
   translation 3.35 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward2a_l"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_ward2a_l"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 4.65 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward2a_r"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_ward2a_r"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 4 3.76 1.35
+  rotation 0 0 1 0
+  name "door_frame_ward2a_t"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.3 0.05 0.1
-      }
+      geometry Box { size 1.3 0.05 0.1 }
     }
   ]
-  name "door_frame_ward2a_t"
-  boundingObject Box {
-    size 1.3 0.05 0.1
-  }
+  boundingObject Box { size 1.3 0.05 0.1 }
 }
 Solid {
   translation 4 3.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_ward2a"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.8 0.9 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.2 0.05 1.2
-      }
+      geometry Box { size 1.2 0.05 1.2 }
     }
   ]
-  name "door_glass_ward2a"
-  boundingObject Box {
-    size 1.2 0.05 1.2
-  }
+  boundingObject Box { size 1.2 0.05 1.2 }
 }
 Solid {
   translation 6.35 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward3b_l"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_ward3b_l"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 7.65 3.7 0.7
+  rotation 0 0 1 0
+  name "door_frame_ward3b_r"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.12 1.4
-      }
+      geometry Box { size 0.05 0.12 1.4 }
     }
   ]
-  name "door_frame_ward3b_r"
-  boundingObject Box {
-    size 0.05 0.12 1.4
-  }
+  boundingObject Box { size 0.05 0.12 1.4 }
 }
 Solid {
   translation 7 3.76 1.35
+  rotation 0 0 1 0
+  name "door_frame_ward3b_t"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.3 0.05 0.1
-      }
+      geometry Box { size 1.3 0.05 0.1 }
     }
   ]
-  name "door_frame_ward3b_t"
-  boundingObject Box {
-    size 1.3 0.05 0.1
-  }
+  boundingObject Box { size 1.3 0.05 0.1 }
 }
 Solid {
   translation 7 3.7 0.7
+  rotation 0 0 1 0
+  name "door_glass_ward3b"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.8 0.9 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.2 0.05 1.2
-      }
+      geometry Box { size 1.2 0.05 1.2 }
     }
   ]
-  name "door_glass_ward3b"
-  boundingObject Box {
-    size 1.2 0.05 1.2
-  }
+  boundingObject Box { size 1.2 0.05 1.2 }
 }
 Solid {
   translation -2.35 0 0.45
+  rotation 0 0 1 0
+  name "charging_tower"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.18 0.22 0.28
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.25 0.5 0.9
-      }
+      geometry Box { size 0.25 0.5 0.9 }
     }
   ]
-  name "charging_tower"
-  boundingObject Box {
-    size 0.25 0.5 0.9
-  }
+  boundingObject Box { size 0.25 0.5 0.9 }
 }
 Solid {
   translation -2.22 0 0.75
+  rotation 0 0 1 0
+  name "charging_led"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.95 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.02 0.25 0.06
-      }
+      geometry Box { size 0.02 0.25 0.06 }
     }
   ]
-  name "charging_led"
 }
 Solid {
   translation -2.17 0 0.003
+  rotation 0 0 1 0
+  name "charging_pads"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.75 0.2
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.3 0.006
-      }
+      geometry Box { size 0.2 0.3 0.006 }
     }
   ]
-  name "charging_pads"
 }
 Solid {
   translation -1 2 0.42
+  rotation 0 0 1 0
+  name "reception_desk"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.4 0.6 0.84
-      }
+      geometry Box { size 1.4 0.6 0.84 }
     }
   ]
-  name "reception_desk"
-  boundingObject Box {
-    size 1.4 0.6 0.84
-  }
+  boundingObject Box { size 1.4 0.6 0.84 }
 }
 Solid {
   translation -1 2 0.95
+  rotation 0 0 1 0
+  name "reception_pc"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.15 0.15 0.18
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.05 0.35 0.22
-      }
+      geometry Box { size 0.05 0.35 0.22 }
     }
   ]
-  name "reception_pc"
 }
 Solid {
   translation -0.5 0.75 0.32
   rotation 0 0 1 1.5708
+  name "wheelchair_reception_seat"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.15 0.2 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.45 0.45 0.06
-      }
+      geometry Box { size 0.45 0.45 0.06 }
     }
   ]
-  name "wheelchair_reception_seat"
-  boundingObject Box {
-    size 0.45 0.45 0.06
-  }
+  boundingObject Box { size 0.45 0.45 0.06 }
 }
 Solid {
   translation -0.5 0.55 0.55
   rotation 0 0 1 1.5708
+  name "wheelchair_reception_back"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.15 0.2 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.06 0.45 0.42
-      }
+      geometry Box { size 0.06 0.45 0.42 }
     }
   ]
-  name "wheelchair_reception_back"
 }
 Solid {
   translation -0.24 0.75 0.3
+  rotation 0 0 1 0
+  name "wheelchair_reception_w1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.03
-        radius 0.28
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.28 height 0.03 }
     }
   ]
-  name "wheelchair_reception_w1"
 }
 Solid {
   translation -0.76 0.75 0.3
+  rotation 0 0 1 0
+  name "wheelchair_reception_w2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.03
-        radius 0.28
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.28 height 0.03 }
     }
   ]
-  name "wheelchair_reception_w2"
 }
 Solid {
   translation 1.9 -1.6 0.42
+  rotation 0 0 1 0
+  name "pharm_counter"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.9 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.5 0.5 0.84
-      }
+      geometry Box { size 1.5 0.5 0.84 }
     }
   ]
-  name "pharm_counter"
-  boundingObject Box {
-    size 1.5 0.5 0.84
-  }
+  boundingObject Box { size 1.5 0.5 0.84 }
 }
 Solid {
   translation 1.9 -2.65 0.6
+  rotation 0 0 1 0
+  name "pharm_shelves"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.8 0.85 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 2.2 0.28 1.2
-      }
+      geometry Box { size 2.2 0.28 1.2 }
     }
   ]
-  name "pharm_shelves"
-  boundingObject Box {
-    size 2.2 0.28 1.2
-  }
+  boundingObject Box { size 2.2 0.28 1.2 }
 }
 Solid {
   translation 0.85 -2.4 0.55
+  rotation 0 0 1 0
+  name "pharm_fridge"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.5 0.5 1.1
-      }
+      geometry Box { size 0.5 0.5 1.1 }
     }
   ]
-  name "pharm_fridge"
-  boundingObject Box {
-    size 0.5 0.5 1.1
-  }
+  boundingObject Box { size 0.5 0.5 1.1 }
 }
 Solid {
   translation 3.55 -2.25 0.25
+  rotation 0 0 1 0
+  name "waiting_chair_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.4 0.65
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.4 0.45 0.45
-      }
+      geometry Box { size 1.4 0.45 0.45 }
     }
   ]
-  name "waiting_chair_1"
-  boundingObject Box {
-    size 1.4 0.45 0.45
-  }
+  boundingObject Box { size 1.4 0.45 0.45 }
 }
 Solid {
   translation 4.25 -2.25 0.25
+  rotation 0 0 1 0
+  name "waiting_chair_2"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.4 0.65
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.4 0.45 0.45
-      }
+      geometry Box { size 1.4 0.45 0.45 }
     }
   ]
-  name "waiting_chair_2"
-  boundingObject Box {
-    size 1.4 0.45 0.45
-  }
+  boundingObject Box { size 1.4 0.45 0.45 }
 }
 Solid {
   translation 4.95 -2.25 0.25
+  rotation 0 0 1 0
+  name "waiting_chair_3"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.4 0.65
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.4 0.45 0.45
-      }
+      geometry Box { size 1.4 0.45 0.45 }
     }
   ]
-  name "waiting_chair_3"
-  boundingObject Box {
-    size 1.4 0.45 0.45
-  }
+  boundingObject Box { size 1.4 0.45 0.45 }
 }
 Solid {
   translation 5.65 -2.25 0.25
+  rotation 0 0 1 0
+  name "waiting_chair_4"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.4 0.65
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.4 0.45 0.45
-      }
+      geometry Box { size 1.4 0.45 0.45 }
     }
   ]
-  name "waiting_chair_4"
-  boundingObject Box {
-    size 1.4 0.45 0.45
-  }
+  boundingObject Box { size 1.4 0.45 0.45 }
 }
 Solid {
   translation 3.35 -1.25 0.18
+  rotation 0 0 1 0
+  name "planter_0"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.72 0.75 0.76
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.22
-      }
+      appearance PBRAppearance { baseColor 0.72 0.75 0.76 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.22 height 0.34 }
     }
   ]
-  name "planter_0"
-  boundingObject Cylinder {
-    height 0.34
-    radius 0.22
-  }
+  boundingObject Cylinder { radius 0.22 height 0.34 }
 }
 Solid {
   translation 3.35 -1.25 0.75
+  rotation 0 0 1 0
+  name "plant_trunk_0"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.3 0.22 0.12
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.8
-        radius 0.035
-      }
+      appearance PBRAppearance { baseColor 0.3 0.22 0.12 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.035 height 0.8 }
     }
   ]
-  name "plant_trunk_0"
 }
 Solid {
   translation 3.35 -1.25 1
+  rotation 0 0 1 0
+  name "plant_leaf_0_0"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_0_0"
 }
 Solid {
   translation 3.51 -1.23 1
   rotation 0 0 1 0.785398
+  name "plant_leaf_0_1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_0_1"
 }
 Solid {
   translation 3.22 -1.13 1
   rotation 0 0 1 1.5708
+  name "plant_leaf_0_2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_0_2"
 }
 Solid {
   translation 3.39 -1.41 1
   rotation 0 0 1 2.35619
+  name "plant_leaf_0_3"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_0_3"
 }
 Solid {
   translation 5.95 -1.25 0.18
+  rotation 0 0 1 0
+  name "planter_1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.72 0.75 0.76
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.22
-      }
+      appearance PBRAppearance { baseColor 0.72 0.75 0.76 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.22 height 0.34 }
     }
   ]
-  name "planter_1"
-  boundingObject Cylinder {
-    height 0.34
-    radius 0.22
-  }
+  boundingObject Cylinder { radius 0.22 height 0.34 }
 }
 Solid {
   translation 5.95 -1.25 0.75
+  rotation 0 0 1 0
+  name "plant_trunk_1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.3 0.22 0.12
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.8
-        radius 0.035
-      }
+      appearance PBRAppearance { baseColor 0.3 0.22 0.12 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.035 height 0.8 }
     }
   ]
-  name "plant_trunk_1"
 }
 Solid {
   translation 5.95 -1.25 1
+  rotation 0 0 1 0
+  name "plant_leaf_1_0"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_1_0"
 }
 Solid {
   translation 6.11 -1.23 1
   rotation 0 0 1 0.785398
+  name "plant_leaf_1_1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_1_1"
 }
 Solid {
   translation 5.82 -1.13 1
   rotation 0 0 1 1.5708
+  name "plant_leaf_1_2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_1_2"
 }
 Solid {
   translation 5.99 -1.41 1
   rotation 0 0 1 2.35619
+  name "plant_leaf_1_3"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_1_3"
 }
 Solid {
   translation 8.75 1 0.18
+  rotation 0 0 1 0
+  name "planter_2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.72 0.75 0.76
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.22
-      }
+      appearance PBRAppearance { baseColor 0.72 0.75 0.76 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.22 height 0.34 }
     }
   ]
-  name "planter_2"
-  boundingObject Cylinder {
-    height 0.34
-    radius 0.22
-  }
+  boundingObject Cylinder { radius 0.22 height 0.34 }
 }
 Solid {
   translation 8.75 1 0.75
+  rotation 0 0 1 0
+  name "plant_trunk_2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.3 0.22 0.12
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.8
-        radius 0.035
-      }
+      appearance PBRAppearance { baseColor 0.3 0.22 0.12 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.035 height 0.8 }
     }
   ]
-  name "plant_trunk_2"
 }
 Solid {
   translation 8.75 1 1
+  rotation 0 0 1 0
+  name "plant_leaf_2_0"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_2_0"
 }
 Solid {
   translation 8.91 1.02 1
   rotation 0 0 1 0.785398
+  name "plant_leaf_2_1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_2_1"
 }
 Solid {
   translation 8.62 1.12 1
   rotation 0 0 1 1.5708
+  name "plant_leaf_2_2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_2_2"
 }
 Solid {
   translation 8.79 0.84 1
   rotation 0 0 1 2.35619
+  name "plant_leaf_2_3"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.48 0.28
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.34
-        radius 0.1
-      }
+      appearance PBRAppearance { baseColor 0.18 0.48 0.28 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.1 height 0.34 }
     }
   ]
-  name "plant_leaf_2_3"
 }
 Solid {
   translation 4.6 -2.72 1.05
+  rotation 0 0 1 0
+  name "waiting_wall_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.88 0.91 0.94
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.2 0.48
-      }
+      geometry Box { size 1.8 0.2 0.48 }
     }
   ]
-  name "waiting_wall_cabinet"
 }
 Solid {
   translation 6.4 -1.9 0.15
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "icu_bed_1_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 6.4 -1.9 0.32
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "icu_bed_1_mattress"
 }
 Solid {
   translation 6.4 -2.25 0.395
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "icu_bed_1_blue_blanket"
 }
 Solid {
   translation 6.4 -1.05 0.38
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.45 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "icu_bed_1_headboard"
 }
 Solid {
   translation 6.4 -1.25 0.4
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "icu_bed_1_pillow"
 }
 Solid {
   translation 5.85 -1.9 0.25
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "icu_bed_1_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 6.4 -2.35 0.43
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "icu_bed_1_bed_number"
 }
 Solid {
   translation 6.95 -1.5 0.6
+  rotation 0 0 1 0
+  name "icu_bed_1_iv_stand"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.8 0.8 0.85
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 1.2
-        radius 0.02
-      }
+      appearance PBRAppearance { baseColor 0.8 0.8 0.85 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.02 height 1.2 }
     }
   ]
-  name "icu_bed_1_iv_stand"
 }
 Solid {
   translation 6.95 -1.5 1
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_monitor"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.15 0.2
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.1 0.25 0.2
-      }
+      geometry Box { size 0.1 0.25 0.2 }
     }
   ]
-  name "icu_bed_1_monitor"
-  boundingObject Box {
-    size 0.1 0.25 0.2
-  }
+  boundingObject Box { size 0.1 0.25 0.2 }
 }
 Solid {
   translation 6.95 -1.55 1
   rotation 0 0 1 -1.5708
+  name "icu_bed_1_screen"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.9 0.3
         roughness 0.1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.01 0.22 0.16
-      }
+      geometry Box { size 0.01 0.22 0.16 }
     }
   ]
-  name "icu_bed_1_screen"
 }
 Solid {
   translation 7.8 -1.9 0.15
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "icu_bed_2_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 7.8 -1.9 0.32
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "icu_bed_2_mattress"
 }
 Solid {
   translation 7.8 -2.25 0.395
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "icu_bed_2_blue_blanket"
 }
 Solid {
   translation 7.8 -1.05 0.38
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.45 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "icu_bed_2_headboard"
 }
 Solid {
   translation 7.8 -1.25 0.4
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "icu_bed_2_pillow"
 }
 Solid {
   translation 7.25 -1.9 0.25
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "icu_bed_2_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 7.8 -2.35 0.43
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "icu_bed_2_bed_number"
 }
 Solid {
   translation 8.35 -1.5 0.6
+  rotation 0 0 1 0
+  name "icu_bed_2_iv_stand"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.8 0.8 0.85
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 1.2
-        radius 0.02
-      }
+      appearance PBRAppearance { baseColor 0.8 0.8 0.85 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.02 height 1.2 }
     }
   ]
-  name "icu_bed_2_iv_stand"
 }
 Solid {
   translation 8.35 -1.5 1
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_monitor"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.15 0.2
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.1 0.25 0.2
-      }
+      geometry Box { size 0.1 0.25 0.2 }
     }
   ]
-  name "icu_bed_2_monitor"
-  boundingObject Box {
-    size 0.1 0.25 0.2
-  }
+  boundingObject Box { size 0.1 0.25 0.2 }
 }
 Solid {
   translation 8.35 -1.55 1
   rotation 0 0 1 -1.5708
+  name "icu_bed_2_screen"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.1 0.9 0.3
         roughness 0.1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.01 0.22 0.16
-      }
+      geometry Box { size 0.01 0.22 0.16 }
     }
   ]
-  name "icu_bed_2_screen"
 }
 Solid {
   translation 4.92881 1.39928 0.43
   rotation 0 0 1 1.74533
+  name "nurse_counter_0"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_0"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 4.92881 1.60072 0.43
   rotation 0 0 1 1.39626
+  name "nurse_counter_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_1"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 4.99771 1.79 0.43
   rotation 0 0 1 1.0472
+  name "nurse_counter_2"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_2"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.12718 1.94431 0.43
   rotation 0 0 1 0.698132
+  name "nurse_counter_3"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_3"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.30163 2.04502 0.43
   rotation 0 0 1 0.349066
+  name "nurse_counter_4"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_4"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.5 2.08 0.43
+  rotation 0 0 1 -0
+  name "nurse_counter_5"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_5"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.69837 2.04502 0.43
   rotation 0 0 1 -0.349066
+  name "nurse_counter_6"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_6"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.87282 1.94431 0.43
   rotation 0 0 1 -0.698132
+  name "nurse_counter_7"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_7"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 6.00229 1.79 0.43
   rotation 0 0 1 -1.0472
+  name "nurse_counter_8"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_8"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 6.07119 1.60072 0.43
   rotation 0 0 1 -1.39626
+  name "nurse_counter_9"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_9"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 6.07119 1.39928 0.43
   rotation 0 0 1 -1.74533
+  name "nurse_counter_10"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.35 0.5
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.36 0.25 0.86
-      }
+      geometry Box { size 0.36 0.25 0.86 }
     }
   ]
-  name "nurse_counter_10"
-  boundingObject Box {
-    size 0.36 0.25 0.86
-  }
+  boundingObject Box { size 0.36 0.25 0.86 }
 }
 Solid {
   translation 5.18 1.98 0.98
+  rotation 0 0 1 0
+  name "nurse_pc_0"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.12 0.14 0.18
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.06 0.28 0.22
-      }
+      geometry Box { size 0.06 0.28 0.22 }
     }
   ]
-  name "nurse_pc_0"
 }
 Solid {
   translation 5.18 1.95 0.98
+  rotation 0 0 1 0
+  name "nurse_screen_0"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.12 0.62 0.88
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.015 0.23 0.16
-      }
+      geometry Box { size 0.015 0.23 0.16 }
     }
   ]
-  name "nurse_screen_0"
 }
 Solid {
   translation 5.82 1.98 0.98
+  rotation 0 0 1 0
+  name "nurse_pc_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.12 0.14 0.18
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.06 0.28 0.22
-      }
+      geometry Box { size 0.06 0.28 0.22 }
     }
   ]
-  name "nurse_pc_1"
 }
 Solid {
   translation 5.82 1.95 0.98
+  rotation 0 0 1 0
+  name "nurse_screen_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.12 0.62 0.88
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.015 0.23 0.16
-      }
+      geometry Box { size 0.015 0.23 0.16 }
     }
   ]
-  name "nurse_screen_1"
 }
 Solid {
   translation 5.5 0.75 0.32
   rotation 0 0 1 1.5708
+  name "nurse_station_chair_seat"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.15 0.2 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.45 0.45 0.06
-      }
+      geometry Box { size 0.45 0.45 0.06 }
     }
   ]
-  name "nurse_station_chair_seat"
-  boundingObject Box {
-    size 0.45 0.45 0.06
-  }
+  boundingObject Box { size 0.45 0.45 0.06 }
 }
 Solid {
   translation 5.5 0.55 0.55
   rotation 0 0 1 1.5708
+  name "nurse_station_chair_back"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.15 0.2 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.06 0.45 0.42
-      }
+      geometry Box { size 0.06 0.45 0.42 }
     }
   ]
-  name "nurse_station_chair_back"
 }
 Solid {
   translation 5.76 0.75 0.3
+  rotation 0 0 1 0
+  name "nurse_station_chair_w1"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.03
-        radius 0.28
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.28 height 0.03 }
     }
   ]
-  name "nurse_station_chair_w1"
 }
 Solid {
   translation 5.24 0.75 0.3
+  rotation 0 0 1 0
+  name "nurse_station_chair_w2"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.2 0.2 0.2
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.03
-        radius 0.28
-      }
+      appearance PBRAppearance { baseColor 0.2 0.2 0.2 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.28 height 0.03 }
     }
   ]
-  name "nurse_station_chair_w2"
 }
 Solid {
   translation 5.5 2.75 1.12
+  rotation 0 0 1 0
+  name "nurse_clock_rim"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.18 0.22 0.26
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 0.06
-        radius 0.22
-      }
+      appearance PBRAppearance { baseColor 0.18 0.22 0.26 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.22 height 0.06 }
     }
   ]
-  name "nurse_clock_rim"
 }
 Solid {
   translation 2.7 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward2a_bed_0_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 2.7 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward2a_bed_0_mattress"
 }
 Solid {
   translation 2.7 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward2a_bed_0_blue_blanket"
 }
 Solid {
   translation 2.7 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward2a_bed_0_headboard"
 }
 Solid {
   translation 2.7 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward2a_bed_0_pillow"
 }
 Solid {
   translation 2.15 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward2a_bed_0_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 2.7 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_0_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward2a_bed_0_bed_number"
 }
 Solid {
   translation 3.4 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward2a_bed_1_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 3.4 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward2a_bed_1_mattress"
 }
 Solid {
   translation 3.4 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward2a_bed_1_blue_blanket"
 }
 Solid {
   translation 3.4 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward2a_bed_1_headboard"
 }
 Solid {
   translation 3.4 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward2a_bed_1_pillow"
 }
 Solid {
   translation 2.85 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward2a_bed_1_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 3.4 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_1_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward2a_bed_1_bed_number"
 }
 Solid {
   translation 3.05 4.5 0.75
+  rotation 0 0 1 0
+  name "ward2a_curtain_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward2a_curtain_1"
 }
 Solid {
   translation 4.1 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward2a_bed_2_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 4.1 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward2a_bed_2_mattress"
 }
 Solid {
   translation 4.1 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward2a_bed_2_blue_blanket"
 }
 Solid {
   translation 4.1 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward2a_bed_2_headboard"
 }
 Solid {
   translation 4.1 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward2a_bed_2_pillow"
 }
 Solid {
   translation 3.55 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward2a_bed_2_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 4.1 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_2_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward2a_bed_2_bed_number"
 }
 Solid {
   translation 3.75 4.5 0.75
+  rotation 0 0 1 0
+  name "ward2a_curtain_2"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward2a_curtain_2"
 }
 Solid {
   translation 4.8 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward2a_bed_3_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 4.8 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward2a_bed_3_mattress"
 }
 Solid {
   translation 4.8 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward2a_bed_3_blue_blanket"
 }
 Solid {
   translation 4.8 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward2a_bed_3_headboard"
 }
 Solid {
   translation 4.8 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward2a_bed_3_pillow"
 }
 Solid {
   translation 4.25 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward2a_bed_3_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 4.8 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward2a_bed_3_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward2a_bed_3_bed_number"
 }
 Solid {
   translation 4.45 4.5 0.75
+  rotation 0 0 1 0
+  name "ward2a_curtain_3"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward2a_curtain_3"
 }
 Solid {
   translation 3.75 4.5 1.48
   rotation 0 0 1 1.5708
+  name "ward2a_curtain_rail"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.78 0.82 0.86
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 2.6
-        radius 0.025
-      }
+      appearance PBRAppearance { baseColor 0.78 0.82 0.86 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.025 height 2.6 }
     }
   ]
-  name "ward2a_curtain_rail"
 }
 Solid {
   translation 5.8 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward3b_bed_0_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 5.8 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward3b_bed_0_mattress"
 }
 Solid {
   translation 5.8 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward3b_bed_0_blue_blanket"
 }
 Solid {
   translation 5.8 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward3b_bed_0_headboard"
 }
 Solid {
   translation 5.8 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward3b_bed_0_pillow"
 }
 Solid {
   translation 5.25 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward3b_bed_0_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 5.8 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_0_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward3b_bed_0_bed_number"
 }
 Solid {
   translation 6.6 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward3b_bed_1_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 6.6 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward3b_bed_1_mattress"
 }
 Solid {
   translation 6.6 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward3b_bed_1_blue_blanket"
 }
 Solid {
   translation 6.6 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward3b_bed_1_headboard"
 }
 Solid {
   translation 6.6 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward3b_bed_1_pillow"
 }
 Solid {
   translation 6.05 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward3b_bed_1_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 6.6 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_1_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward3b_bed_1_bed_number"
 }
 Solid {
   translation 6.2 4.5 0.75
+  rotation 0 0 1 0
+  name "ward3b_curtain_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward3b_curtain_1"
 }
 Solid {
   translation 7.4 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward3b_bed_2_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 7.4 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward3b_bed_2_mattress"
 }
 Solid {
   translation 7.4 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward3b_bed_2_blue_blanket"
 }
 Solid {
   translation 7.4 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward3b_bed_2_headboard"
 }
 Solid {
   translation 7.4 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward3b_bed_2_pillow"
 }
 Solid {
   translation 6.85 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward3b_bed_2_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 7.4 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_2_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward3b_bed_2_bed_number"
 }
 Solid {
   translation 7 4.5 0.75
+  rotation 0 0 1 0
+  name "ward3b_curtain_2"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward3b_curtain_2"
 }
 Solid {
   translation 8.2 4.5 0.15
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_frame"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.25 0.28 0.3
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.8 0.85 0.25
-      }
+      geometry Box { size 1.8 0.85 0.25 }
     }
   ]
-  name "ward3b_bed_3_frame"
-  boundingObject Box {
-    size 1.8 0.85 0.25
-  }
+  boundingObject Box { size 1.8 0.85 0.25 }
 }
 Solid {
   translation 8.2 4.5 0.32
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_mattress"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.95 0.98
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.8 0.12
-      }
+      geometry Box { size 1.7 0.8 0.12 }
     }
   ]
-  name "ward3b_bed_3_mattress"
 }
 Solid {
   translation 8.2 4.15 0.395
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_blue_blanket"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.2 0.43 0.82
         roughness 0.9
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.9 0.78 0.035
-      }
+      geometry Box { size 0.9 0.78 0.035 }
     }
   ]
-  name "ward3b_bed_3_blue_blanket"
 }
 Solid {
   translation 8.2 5.35 0.38
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_headboard"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.88 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.08 0.85 0.45
-      }
+      geometry Box { size 0.08 0.85 0.45 }
     }
   ]
-  name "ward3b_bed_3_headboard"
 }
 Solid {
   translation 8.2 5.15 0.4
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_pillow"
   children [
     Shape {
       appearance PBRAppearance {
+        baseColor 1 1 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.35 0.55 0.08
-      }
+      geometry Box { size 0.35 0.55 0.08 }
     }
   ]
-  name "ward3b_bed_3_pillow"
 }
 Solid {
   translation 7.65 4.5 0.25
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_cabinet"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.85 0.9 0.95
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.4 0.4 0.5
-      }
+      geometry Box { size 0.4 0.4 0.5 }
     }
   ]
-  name "ward3b_bed_3_cabinet"
-  boundingObject Box {
-    size 0.4 0.4 0.5
-  }
+  boundingObject Box { size 0.4 0.4 0.5 }
 }
 Solid {
   translation 8.2 4.05 0.43
   rotation 0 0 1 -1.5708
+  name "ward3b_bed_3_bed_number"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.95 0.98 1
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.3 0.16 0.012
-      }
+      geometry Box { size 0.3 0.16 0.012 }
     }
   ]
-  name "ward3b_bed_3_bed_number"
 }
 Solid {
   translation 7.8 4.5 0.75
+  rotation 0 0 1 0
+  name "ward3b_curtain_3"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.35 0.7 0.7
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.03 1.2 1.4
-      }
+      geometry Box { size 0.03 1.2 1.4 }
     }
   ]
-  name "ward3b_curtain_3"
 }
 Solid {
   translation 7 4.5 1.48
   rotation 0 0 1 1.5708
+  name "ward3b_curtain_rail"
   children [
     Shape {
-      appearance PBRAppearance {
-        baseColor 0.78 0.82 0.86
-        roughness 0.5
-        metalness 0.2
-      }
-      geometry Cylinder {
-        height 2.8
-        radius 0.025
-      }
+      appearance PBRAppearance { baseColor 0.78 0.82 0.86 roughness 0.5 metalness 0.2 }
+      geometry Cylinder { radius 0.025 height 2.8 }
     }
   ]
-  name "ward3b_curtain_rail"
 }
 Solid {
   translation 3.75 5.08 0.92
+  rotation 0 0 1 0
+  name "ward2a_outer_window"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.48 0.72 0.84
-        transparency 0.28
         roughness 0.2
         metalness 0
+        transparency 0.28
       }
-      geometry Box {
-        size 1.75 0.035 0.72
-      }
+      geometry Box { size 1.75 0.035 0.72 }
     }
   ]
-  name "ward2a_outer_window"
 }
 Solid {
   translation 3.75 5.04 0.53
+  rotation 0 0 1 0
+  name "ward2a_window_sill"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.88 0.9 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.85 0.12 0.07
-      }
+      geometry Box { size 1.85 0.12 0.07 }
     }
   ]
-  name "ward2a_window_sill"
 }
 Solid {
   translation 7 5.08 0.92
+  rotation 0 0 1 0
+  name "ward3b_outer_window"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.48 0.72 0.84
-        transparency 0.28
         roughness 0.2
         metalness 0
+        transparency 0.28
       }
-      geometry Box {
-        size 1.75 0.035 0.72
-      }
+      geometry Box { size 1.75 0.035 0.72 }
     }
   ]
-  name "ward3b_outer_window"
 }
 Solid {
   translation 7 5.04 0.53
+  rotation 0 0 1 0
+  name "ward3b_window_sill"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.88 0.9 0.92
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.85 0.12 0.07
-      }
+      geometry Box { size 1.85 0.12 0.07 }
     }
   ]
-  name "ward3b_window_sill"
 }
 Solid {
   translation 0 -1.65 0.48
+  rotation 0 0 1 0
+  name "medicine_delivery_counter"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.9 0.93 0.96
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 1.7 0.58 0.92
-      }
+      geometry Box { size 1.7 0.58 0.92 }
     }
   ]
-  name "medicine_delivery_counter"
-  boundingObject Box {
-    size 1.7 0.58 0.92
-  }
+  boundingObject Box { size 1.7 0.58 0.92 }
 }
 Solid {
   translation -0.45 -1.62 1.05
+  rotation 0 0 1 0
+  name "medicine_delivery_monitor"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.12 0.14 0.18
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.06 0.32 0.24
-      }
+      geometry Box { size 0.06 0.32 0.24 }
     }
   ]
-  name "medicine_delivery_monitor"
 }
 Solid {
   translation 1.05 -2.48 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_1"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.88 0.25 0.28
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_1"
 }
 Solid {
   translation 1.67 -2.48 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_2"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.22 0.55 0.84
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_2"
 }
 Solid {
   translation 2.29 -2.48 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_3"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.88 0.68 0.18
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_3"
 }
 Solid {
   translation 1.05 -2.73 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_4"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.32 0.7 0.42
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_4"
 }
 Solid {
   translation 1.67 -2.73 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_5"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.72 0.38 0.72
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_5"
 }
 Solid {
   translation 2.29 -2.73 0.42
+  rotation 0 0 1 0
+  name "pharmacy_medicine_box_6"
   children [
     Shape {
       appearance PBRAppearance {
         baseColor 0.92 0.92 0.9
         roughness 1
         metalness 0
+        transparency 0
       }
-      geometry Box {
-        size 0.2 0.16 0.2
-      }
+      geometry Box { size 0.2 0.16 0.2 }
     }
   ]
-  name "pharmacy_medicine_box_6"
 }
 Solid {
   translation 0 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_00.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_00.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_0"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 3 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_01.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_01.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_1"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 5.9 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_02.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_02.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_2"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 8.4 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_03.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_03.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_3"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 2.5 3.63 1
@@ -4216,24 +3370,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_04.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_04.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_4"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 5.5 3.63 1
@@ -4241,24 +3387,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_05.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_05.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_5"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 8.5 3.63 1
@@ -4266,96 +3404,67 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_06.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_06.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_6"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 1 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_07.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_07.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_7"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 6 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_08.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_08.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_8"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 8 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_09.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_09.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_9"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 3.15 3.63 1
@@ -4363,24 +3472,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_10.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_10.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_10"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 4.9 3.63 1
@@ -4388,24 +3489,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_11.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_11.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_11"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 6 3.63 1
@@ -4413,24 +3506,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_12.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_12.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_12"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 8 3.63 1
@@ -4438,24 +3523,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_13.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_13.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_13"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation -2.53 0 1
@@ -4463,24 +3540,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_14.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_14.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_14"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 9.13 0 1
@@ -4488,72 +3557,50 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_15.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_15.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_15"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 1.9 -2.73 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_16.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_16.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_16"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 7 -2.73 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_17.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_17.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_17"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 3.8 5.13 1
@@ -4561,24 +3608,16 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_18.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_18.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_18"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 Solid {
   translation 7 5.13 1
@@ -4586,28 +3625,21 @@ Solid {
   children [
     Shape {
       appearance PBRAppearance {
-        baseColorMap ImageTexture {
-          url [
-            "textures/tag_19.png"
-          ]
-          filtering 0
-        }
+        baseColor 1 1 1
         roughness 0.5
         metalness 0
+        baseColorMap ImageTexture { url [ "textures/tag_19.png" ] filtering 0 }
       }
-      geometry Box {
-        size 0.363636 0.01 0.363636
-      }
+      geometry Box { size 0.363636 0.01 0.363636 }
     }
   ]
+  boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_19"
-  boundingObject Box {
-    size 0.363636 0.01 0.363636
-  }
 }
 DEF TROLLEY Solid {
-  translation -1.50075321516678 1.7981353298472444 0.04013009931350654
-  rotation -0.9218272217283782 0.3875981545648993 -0.0014979514090507535 0.07344201495904192
+  translation -1.5 1.8 0.1
+  rotation 0 0 1 0
+  name "trolley"
   children [
     Shape {
       appearance PBRAppearance {
@@ -4615,113 +3647,56 @@ DEF TROLLEY Solid {
         roughness 1
         metalness 0
       }
-      geometry Box {
-        size 0.6 0.5 0.2
-      }
+      geometry Box { size 0.6 0.5 0.2 }
     }
   ]
-  name "trolley"
-  boundingObject Box {
-    size 0.6 0.5 0.2
-  }
-  physics Physics {
-    density -1
-    mass 15
-  }
-  linearVelocity -5.9876964002342925e-05 -7.196411296193883e-05 -2.631776839380505e-05
-  angularVelocity -0.0014987902705643923 0.0002597790732421704 4.0904621141899485e-07
+  boundingObject Box { size 0.6 0.5 0.2 }
+  physics Physics { density -1 mass 15 }
 }
 DEF OBSTACLE_WHEELCHAIR Solid {
-  translation -1.5 1.8 -2717.824846979949
-  rotation 0.5276556228456808 0.8489392687561669 -0.02969278772835764 7.021072881069807e-14
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.12 0.32 0.72
-        roughness 0.75
-      }
-      geometry Box {
-        size 0.6 0.5 0.45
-      }
-    }
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.08 0.08 0.1
-        roughness 0.8
-      }
-      geometry Cylinder {
-        height 0.035
-        radius 0.24
-      }
-    }
-  ]
+  translation -1.5 1.8 -10
   name "wheelchair_obstacle"
-  boundingObject Box {
-    size 0.6 0.5 0.45
-  }
-  physics Physics {
-    density -1
-    mass 18
-  }
-  linearVelocity -8.1562831761937675e-19 -2.872821585790678e-17 -1083.3761264319437
-  angularVelocity 3.349888404320178e-16 5.389598232728464e-16 -1.88508415331069e-17
+  children [
+    Shape { appearance PBRAppearance { baseColor 0.12 0.32 0.72 roughness 0.75 }
+      geometry Box { size 0.6 0.5 0.45 } }
+    Shape { appearance PBRAppearance { baseColor 0.08 0.08 0.1 roughness 0.8 }
+      geometry Cylinder { radius 0.24 height 0.035 } }
+  ]
+  boundingObject Box { size 0.6 0.5 0.45 }
+  physics Physics { density -1 mass 18 }
 }
 DEF OBSTACLE_CART Solid {
-  translation -1.5 1.8 -2725.1804365664734
-  rotation -0.513702551622296 -0.8573518447764209 0.03251926683076157 4.854539588085037e-14
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.72 0.76 0.8
-        roughness 0.55
-        metalness 0.35
-      }
-      geometry Box {
-        size 0.65 0.55 0.55
-      }
-    }
-  ]
+  translation -1.5 1.8 -10
   name "equipment_cart_obstacle"
-  boundingObject Box {
-    size 0.65 0.55 0.55
-  }
-  physics Physics {
-    density -1
-    mass 20
-  }
-  linearVelocity 7.340654858574392e-19 2.58553942721161e-17 -1086.2857742114234
-  angularVelocity -2.2549455415857725e-16 -3.7634263521638404e-16 1.42746372436906e-17
+  children [ Shape { appearance PBRAppearance { baseColor 0.72 0.76 0.8 roughness 0.55 metalness 0.35 }
+    geometry Box { size 0.65 0.55 0.55 } } ]
+  boundingObject Box { size 0.65 0.55 0.55 }
+  physics Physics { density -1 mass 20 }
 }
 DEF MEDIBOT Robot {
-  translation 0.7391413578175762 2.379689086250165e-09 0.07818479641562687
-  rotation 0.00019142388244361075 -0.9999997510805793 -0.0006791138909810245 5.509805427152697e-05
+  translation 0 0 0.06
+  rotation 0 0 1 0
+  name "MediBot"
+  controller "medibot_controller"
+  supervisor TRUE
   children [
+    # Main Body Chassis
     Pose {
       translation 0 0 0.06
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.95 0.96 0.98
-            roughness 0.5
-            metalness 0.1
-          }
-          geometry Box {
-            size 0.44 0.24 0.12
-          }
+          appearance PBRAppearance { baseColor 0.95 0.96 0.98 roughness 0.5 metalness 0.1 }
+          geometry Box { size 0.44 0.24 0.12 }
         }
       ]
     }
+    # Hospital Blue Side Skirts
     Pose {
       translation 0 0.122 0.06
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.12 0.4 0.8
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.42 0.008 0.08
-          }
+          appearance PBRAppearance { baseColor 0.12 0.40 0.80 roughness 0.4 }
+          geometry Box { size 0.42 0.008 0.08 }
         }
       ]
     }
@@ -4729,177 +3704,118 @@ DEF MEDIBOT Robot {
       translation 0 -0.122 0.06
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.12 0.4 0.8
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.42 0.008 0.08
-          }
+          appearance PBRAppearance { baseColor 0.12 0.40 0.80 roughness 0.4 }
+          geometry Box { size 0.42 0.008 0.08 }
         }
       ]
     }
+    # Front Bumper
     Pose {
       translation 0.222 0 0.06
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.25 0.3
-            roughness 0.6
-          }
-          geometry Box {
-            size 0.025 0.24 0.08
-          }
+          appearance PBRAppearance { baseColor 0.2 0.25 0.3 roughness 0.6 }
+          geometry Box { size 0.025 0.24 0.08 }
         }
       ]
     }
+    # Front MediBot Logo Badge
     Pose {
       translation 0.235 0 0.085
       children [
         Shape {
-          appearance Appearance {
-            texture ImageTexture {
-              url [
-                "textures/medibot_logo.png"
-              ]
-            }
-          }
+          appearance Appearance { texture ImageTexture { url [ "textures/medibot_logo.png" ] } }
           geometry IndexedFaceSet {
-            coord Coordinate {
-              point [
-                0.002 -0.06 -0.025
-                0.002 0.06 -0.025
-                0.002 0.06 0.025
-                0.002 -0.06 0.025
-              ]
-            }
-            texCoord TextureCoordinate {
-              point [
-                0 0
-                1 0
-                1 1
-                0 1
-              ]
-            }
-            coordIndex [
-              0, 1, 2, 3, -1
-            ]
-            texCoordIndex [
-              0, 1, 2, 3, -1
-            ]
+            coord Coordinate { point [ 0.002 -0.06 -0.025, 0.002 0.06 -0.025, 0.002 0.06 0.025, 0.002 -0.06 0.025 ] }
+            texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
+            coordIndex [ 0 1 2 3 -1 ]
+            texCoordIndex [ 0 1 2 3 -1 ]
           }
         }
       ]
     }
+    # Front Status LED Strip
     LED {
       translation 0.236 0 0.038
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0 1 0
-            roughness 0.2
-            emissiveColor 0.8627451062202454 0 0
-          }
-          geometry Box {
-            size 0.008 0.14 0.018
-          }
-        }
-      ]
       name "status_led"
       gradual TRUE
+      children [
+        Shape {
+          appearance PBRAppearance { baseColor 0 1 0 roughness 0.2 emissiveColor 0 1 0 }
+          geometry Box { size 0.008 0.14 0.018 }
+        }
+      ]
     }
+    # Tall Mast Column (~0.85m tall)
     Pose {
       translation 0.14 0 0.48
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.94 0.95 0.97
-            roughness 0.5
-            metalness 0.2
-          }
-          geometry Box {
-            size 0.045 0.055 0.72
-          }
+          appearance PBRAppearance { baseColor 0.94 0.95 0.97 roughness 0.5 metalness 0.2 }
+          geometry Box { size 0.045 0.055 0.72 }
         }
       ]
     }
+    # Mast Blue Racing Stripe
     Pose {
       translation 0.164 0 0.48
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.12 0.4 0.8
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.005 0.035 0.7
-          }
+          appearance PBRAppearance { baseColor 0.12 0.40 0.80 roughness 0.4 }
+          geometry Box { size 0.005 0.035 0.70 }
         }
       ]
     }
+    # RFID Badge Reader Module
     Pose {
-      translation 0.166 0 0.4
+      translation 0.166 0 0.40
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.18 0.22 0.28
-            roughness 0.3
-          }
-          geometry Box {
-            size 0.012 0.07 0.09
-          }
+          appearance PBRAppearance { baseColor 0.18 0.22 0.28 roughness 0.3 }
+          geometry Box { size 0.012 0.07 0.09 }
         }
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.75 0.95
-            roughness 0.3
-            emissiveColor 0.1 0.4 0.6
-          }
-          geometry Box {
-            size 0.015 0.045 0.045
-          }
+          appearance PBRAppearance { baseColor 0.2 0.75 0.95 roughness 0.3 emissiveColor 0.1 0.4 0.6 }
+          geometry Box { size 0.015 0.045 0.045 }
         }
       ]
     }
+    # Mast Head Holding Face Camera
     Pose {
       translation 0.14 0 0.88
       children [
         Shape {
-          appearance PBRAppearance {
-            baseColor 0.12 0.35 0.75
-            roughness 0.4
-            metalness 0.3
-          }
-          geometry Box {
-            size 0.09 0.13 0.08
-          }
+          appearance PBRAppearance { baseColor 0.12 0.35 0.75 roughness 0.4 metalness 0.3 }
+          geometry Box { size 0.09 0.13 0.08 }
         }
       ]
     }
+    # Face Camera on Head (pointing forward and slightly down at patient/nurse faces)
     Camera {
       translation 0.19 0 0.88
       rotation 0 1 0 0.18
       name "face_cam"
-      fieldOfView 0.9
       width 640
       height 480
+      fieldOfView 0.9
       near 0.05
     }
+    # Navigation Camera at AprilTag Level
     Camera {
       translation 0.22 0 0.94
-      fieldOfView 1.6
+      name "camera"
       width 960
       height 720
+      fieldOfView 1.6
       near 0.05
     }
+    # Front Sonars
     DistanceSensor {
       translation 0.236 0 0.04
+      rotation 0 0 1 0
       name "us_front"
-      lookupTable [
-        0 0 0
-        4 4 0
-      ]
       type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
       numberOfRays 3
       aperture 0.3
     }
@@ -4907,11 +3823,8 @@ DEF MEDIBOT Robot {
       translation 0.226 0.08 0.04
       rotation 0 0 1 0.7854
       name "us_left"
-      lookupTable [
-        0 0 0
-        4 4 0
-      ]
       type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
       numberOfRays 3
       aperture 0.3
     }
@@ -4919,665 +3832,338 @@ DEF MEDIBOT Robot {
       translation 0.226 -0.08 0.04
       rotation 0 0 1 -0.7854
       name "us_right"
-      lookupTable [
-        0 0 0
-        4 4 0
-      ]
       type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
       numberOfRays 3
       aperture 0.3
     }
-    InertialUnit {
-      translation 0 0 0.04
-      name "imu"
-    }
-    Gyro {
-      translation 0 0 0.04
-    }
-    Accelerometer {
-      translation 0 0 0.04
-      name "accel"
-    }
-    Pose {
-      translation 0.04 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.24 0.3
-            roughness 0.5
-          }
-          geometry Box {
-            size 0.09 0.2 0.006
-          }
+    # IMU, Gyro, Accelerometer
+    InertialUnit { translation 0 0 0.04 name "imu" }
+    Gyro { translation 0 0 0.04 name "gyro" }
+    Accelerometer { translation 0 0 0.04 name "accel" }
+    # 3 Lockable Medicine Compartments
+
+        # Compartment 1 tray rim
+        Pose {
+          translation 0.04 0 0.122
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
+            }
+          ]
         }
-      ]
-    }
-    LED {
-      translation 0.04 0.115 0.135
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 1 0 0
-            roughness 0.2
-            emissiveColor 0.8627451062202454 0 0
-          }
-          geometry Sphere {
-            radius 0.008
-          }
+        # Lock Indicator LED 1 (red when locked, green when unlocked)
+        LED {
+          translation 0.04 0.115 0.135
+          name "led_lock_1"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-      ]
-      name "led_lock_1"
-      gradual TRUE
-    }
-    DEF CARGO_1 Solid {
-      translation 0.04 0 0.09
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.85 0.15 0.15
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.045 0.07 0.035
-          }
+        # Medicine Cargo Box 1
+        DEF CARGO_1 Solid {
+          translation 0.04 0 0.09
+          name "cargo_1"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.85 0.15 0.15 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-      name "cargo_1"
-    }
-    HingeJoint {
-      jointParameters HingeJointParameters {
-        position -1.1772064509328735e-08
-        axis 0 1 0
-        anchor 0.08 0 0.13
-      }
-      device [
-        RotationalMotor {
-          name "lid_1"
-          maxVelocity 3
-          minPosition -1.6
-        }
-        PositionSensor {
-          name "lid_1_ps"
-        }
-      ]
-      endPoint Solid {
-        translation 0.08 0 0.13
-        rotation 0.05347021573353418 -0.5341636582231362 0.8436884035371623 6.098037218719226e-16
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 1
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor 0.08 0 0.13 }
+          device [
+            RotationalMotor { name "lid_1" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_1_ps" }
+          ]
+          endPoint Solid {
+            translation 0.08 0 0.13
+            name "lid_1_solid"
             children [
-              Shape {
-                appearance PBRAppearance {
-                  baseColor 0.18 0.55 0.85
-                  roughness 0.4
-                  metalness 0.1
-                }
-                geometry Box {
-                  size 0.08 0.19 0.008
-                }
-              }
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance {
-                      roughness 0.3
-                    }
-                    geometry Box {
-                      size 0.03 0.03 0.002
-                    }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
+            }
+            physics Physics { density -1 mass 0.03 }
           }
-        ]
-        name "lid_1_solid"
-        boundingObject Pose {
-          translation -0.04 0 0.004
+        }
+
+        # Compartment 2 tray rim
+        Pose {
+          translation -0.06 0 0.122
           children [
-            Box {
-              size 0.08 0.19 0.008
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
             }
           ]
         }
-        physics Physics {
-          density -1
-          mass 0.03
+        # Lock Indicator LED 2 (red when locked, green when unlocked)
+        LED {
+          translation -0.06 0.115 0.135
+          name "led_lock_2"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-        linearVelocity 0.3000000000589408 1.315453039495307e-08 3.340094422725236e-09
-        angularVelocity -1.273642964116319e-07 2.985807210231398e-10 4.798457060933768e-10
-      }
-    }
-    Pose {
-      translation -0.06 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.24 0.3
-            roughness 0.5
-          }
-          geometry Box {
-            size 0.09 0.2 0.006
-          }
+        # Medicine Cargo Box 2
+        DEF CARGO_2 Solid {
+          translation -0.06 0 0.09
+          name "cargo_2"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.15 0.45 0.85 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-    }
-    LED {
-      translation -0.06 0.115 0.135
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 1 0 0
-            roughness 0.2
-            emissiveColor 0.8627451062202454 0 0
-          }
-          geometry Sphere {
-            radius 0.008
-          }
-        }
-      ]
-      name "led_lock_2"
-      gradual TRUE
-    }
-    DEF CARGO_2 Solid {
-      translation -0.06 0 0.09
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.15 0.45 0.85
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.045 0.07 0.035
-          }
-        }
-      ]
-      name "cargo_2"
-    }
-    HingeJoint {
-      jointParameters HingeJointParameters {
-        position -1.1772065542547643e-08
-        axis 0 1 0
-        anchor -0.02 0 0.13
-      }
-      device [
-        RotationalMotor {
-          name "lid_2"
-          maxVelocity 3
-          minPosition -1.6
-        }
-        PositionSensor {
-          name "lid_2_ps"
-        }
-      ]
-      endPoint Solid {
-        translation -0.02 0 0.13
-        rotation 0.05668891998206296 -0.9303331599711574 0.36230729748287954 9.447827254209116e-16
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 2
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor -0.02 0 0.13 }
+          device [
+            RotationalMotor { name "lid_2" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_2_ps" }
+          ]
+          endPoint Solid {
+            translation -0.02 0 0.13
+            name "lid_2_solid"
             children [
-              Shape {
-                appearance PBRAppearance {
-                  baseColor 0.18 0.55 0.85
-                  roughness 0.4
-                  metalness 0.1
-                }
-                geometry Box {
-                  size 0.08 0.19 0.008
-                }
-              }
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance {
-                      roughness 0.3
-                    }
-                    geometry Box {
-                      size 0.03 0.03 0.002
-                    }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
+            }
+            physics Physics { density -1 mass 0.03 }
           }
-        ]
-        name "lid_2_solid"
-        boundingObject Pose {
-          translation -0.04 0 0.004
+        }
+
+        # Compartment 3 tray rim
+        Pose {
+          translation -0.16 0 0.122
           children [
-            Box {
-              size 0.08 0.19 0.008
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
             }
           ]
         }
-        physics Physics {
-          density -1
-          mass 0.03
+        # Lock Indicator LED 3 (red when locked, green when unlocked)
+        LED {
+          translation -0.16 0.115 0.135
+          name "led_lock_3"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-        linearVelocity 0.30000000005895977 1.310585510122114e-08 3.3699508865332686e-09
-        angularVelocity -1.2736429960920582e-07 2.9855667715152063e-10 4.798423991848741e-10
-      }
-    }
-    Pose {
-      translation -0.16 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.2 0.24 0.3
-            roughness 0.5
-          }
-          geometry Box {
-            size 0.09 0.2 0.006
-          }
+        # Medicine Cargo Box 3
+        DEF CARGO_3 Solid {
+          translation -0.16 0 0.09
+          name "cargo_3"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.15 0.75 0.35 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-    }
-    LED {
-      translation -0.16 0.115 0.135
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 1 0 0
-            roughness 0.2
-            emissiveColor 0.8627451062202454 0 0
-          }
-          geometry Sphere {
-            radius 0.008
-          }
-        }
-      ]
-      name "led_lock_3"
-      gradual TRUE
-    }
-    DEF CARGO_3 Solid {
-      translation -0.16 0 0.09
-      children [
-        Shape {
-          appearance PBRAppearance {
-            baseColor 0.15 0.75 0.35
-            roughness 0.4
-          }
-          geometry Box {
-            size 0.045 0.07 0.035
-          }
-        }
-      ]
-      name "cargo_3"
-    }
-    HingeJoint {
-      jointParameters HingeJointParameters {
-        position -1.1772064673626379e-08
-        axis 0 1 0
-        anchor -0.12 0 0.13
-      }
-      device [
-        RotationalMotor {
-          name "lid_3"
-          maxVelocity 3
-          minPosition -1.6
-        }
-        PositionSensor {
-          name "lid_3_ps"
-        }
-      ]
-      endPoint Solid {
-        translation -0.12 0 0.13
-        rotation 0.4888992093000214 -0.4058294482743266 0.7721917003304101 3.2212465912779983e-16
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 3
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor -0.12 0 0.13 }
+          device [
+            RotationalMotor { name "lid_3" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_3_ps" }
+          ]
+          endPoint Solid {
+            translation -0.12 0 0.13
+            name "lid_3_solid"
             children [
-              Shape {
-                appearance PBRAppearance {
-                  baseColor 0.18 0.55 0.85
-                  roughness 0.4
-                  metalness 0.1
-                }
-                geometry Box {
-                  size 0.08 0.19 0.008
-                }
-              }
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance {
-                      roughness 0.3
-                    }
-                    geometry Box {
-                      size 0.03 0.03 0.002
-                    }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
-          }
-        ]
-        name "lid_3_solid"
-        boundingObject Pose {
-          translation -0.04 0 0.004
-          children [
-            Box {
-              size 0.08 0.19 0.008
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
             }
-          ]
+            physics Physics { density -1 mass 0.03 }
+          }
         }
-        physics Physics {
-          density -1
-          mass 0.03
-        }
-        linearVelocity 0.30000000005897615 1.3057180152320595e-08 3.3998077906609967e-09
-        angularVelocity -1.2736429666522735e-07 2.985635419168744e-10 4.798438728914813e-10
-      }
-    }
+    # 4 Wheels
     HingeJoint {
-      jointParameters HingeJointParameters {
-        position 356.7082193832449
-        axis 0 1 0
-        anchor 0.14 0.14 0
-      }
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 0.14 0 }
       device [
-        RotationalMotor {
-          name "wheel_fl"
-          maxVelocity 20
-        }
-        PositionSensor {
-          name "ps_fl"
-        }
+        RotationalMotor { name "wheel_fl" maxVelocity 20 }
+        PositionSensor { name "ps_fl" }
       ]
       endPoint Solid {
         translation 0.14 0.14 0
-        rotation -0.630195916580852 0.5490222638116381 -0.5490242804867231 4.266243304883755
+        rotation 1 0 0 1.5708
         children [
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.15 0.15 0.15
-              roughness 0.8
-              metalness 0.2
-            }
-            geometry Cylinder {
-              height 0.032
-              radius 0.06
-            }
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
           }
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.85 0.88 0.92
-              roughness 0.4
-              metalness 0.7
-            }
-            geometry Cylinder {
-              height 0.034
-              radius 0.03
-            }
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
           }
         ]
         name "wheel_fl_solid"
-        boundingObject Cylinder {
-          height 0.032
-          radius 0.06
-        }
-        physics Physics {
-          density -1
-          mass 0.25
-        }
-        linearVelocity 0.3000000006705884 -1.028445872059597e-08 -1.4153285857351552e-08
-        angularVelocity 6.601026541431929e-08 4.999999798741732 6.594158558367982e-08
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
     }
     HingeJoint {
-      jointParameters HingeJointParameters {
-        position 317.50621812987305
-        axis 0 1 0
-        anchor 0.14 -0.14 0
-      }
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 -0.14 0 }
       device [
-        RotationalMotor {
-          name "wheel_fr"
-          maxVelocity 20
-        }
-        PositionSensor {
-          name "ps_fr"
-        }
+        RotationalMotor { name "wheel_fr" maxVelocity 20 }
+        PositionSensor { name "ps_fr" }
       ]
       endPoint Solid {
         translation 0.14 -0.14 0
-        rotation -0.07266950392412752 0.7052359496622346 -0.7052385401432817 3.286676099802403
+        rotation 1 0 0 1.5708
         children [
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.15 0.15 0.15
-              roughness 0.8
-              metalness 0.2
-            }
-            geometry Cylinder {
-              height 0.032
-              radius 0.06
-            }
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
           }
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.85 0.88 0.92
-              roughness 0.4
-              metalness 0.7
-            }
-            geometry Cylinder {
-              height 0.034
-              radius 0.03
-            }
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
           }
         ]
         name "wheel_fr_solid"
-        boundingObject Cylinder {
-          height 0.032
-          radius 0.06
-        }
-        physics Physics {
-          density -1
-          mass 0.25
-        }
-        linearVelocity 0.3000000033813524 -1.035146792016661e-08 2.080958859627545e-08
-        angularVelocity 6.498599135431612e-08 5.000000202334113 6.045839550337477e-08
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
     }
     HingeJoint {
-      jointParameters HingeJointParameters {
-        position 356.7081774625155
-        axis 0 1 0
-        anchor -0.14 0.14 0
-      }
+      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 0.14 0 }
       device [
-        RotationalMotor {
-          name "wheel_rl"
-          maxVelocity 20
-        }
-        PositionSensor {
-          name "ps_rl"
-        }
+        RotationalMotor { name "wheel_rl" maxVelocity 20 }
+        PositionSensor { name "ps_rl" }
       ]
       endPoint Solid {
         translation -0.14 0.14 0
-        rotation -0.6301798385799381 0.5490314911595782 -0.5490335078685574 4.26622028927658
+        rotation 1 0 0 1.5708
         children [
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.15 0.15 0.15
-              roughness 0.8
-              metalness 0.2
-            }
-            geometry Cylinder {
-              height 0.032
-              radius 0.06
-            }
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
           }
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.85 0.88 0.92
-              roughness 0.4
-              metalness 0.7
-            }
-            geometry Cylinder {
-              height 0.034
-              radius 0.03
-            }
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
           }
         ]
         name "wheel_rl_solid"
-        boundingObject Cylinder {
-          height 0.032
-          radius 0.06
-        }
-        physics Physics {
-          density -1
-          mass 0.25
-        }
-        linearVelocity 0.29999999665245863 2.488750481467037e-09 -1.4071348580216329e-08
-        angularVelocity 6.605542193396988e-08 4.999999798263003 6.462806924070961e-08
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
     }
     HingeJoint {
-      jointParameters HingeJointParameters {
-        position 317.5061813008035
-        axis 0 1 0
-        anchor -0.14 -0.14 0
-      }
+      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 -0.14 0 }
       device [
-        RotationalMotor {
-          name "wheel_rr"
-          maxVelocity 20
-        }
-        PositionSensor {
-          name "ps_rr"
-        }
+        RotationalMotor { name "wheel_rr" maxVelocity 20 }
+        PositionSensor { name "ps_rr" }
       ]
       endPoint Solid {
         translation -0.14 -0.14 0
-        rotation -0.07265644871052696 0.705236622222064 -0.7052392127055814 3.2866501266061934
+        rotation 1 0 0 1.5708
         children [
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.15 0.15 0.15
-              roughness 0.8
-              metalness 0.2
-            }
-            geometry Cylinder {
-              height 0.032
-              radius 0.06
-            }
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
           }
           Shape {
-            appearance PBRAppearance {
-              baseColor 0.85 0.88 0.92
-              roughness 0.4
-              metalness 0.7
-            }
-            geometry Cylinder {
-              height 0.034
-              radius 0.03
-            }
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
           }
         ]
         name "wheel_rr_solid"
-        boundingObject Cylinder {
-          height 0.032
-          radius 0.06
-        }
-        physics Physics {
-          density -1
-          mass 0.25
-        }
-        linearVelocity 0.29999999936322314 2.4215921749638584e-09 2.0891525411269033e-08
-        angularVelocity 6.503072811784685e-08 5.000000201855384 5.9144992689318915e-08
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
     }
   ]
-  name "MediBot"
+  # Low BoundingObject and Stable Physics Center of Mass (Cannot tip over)
   boundingObject Pose {
     translation 0 0 0.06
-    children [
-      Box {
-        size 0.44 0.24 0.12
-      }
-    ]
+    children [ Box { size 0.44 0.24 0.12 } ]
   }
   physics Physics {
     density -1
     mass 8
-    centerOfMass [
-      0 0 -0.01
-    ]
+    centerOfMass [ 0 0 -0.01 ]
   }
-  controller "medibot_controller"
-  supervisor TRUE
-  linearVelocity 0.3000000000159249 -5.205397174601559e-09 3.352311684960351e-09
-  angularVelocity -1.2736429803953346e-07 2.985795568109677e-10 4.798449405644775e-10
-}
-DEF ROUTE_0 Pose {
-  translation 1 0 0.008
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 0.4 1
-          emissiveColor 0 0.4 1
-        }
-      }
-      geometry Box {
-        size 2 0.06 0.004
-      }
-    }
-  ]
-}
-DEF ROUTE_1 Pose {
-  translation 3 0 0.008
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 0.4 1
-          emissiveColor 0 0.4 1
-        }
-      }
-      geometry Box {
-        size 2 0.06 0.004
-      }
-    }
-  ]
-}
-DEF ROUTE_2 Pose {
-  translation 4 1.5 0.008
-  rotation 0 0 1 1.5708
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 0.4 1
-          emissiveColor 0 0.4 1
-        }
-      }
-      geometry Box {
-        size 3 0.06 0.004
-      }
-    }
-  ]
-}
-DEF ROUTE_3 Pose {
-  translation 5.5 3 0.008
-  children [
-    Shape {
-      appearance Appearance {
-        material Material {
-          diffuseColor 0 0.4 1
-          emissiveColor 0 0.4 1
-        }
-      }
-      geometry Box {
-        size 3 0.06 0.004
-      }
-    }
-  ]
 }

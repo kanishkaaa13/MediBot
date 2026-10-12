@@ -137,6 +137,7 @@ class TagLocalizer:
         fy = fx  # Webots camera pixels are square; fieldOfView is horizontal.
         self.K = np.array([[fx, 0, self.w / 2], [0, fy, self.h / 2], [0, 0, 1]], np.float64)
         self.tags = {t["id"]: t for t in cfg["tags"]}
+        self.last_diagnostics = []
         s = cfg["tag"]["size"] / 2
         self.obj = np.array([[-s, s, 0], [s, s, 0], [s, -s, 0], [-s, -s, 0]], np.float32)
 
@@ -215,6 +216,7 @@ class TagLocalizer:
         """
         # Run the detector ONCE for the whole image (not per-tag).
         corners_all, ids_all, _ = self._detect(gray)
+        self.last_diagnostics = []
         if ids_all is None:
             return []
 
@@ -239,15 +241,24 @@ class TagLocalizer:
 
             pix = corners_for_tag.reshape(4, 2)
             edge_px = min(float(np.linalg.norm(pix[(i + 1) % 4] - pix[i])) for i in range(4))
-            if edge_px < 20.0:
+            diag = {"id": tag["id"], "dist": float("nan"), "bearing": float("nan"),
+                    "incidence": float("nan"), "pixel_size": edge_px, "candidate": None,
+                    "reason": "unprocessed"}
+            self.last_diagnostics.append(diag)
+            if edge_px < 25.0:
+                diag["reason"] = "tag smaller than 25 px"
                 continue
 
             # --- 3. Solve for pose (both IPPE solutions) ---
             tag_cands = self._candidates(corners_for_tag, tag)
+            if tag_cands:
+                diag["dist"] = tag_cands[0]["dist"]
+                diag["bearing"] = tag_cands[0]["bearing"]
 
             # --- 4. Reprojection filter ---
             tag_cands = [c for c in tag_cands if c["reproj"] <= max_reproj]
             if not tag_cands:
+                diag["reason"] = "pose solve or reprojection rejected"
                 continue
 
             # --- 5. Hint-based disambiguation: pick candidate closest to hint ---
@@ -277,16 +288,26 @@ class TagLocalizer:
                 inc = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))
 
             if inc > 60.0:
+                diag["incidence"] = inc
+                diag["reason"] = "incidence over 60 deg"
                 continue
 
             # Discard isolated pose jumps before the EKF blend. A later stable
             # observation can still relocalize through the controller buffer.
             if hint and math.hypot(cand["x"] - hint[0], cand["y"] - hint[1]) > 0.5:
+                diag["incidence"] = inc
+                diag["candidate"] = cand
+                diag["reason"] = "pose jump over 0.5 m"
                 continue
 
             cand["id"] = tag["id"]
             cand["incidence"] = inc
             cand["pixel_size"] = edge_px
+            diag["dist"] = cand["dist"]
+            diag["bearing"] = cand["bearing"]
+            diag["incidence"] = inc
+            diag["candidate"] = cand
+            diag["reason"] = "candidate"
             results.append(cand)
 
         return results

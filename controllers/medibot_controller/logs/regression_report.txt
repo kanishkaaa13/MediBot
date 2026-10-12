@@ -2,45 +2,21 @@ REGRESSION REPORT
 ==================================================
 
 Scenario A:
-  Completed: True
-  Duration: 108.0 s
-  Final distance from HOME: 0.300 m
-  Mean pose error: 9.0 cm
-  Max pose error: 58.7 cm
-  Tag corrections: 293
+  Trial: 1
+  Completed: False
+  Duration: 7.9 s
+  Final distance from HOME: 1.834 m
+  Final heading error: 0.0 deg
+  Mean pose error: 0.4 cm
+  Max pose error: 0.5 cm
+  Tag corrections: 1
   Obstacle stops: 0
   Replans: 0
   Route via ICU: False
-  Delivered: True
-  Mission result: mission complete - robot back at HOME
-  Result: FAIL
-
-Scenario B:
-  Completed: True
-  Duration: 115.9 s
-  Final distance from HOME: 0.831 m
-  Mean pose error: 12.4 cm
-  Max pose error: 74.4 cm
-  Tag corrections: 490
-  Obstacle stops: 1
-  Replans: 1
-  Route via ICU: True
-  Delivered: True
-  Mission result: mission complete - robot back at HOME
-  Result: FAIL
-
-Scenario C:
-  Completed: True
-  Duration: 105.5 s
-  Final distance from HOME: 0.255 m
-  Mean pose error: 24.3 cm
-  Max pose error: 44.0 cm
-  Tag corrections: 0
-  Obstacle stops: 0
-  Replans: 0
-  Route via ICU: False
-  Delivered: True
-  Mission result: mission complete - robot back at HOME
+  Delivered: False
+  Mission result: Webots step returned -1
+  Webots step ended: True
+  Destination: WARD-3B
   Result: FAIL
 
 OVERALL: SOME TESTS FAILED

@@ -11,7 +11,10 @@ Keys (click the 3D view first so it has keyboard focus):
 import csv
 import math
 import os
+import sys
 import time
+import traceback
+from collections import deque
 
 try:
     import cv2
@@ -238,6 +241,13 @@ class MediBot:
         self.n_corrections = 0
         self.errs = []
         self.log_f = self.log_w = None
+        self.tag_log_f = self.tag_log_w = None
+        self.tag_filter = deque(maxlen=3)
+        self.home_tag_pose = None
+        self.home_tag_seen_t = -float("inf")
+        self.tag_last_detection_t = -float("inf")
+        self.dock_position_locked = False
+        self.dock_debug_t = -float("inf")
         self.route_nodes = []
         self.detour_nodes = []
         self.dest = "-"
@@ -293,7 +303,7 @@ class MediBot:
         print(__doc__)
         if self.regression_mode:
             print("[REGRESSION] Automatic regression mode enabled")
-            print("[REGRESSION] Running scenarios A, B, D sequentially...")
+            print("[REGRESSION] Automatic runs selected by MEDIBOT_REGRESSION_SCENARIOS")
             self.run_regression()
         else:
             print("[MediBot] ready - state IDLE. Press S to start a delivery to WARD-3B.")
@@ -325,6 +335,7 @@ class MediBot:
             "NAVIGATE": LED_BLUE,
             "APPROACH": LED_BLUE,
             "RETURN":   LED_BLUE,
+            "DOCK":     LED_BLUE,
             "VERIFY":   LED_ORANGE,
         }.get(state, LED_RED)    # BLOCKED / any other -> red
         self.status_led.set(colour)
@@ -425,20 +436,48 @@ class MediBot:
         meas = self.loc.measure(gray, hint=tuple(self.ekf.x))
         self.tag_seen = bool(meas)
         if not meas:
+            for diag in self.loc.last_diagnostics:
+                self._write_tag_diagnostic(diag, False, diag.get("reason", "rejected"))
             return
         m = min(meas, key=lambda d: d["dist"])
         now = self.now()
+        if now - self.tag_last_detection_t > 0.5:
+            self.tag_filter.clear()
+        self.tag_last_detection_t = now
+        home_tag_id = next((t["id"] for t in CFG["tags"]
+                            if t.get("zone") == "home_south"), None)
+        home_m = next((obs for obs in meas if obs["id"] == home_tag_id), None)
+        if home_m is not None:
+            self.home_tag_pose = dict(home_m)
+            self.home_tag_seen_t = now
         if self.state != "IDLE" and now - self.last_tag_print_t >= 1.0:
             self.last_tag_print_t = now
             print(f"[TAG id={m['id']} range={m['dist']:.2f} "
                   f"bearing={math.degrees(m['bearing']):.1f}deg]")
         if not self.tags_enabled:
             self.last_tag_msg = f"tag {m['id']} seen (correction OFF)"
+            for diag in self.loc.last_diagnostics:
+                self._write_tag_diagnostic(diag, False, "tag correction disabled")
             return
+
+        self.tag_filter.append(dict(m))
+        if len(self.tag_filter) < self.tag_filter.maxlen:
+            for diag in self.loc.last_diagnostics:
+                reason = "median filter warming up" if diag["id"] == m["id"] else "not selected"
+                self._write_tag_diagnostic(diag, False, reason)
+            return
+        history = list(self.tag_filter)
+        m_filtered = dict(m)
+        m_filtered["x"] = float(np.median([obs["x"] for obs in history]))
+        m_filtered["y"] = float(np.median([obs["y"] for obs in history]))
+        _, _, current_heading = self.ekf.x
+        m_filtered["yaw"] = wrap(current_heading + float(np.median(
+            [wrap(obs["yaw"] - current_heading) for obs in history])))
 
         # Mahalanobis test for tag acceptance
         x, y, th = self.ekf.x
-        innovation = np.array([m["x"] - x, m["y"] - y, wrap(m["yaw"] - th)])
+        innovation = np.array([m_filtered["x"] - x, m_filtered["y"] - y,
+                               wrap(m_filtered["yaw"] - th)])
         sp, st = self.loc.noise(m["dist"])
         R = np.diag([sp ** 2, sp ** 2, st ** 2])
         S = self.ekf.P + R
@@ -448,12 +487,25 @@ class MediBot:
             mahalanobis = float('inf')
 
         # Minimum accept radius check
-        dist_error = math.hypot(m["x"] - x, m["y"] - y)
+        dist_error = math.hypot(m_filtered["x"] - x, m_filtered["y"] - y)
+        accepted, reject_reason = False, ""
+        correction_m, correction_deg = 0.0, 0.0
 
         if mahalanobis < MAHALANOBIS_THRESH and dist_error > MIN_ACCEPT_RADIUS:
-            # Accept the tag fix
+            # Apply a bounded EKF correction so one frame cannot move the pose
+            # estimate more than 5 cm or 3 degrees.
             before = self.true_err() * 100
-            self.ekf.update([m["x"], m["y"], m["yaw"]], sp, st)
+            old_pose = self.ekf.x.copy()
+            self.ekf.update([m_filtered["x"], m_filtered["y"], m_filtered["yaw"]], sp, st)
+            delta = self.ekf.x - old_pose
+            position_delta = math.hypot(float(delta[0]), float(delta[1]))
+            if position_delta > 0.05:
+                delta[:2] *= 0.05 / position_delta
+            delta[2] = max(-math.radians(3.0), min(math.radians(3.0), wrap(float(delta[2]))))
+            self.ekf.x = old_pose + delta
+            self.ekf.x[2] = wrap(float(self.ekf.x[2]))
+            correction_m = math.hypot(float(delta[0]), float(delta[1]))
+            correction_deg = math.degrees(float(delta[2]))
 
             # Assert EKF state is finite after update
             if not np.all(np.isfinite(self.ekf.x)):
@@ -464,6 +516,7 @@ class MediBot:
 
             after = self.true_err() * 100
             self.n_corrections += 1
+            accepted = True
             # Get tag zone for display
             tag_info = next((t for t in CFG["tags"] if t["id"] == m["id"]), None)
             zone = tag_info.get("zone", "unknown") if tag_info else "unknown"
@@ -475,6 +528,7 @@ class MediBot:
                       f"error before: {before:.1f} cm | after: {after:.1f} cm | "
                       f"variance(P): {self.ekf.pos_variance:.4f}")
         else:
+            reject_reason = "mahalanobis outlier" if mahalanobis >= MAHALANOBIS_THRESH else "below correction deadband"
             # Reject the tag fix
             self.last_tag_msg = f"tag {m['id']} rejected (outlier)"
             # Add to rejected buffer
@@ -484,40 +538,69 @@ class MediBot:
                 "x": m["x"],
                 "y": m["y"],
                 "yaw": m["yaw"],
-                "id": m["id"]
+                "id": m["id"], "dist": m["dist"], "bearing": m["bearing"],
+                "incidence": m.get("incidence", float("nan")),
+                "pixel_size": m.get("pixel_size", float("nan")),
             })
             # Clean old rejected fixes
             self.rejected_fixes = [f for f in self.rejected_fixes if now - f["t"] < REJECT_BUFFER_TIME]
 
-            # Check for re-localisation trigger
-            if len(self.rejected_fixes) >= REJECT_MIN_COUNT:
-                # Check if rejected fixes agree with each other
-                recent = self.rejected_fixes[-REJECT_MIN_COUNT:]
-                avg_x = sum(f["x"] for f in recent) / len(recent)
-                avg_y = sum(f["y"] for f in recent) / len(recent)
-                avg_yaw = sum(wrap(f["yaw"]) for f in recent) / len(recent)
-                avg_yaw = wrap(avg_yaw)
+        relocal_delta = (0.0, 0.0)
+        if not accepted:
+            relocal_delta = self._maybe_relocalize()
+        for diag in self.loc.last_diagnostics:
+            if diag["id"] == m["id"]:
+                did_relocalize = math.hypot(*relocal_delta) > 0.0
+                self._write_tag_diagnostic(diag, accepted or did_relocalize,
+                                           "bounded relocalization" if did_relocalize else
+                                           ("accepted" if accepted else reject_reason),
+                                           relocal_delta[0] if did_relocalize else correction_m,
+                                           relocal_delta[1] if did_relocalize else correction_deg)
+            else:
+                self._write_tag_diagnostic(diag, False, "not selected")
 
-                # Check agreement
-                pos_agree = all(math.hypot(f["x"] - avg_x, f["y"] - avg_y) < REJECT_AGREE_POS
-                               for f in recent)
-                th_agree = all(abs(wrap(f["yaw"] - avg_yaw)) < REJECT_AGREE_TH
-                              for f in recent)
+    def _write_tag_diagnostic(self, diag, accepted, reason, correction_m=0.0, correction_deg=0.0):
+        if self.tag_log_w is None:
+            return
+        self.tag_log_w.writerow([
+            f"{self.now():.3f}", self.step_no, self.regression_scenario or "manual",
+            diag.get("id", ""), diag.get("dist", float("nan")),
+            math.degrees(diag.get("bearing", float("nan"))),
+            diag.get("incidence", float("nan")), diag.get("pixel_size", float("nan")),
+            f"{correction_m:.4f}", f"{correction_deg:.3f}", int(accepted), reason])
+        self.tag_log_f.flush()
 
-                # Check if from at least 2 different tag IDs or same ID over >= 0.5s
-                tag_ids = set(f["id"] for f in recent)
-                time_span = recent[-1]["t"] - recent[0]["t"]
-                diverse_ids = len(tag_ids) >= 2 or (len(tag_ids) == 1 and time_span >= 0.5)
-
-                if pos_agree and th_agree and diverse_ids:
-                    # Re-localise
-                    old_x, old_y, old_th = self.ekf.x
-                    self.ekf.x = np.array([avg_x, avg_y, avg_yaw])
-                    self.ekf.P = np.diag([1.0, 1.0, 1.0])  # Large uncertainty
-                    tag_str = ",".join(str(tid) for tid in sorted(tag_ids))
-                    print(f"[RELOCALISE] from ({old_x:.2f},{old_y:.2f}) to ({avg_x:.2f},{avg_y:.2f}) "
-                          f"using tags {tag_str}")
-                    self.rejected_fixes = []
+    def _maybe_relocalize(self):
+        """Use a short sequence of consistent outliers to recover a lost pose."""
+        if len(self.rejected_fixes) < REJECT_MIN_COUNT:
+            return 0.0, 0.0
+        recent = self.rejected_fixes[-REJECT_MIN_COUNT:]
+        avg_x = sum(f["x"] for f in recent) / len(recent)
+        avg_y = sum(f["y"] for f in recent) / len(recent)
+        avg_yaw = wrap(sum(wrap(f["yaw"]) for f in recent) / len(recent))
+        pos_agree = all(math.hypot(f["x"] - avg_x, f["y"] - avg_y) < REJECT_AGREE_POS
+                        for f in recent)
+        th_agree = all(abs(wrap(f["yaw"] - avg_yaw)) < REJECT_AGREE_TH for f in recent)
+        tag_ids = set(f["id"] for f in recent)
+        time_span = recent[-1]["t"] - recent[0]["t"]
+        diverse_ids = len(tag_ids) >= 2 or (len(tag_ids) == 1 and time_span >= 0.5)
+        if pos_agree and th_agree and diverse_ids:
+            old_x, old_y, _old_th = self.ekf.x
+            dx, dy, dth = avg_x - old_x, avg_y - old_y, wrap(avg_yaw - self.ekf.x[2])
+            distance = math.hypot(dx, dy)
+            if distance > 0.05:
+                dx *= 0.05 / distance
+                dy *= 0.05 / distance
+            dth = max(-math.radians(3.0), min(math.radians(3.0), dth))
+            self.ekf.x += np.array([dx, dy, dth])
+            self.ekf.x[2] = wrap(float(self.ekf.x[2]))
+            self.ekf.P = np.diag([0.04, 0.04, 0.04])
+            tag_str = ",".join(str(tid) for tid in sorted(tag_ids))
+            print(f"[RELOCALISE] bounded step {math.hypot(dx, dy):.3f} m / "
+                  f"{math.degrees(dth):.1f} deg toward ({avg_x:.2f},{avg_y:.2f}) using tags {tag_str}")
+            self.rejected_fixes = []
+            return math.hypot(dx, dy), math.degrees(dth)
+        return 0.0, 0.0
 
     # ------------------------------------------------------------ planning / drawing
     def plan(self, start, goal):
@@ -591,6 +674,20 @@ class MediBot:
                     dash_i += 1
         except Exception as e:
             print("[draw] could not draw detour:", e)
+
+    def clear_route_visuals(self):
+        """Remove all dynamic route overlays and drop their Webots node handles."""
+        removed = 0
+        for node in self.route_nodes + self.detour_nodes:
+            try:
+                node.remove()
+                removed += 1
+            except Exception as exc:
+                print(f"[draw] route node already unavailable: {exc}")
+        self.route_nodes.clear()
+        self.detour_nodes.clear()
+        if removed:
+            print(f"[draw] removed {removed} route overlay nodes")
 
     def _point_ahead_on_route(self, distance):
         """Return (x, y, heading, edge index) at distance along the active path."""
@@ -721,6 +818,10 @@ class MediBot:
             if last:
                 self.stop()
                 return True
+            # Brake before switching legs. Without this, the old forward wheel
+            # velocities carry the chassis past a waypoint while the next leg
+            # is already rotating in place.
+            self.stop()
             self.idx += 1
             print(f"[NAV] reached {name} -> heading to {self.route[self.idx]}")
             return False
@@ -731,8 +832,10 @@ class MediBot:
         if v > 0.0:
             if last:
                 v = min(v, max(0.08, dist * 1.2))
-            elif dist < 0.30:
-                v = min(v, max(0.12, dist * 1.2))
+            elif dist < 0.60:
+                # Reduce approach speed before each turn so chassis momentum
+                # does not carry the robot beyond the waypoint during braking.
+                v = min(v, max(0.05, dist * 0.4))
 
         if v > 0 and self.obstacle():
             self.stop()
@@ -771,12 +874,19 @@ class MediBot:
         os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs"), exist_ok=True)
         fn = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "logs",
-            f"mission_{time.strftime('%H%M%S')}_tags_{'ON' if self.tags_enabled else 'OFF'}.csv")
+            f"mission_{time.time_ns()}_tags_{'ON' if self.tags_enabled else 'OFF'}.csv")
         self.log_f = open(fn, "w", newline="")
         self.log_w = csv.writer(self.log_f)
         self.log_w.writerow(["t", "state", "tags_on", "est_x", "est_y",
                              "true_x", "true_y", "err_cm", "tag_seen"])
         print(f"[LOG] {fn}")
+        tag_fn = os.path.join(os.path.dirname(fn), f"tag_corrections_{time.time_ns()}.csv")
+        self.tag_log_f = open(tag_fn, "w", newline="")
+        self.tag_log_w = csv.writer(self.tag_log_f)
+        self.tag_log_w.writerow(["t", "step", "scenario", "tag_id", "range_m",
+                                 "bearing_deg", "incidence_deg", "size_px",
+                                 "correction_m", "correction_deg", "accepted", "reason"])
+        print(f"[TAGLOG] {tag_fn}")
         self.set_state("NAVIGATE")
 
     def end_mission(self, why):
@@ -788,6 +898,9 @@ class MediBot:
         if self.log_f:
             self.log_f.close()
             self.log_f = None
+        if self.tag_log_f:
+            self.tag_log_f.close()
+            self.tag_log_f = self.tag_log_w = None
         self.stop()
         self.set_state("IDLE")
 
@@ -826,8 +939,18 @@ class MediBot:
                    0.01, 0.95, 0.05, 0x555555, 0, "Arial")
 
     def run_regression(self):
-        """Run regression scenarios A, B, D automatically."""
-        scenarios = ["A", "B", "D"]
+        """Run selected scenarios; env vars permit separate/repeated Webots runs."""
+        requested = os.environ.get("MEDIBOT_REGRESSION_SCENARIOS", "A,B").upper()
+        scenarios = [name.strip() for name in requested.split(",")
+                     if name.strip() in {"A", "B", "D"}]
+        if not scenarios:
+            scenarios = ["A", "B"]
+        try:
+            repeat = max(1, min(3, int(os.environ.get("MEDIBOT_REGRESSION_REPEAT", "1"))))
+        except ValueError:
+            repeat = 1
+        scenarios = [scenario for scenario in scenarios for _ in range(repeat)]
+        print(f"[REGRESSION] scenario queue: {', '.join(scenarios)}")
         results = []
 
         for scenario in scenarios:
@@ -844,6 +967,10 @@ class MediBot:
             self.last_mission_result = None
             self.mission_destination = "WARD-2A" if scenario == "D" else "WARD-3B"
             self.tags_enabled = True
+            self.tag_filter.clear()
+            self.home_tag_pose = None
+            self.home_tag_seen_t = -float("inf")
+            self.tag_last_detection_t = -float("inf")
 
             # Setup for each scenario
             self.reset()
@@ -855,8 +982,14 @@ class MediBot:
             self.start_mission()
 
             # Wait for mission completion (max 120 s)
+            webots_stopped = False
             while self.state != "IDLE" and (self.now() - self.regression_start_t) < 180:
-                self.robot.step(TIME_STEP)
+                step_status = self.robot.step(TIME_STEP)
+                if step_status == -1:
+                    print(f"[REGRESSION][ERROR] robot.step returned -1 during scenario {scenario}; "
+                          "stopping this trial because Webots has ended the simulation")
+                    webots_stopped = True
+                    break
                 self.step_no += 1
                 self.localize_step()
                 if self.step_no % 2 == 0:
@@ -873,28 +1006,40 @@ class MediBot:
 
             # Collect results
             duration = self.now() - self.regression_start_t
-            tx, ty, _ = self.true_pose()
+            if webots_stopped:
+                tx, ty = float(self.ekf.x[0]), float(self.ekf.x[1])
+                _tx, _ty, final_heading = self.ekf.x
+            else:
+                tx, ty, final_heading = self.true_pose()
             final_dist_home = math.hypot(tx - CFG["robot"]["start"][0], ty - CFG["robot"]["start"][1])
+            final_heading_error_deg = abs(math.degrees(wrap(
+                final_heading - CFG["robot"]["start"][2])))
             mean_err = np.mean(self.errs) if self.errs else float('inf')
             max_err = np.max(self.errs) if self.errs else float('inf')
 
             result = {
                 "scenario": scenario,
+                "trial": sum(1 for previous in results if previous["scenario"] == scenario) + 1,
                 "completed": self.state == "IDLE",
                 "delivered": self.mission_delivered,
-                "mission_result": self.last_mission_result or "",
+                "mission_result": (self.last_mission_result or
+                                   ("Webots step returned -1" if webots_stopped else "")),
                 "duration": duration,
                 "final_dist_home": final_dist_home,
+                "final_heading_error_deg": final_heading_error_deg,
                 "mean_err": mean_err,
                 "max_err": max_err,
                 "n_corrections": self.n_corrections,
                 "obstacle_stops": self.obstacle_stops,
                 "replans": self.replans,
                 "route_via_icu": self.regression_route_via_icu,
+                "webots_stopped": webots_stopped,
             }
             results.append(result)
 
             # Clean up
+            if webots_stopped:
+                break
             self.unblock()
             self.tags_enabled = True
 
@@ -906,9 +1051,11 @@ class MediBot:
             f.write("=" * 50 + "\n\n")
             for r in results:
                 f.write(f"Scenario {r['scenario']}:\n")
+                f.write(f"  Trial: {r['trial']}\n")
                 f.write(f"  Completed: {r['completed']}\n")
                 f.write(f"  Duration: {r['duration']:.1f} s\n")
                 f.write(f"  Final distance from HOME: {r['final_dist_home']:.3f} m\n")
+                f.write(f"  Final heading error: {r['final_heading_error_deg']:.1f} deg\n")
                 f.write(f"  Mean pose error: {r['mean_err']:.1f} cm\n")
                 f.write(f"  Max pose error: {r['max_err']:.1f} cm\n")
                 f.write(f"  Tag corrections: {r['n_corrections']}\n")
@@ -917,47 +1064,55 @@ class MediBot:
                 f.write(f"  Route via ICU: {r['route_via_icu']}\n")
                 f.write(f"  Delivered: {r['delivered']}\n")
                 f.write(f"  Mission result: {r['mission_result']}\n")
+                f.write(f"  Webots step ended: {r['webots_stopped']}\n")
                 f.write(f"  Destination: {'WARD-2A' if r['scenario'] == 'D' else 'WARD-3B'}\n")
 
                 # Determine PASS/FAIL
                 passed = True
                 if r['scenario'] == "A":
-                    passed = (r['completed'] and r['duration'] < 120 and
-                             r['mission_result'] == "mission complete - robot back at HOME" and
-                             r['final_dist_home'] < 0.3 and
-                             r['mean_err'] < 15 and r['max_err'] < 40)
+                    passed = (r['completed'] and
+                             r['mission_result'] == "mission complete - robot docked at HOME" and
+                             r['final_dist_home'] < 0.15 and
+                             r['final_heading_error_deg'] <= 10.0 and
+                             r['mean_err'] < 8 and r['max_err'] < 25)
                 elif r['scenario'] == "B":
                     passed = (r['completed'] and r['obstacle_stops'] >= 1 and
                               r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
-                              r['mission_result'] == "mission complete - robot back at HOME" and
-                              r['final_dist_home'] < 0.3)
+                              r['mission_result'] == "mission complete - robot docked at HOME" and
+                              r['final_dist_home'] < 0.15 and
+                              r['final_heading_error_deg'] <= 10.0 and
+                              r['mean_err'] < 8 and r['max_err'] < 25)
                 elif r['scenario'] == "D":
                     passed = (r['completed'] and r['delivered'] and
-                              r['mission_result'] == "mission complete - robot back at HOME" and
-                              r['final_dist_home'] < 0.30)
+                              r['mission_result'] == "mission complete - robot docked at HOME" and
+                              r['final_dist_home'] < 0.15 and
+                              r['final_heading_error_deg'] <= 10.0)
 
                 f.write(f"  Result: {'PASS' if passed else 'FAIL'}\n\n")
 
             # Overall summary
             all_passed = all(
-                (r['scenario'] == "A" and r['completed'] and r['duration'] < 120 and
-                 r['mission_result'] == "mission complete - robot back at HOME" and
-                 r['final_dist_home'] < 0.3 and r['mean_err'] < 15 and r['max_err'] < 40) or
+                (r['scenario'] == "A" and r['completed'] and
+                 r['mission_result'] == "mission complete - robot docked at HOME" and
+                 r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0 and
+                 r['mean_err'] < 8 and r['max_err'] < 25) or
                 (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and
                  r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
-                 r['mission_result'] == "mission complete - robot back at HOME" and
-                 r['final_dist_home'] < 0.3) or
+                 r['mission_result'] == "mission complete - robot docked at HOME" and
+                 r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0 and
+                 r['mean_err'] < 8 and r['max_err'] < 25) or
                 (r['scenario'] == "D" and r['completed'] and r['delivered'] and
-                 r['mission_result'] == "mission complete - robot back at HOME" and
-                 r['final_dist_home'] < 0.3)
+                 r['mission_result'] == "mission complete - robot docked at HOME" and
+                 r['final_dist_home'] < 0.15 and r['final_heading_error_deg'] <= 10.0)
                 for r in results)
             f.write(f"OVERALL: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}\n")
 
         print(f"[REGRESSION] Report written to {report_path}")
         print(f"[REGRESSION] Overall: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}")
 
-        # Quit simulation
-        self.robot.simulationQuit(0)
+        # Quit only after writing the report; do not mask an earlier Webots stop.
+        if not any(result["webots_stopped"] for result in results):
+            self.robot.simulationQuit(0)
 
     # ------------------------------------------------------------ keys + state machine
     def keys(self):
@@ -1019,15 +1174,19 @@ class MediBot:
         self.compartments.lock_all()
         self.compartments.reset_cargo()
         self.unblock()
-        for n in self.route_nodes:
-            try:
-                n.remove()
-            except Exception:
-                pass
+        self.clear_route_visuals()
         self.route_nodes, self.route, self.dest = [], [], "-"
+        self.tag_filter.clear()
+        self.home_tag_pose = None
+        self.home_tag_seen_t = -float("inf")
+        self.tag_last_detection_t = -float("inf")
+        self.dock_position_locked = False
         if self.log_f:
             self.log_f.close()
             self.log_f = None
+        if self.tag_log_f:
+            self.tag_log_f.close()
+            self.tag_log_f = self.tag_log_w = None
         self.set_state("IDLE")
         print("[RESET] robot back at HOME")
 
@@ -1103,7 +1262,67 @@ class MediBot:
 
         elif s == "RETURN":
             if self.follow(0.25, CRUISE_V):
-                self.end_mission("mission complete - robot back at HOME")
+                self.dock_position_locked = False
+                self.set_state("DOCK")
+
+        elif s == "DOCK":
+            sx, sy, home_yaw = CFG["robot"]["start"]
+            x, y, heading = self.ekf.x
+            home_tag = next(t for t in CFG["tags"] if t.get("zone") == "home_south")
+            tag_fresh = t - self.home_tag_seen_t < 20.0
+            if t - self.dock_debug_t >= 2.0:
+                self.dock_debug_t = t
+                tag_err = (math.hypot(self.home_tag_pose["x"] - sx,
+                                      self.home_tag_pose["y"] - sy)
+                           if self.home_tag_pose is not None else float("inf"))
+                true_x, true_y, true_yaw = self.true_pose()
+                print(f"[DOCK] est={math.hypot(x-sx,y-sy):.3f} m, tag={tag_err:.3f} m, "
+                      f"tag age={t-self.home_tag_seen_t:.2f} s, locked={self.dock_position_locked}, "
+                      f"true={math.hypot(true_x-sx,true_y-sy):.3f} m / "
+                      f"{math.degrees(wrap(true_yaw-home_yaw)):.1f} deg")
+            if self.dock_position_locked:
+                heading_err = wrap(home_yaw - heading)
+                if abs(heading_err) > math.radians(10.0):
+                    self.drive(0.0, max(-0.35, min(0.35, 1.5 * heading_err)))
+                else:
+                    self.stop()
+                    tx, ty, true_yaw = self.true_pose()
+                    actual_pos_err = math.hypot(tx - sx, ty - sy)
+                    actual_heading_err = abs(wrap(true_yaw - home_yaw))
+                    if actual_pos_err <= 0.15 and actual_heading_err <= math.radians(10.0):
+                        print(f"[DOCK] HOME tag aligned; position={actual_pos_err:.3f} m, "
+                              f"heading={math.degrees(actual_heading_err):.1f} deg")
+                        self.end_mission("mission complete - robot docked at HOME")
+                    elif actual_pos_err > 0.15:
+                        self.dock_position_locked = False
+            elif tag_fresh and self.home_tag_pose is not None:
+                # Use the tag-derived pose when fresh, with the filtered EKF pose
+                # bridging intermittent camera frames between detections.
+                pose_x, pose_y = self.home_tag_pose["x"], self.home_tag_pose["y"]
+                if t - self.home_tag_seen_t > 0.5:
+                    pose_x, pose_y = x, y
+                dx, dy = sx - pose_x, sy - pose_y
+                pos_err = math.hypot(dx, dy)
+                if pos_err > 0.10:
+                    target_heading = math.atan2(dy, dx)
+                    v, w = rotate_drive_command(wrap(target_heading - heading), 0.08)
+                    self.drive(v, w)
+                else:
+                    if t - self.home_tag_seen_t <= 0.5:
+                        self.dock_position_locked = True
+                        self.stop()
+                    else:
+                        home_heading = math.atan2(home_tag["y"] - y, home_tag["x"] - x)
+                        self.drive(0.0, max(-0.25, min(0.25,
+                                                       1.5 * wrap(home_heading - heading))))
+            else:
+                tx_tag, ty_tag = home_tag["x"], home_tag["y"]
+                target_heading = math.atan2(ty_tag - y, tx_tag - x)
+                err = wrap(target_heading - heading)
+                if abs(err) > math.radians(8.0):
+                    self.drive(0.0, max(-0.35, min(0.35, 1.5 * err)))
+                else:
+                    self.stop()
 
     # ------------------------------------------------------------ main loop
     def run(self):
@@ -1121,4 +1340,9 @@ class MediBot:
 
 
 if __name__ == "__main__":
-    MediBot().run()
+    try:
+        MediBot().run()
+    except BaseException:
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
+        raise
