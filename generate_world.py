@@ -81,6 +81,9 @@ def generate_wall_tags():
     - yaw: direction of plate's outward normal (facing corridor)
     - zone_name: descriptive location name
     - tag_id: assigned ID
+    
+    Tags are placed on cross walls (perpendicular to corridor) to face head-on
+    to approaching robots, avoiding grazing-angle pose errors.
     """
     tags = []
     tag_id = 0
@@ -90,41 +93,33 @@ def generate_wall_tags():
         tags.append((x, y, TAG_Z, yaw, zone, tag_id))
         tag_id += 1
 
-    # Zone 0-9: HOME -> PHARMACY corridor (y = -0.70, x: 0 to 2)
-    # Head-on tags at both ends facing the corridor
-    add_tag(0.0, -0.70, 0.0, "home_end")  # Facing east (toward PHARMACY)
-    add_tag(2.0, -0.70, PI, "pharmacy_end")  # Facing west (toward HOME)
-    # Middle tag for coverage
-    add_tag(1.0, -0.70, 0.0, "home_pharmacy_mid")
+    # Zone 0-9: HOME -> PHARMACY (eastbound corridor, y=1.5, x: 0 to 2)
+    # Tag on far end wall (x=2) facing west
+    add_tag(2.0, 1.5, PI, "pharmacy_end")
+    # Tag on near end wall (x=0) facing east
+    add_tag(0.0, 1.5, 0.0, "home_end")
 
-    # Zone 10-19: PHARMACY -> JUNCTION corridor (y = -0.70, x: 2 to 4)
-    add_tag(2.0, -0.70, 0.0, "pharmacy_junction_start")  # Facing east
-    add_tag(4.0, -0.70, PI, "junction_south")  # Facing west
-    add_tag(3.0, -0.70, 0.0, "pharmacy_junction_mid")
+    # Zone 10-19: PHARMACY -> JUNCTION (eastbound, y=1.5, x: 2 to 4)
+    add_tag(4.0, 1.5, PI, "junction_south")
+    add_tag(2.0, 1.5, 0.0, "pharmacy_start")
 
-    # Zone 20-29: JUNCTION -> ICU corridor (y = -0.70, x: 4 to 7)
-    add_tag(4.0, -0.70, 0.0, "junction_icu_start")  # Facing east
-    add_tag(7.0, -0.70, PI, "icu_end")  # Facing west
-    add_tag(5.5, -0.70, 0.0, "junction_icu_mid")
+    # Zone 20-29: JUNCTION -> ICU (eastbound, y=1.5, x: 4 to 7)
+    add_tag(7.0, 1.5, PI, "icu_end")
+    add_tag(4.0, 1.5, 0.0, "junction_south_start")
 
-    # Zone 30-39: JUNCTION -> WARD-2A vertical corridor (x = 4.0, y: 0 to 3.7)
-    # Tags on end walls facing the corridor
-    add_tag(4.0, 0.0, 0.0, "junction_north")  # Facing north (toward WARD-2A)
-    add_tag(4.0, 3.70, PI, "ward2a_end")  # Facing south (toward JUNCTION)
-    # Middle tags on cross walls
-    add_tag(3.5, 1.5, 0.0, "junction_cross_1")
-    add_tag(3.5, 2.5, 0.0, "junction_cross_2")
+    # Zone 30-39: JUNCTION -> WARD-2A (northbound, x=4.0, y: 0 to 3.7)
+    # Tag on far end wall (y=3.7) facing south
+    add_tag(4.0, 3.7, PI, "ward2a_end")
+    # Tag on near end wall (y=0) facing north
+    add_tag(4.0, 0.0, 0.0, "junction_north")
 
-    # Zone 40-49: ICU -> WARD-3B vertical corridor (x = 7.0, y: 0 to 3.7)
-    add_tag(7.0, 0.0, 0.0, "icu_north")  # Facing north
-    add_tag(7.0, 3.70, PI, "ward3b_end")  # Facing south
-    add_tag(6.5, 1.5, 0.0, "icu_cross_1")
-    add_tag(6.5, 2.5, 0.0, "icu_cross_2")
+    # Zone 40-49: ICU -> WARD-3B (northbound, x=7.0, y: 0 to 3.7)
+    add_tag(7.0, 3.7, PI, "ward3b_end")
+    add_tag(7.0, 0.0, 0.0, "icu_north")
 
-    # Zone 50-59: WARD-2A -> WARD-3B horizontal corridor (y = 3.70, x: 4 to 7)
-    add_tag(4.0, 3.70, 0.0, "ward2a_north")  # Facing east
-    add_tag(7.0, 3.70, PI, "ward3b_north")  # Facing west
-    add_tag(5.5, 3.70, 0.0, "ward_mid")
+    # Zone 50-59: WARD-2A -> WARD-3B (eastbound, y=3.7, x: 4 to 7)
+    add_tag(7.0, 3.7, PI, "ward3b_north")
+    add_tag(4.0, 3.7, 0.0, "ward2a_north")
 
     # Zone 60-69: Room door frames (head-on tags facing corridor)
     add_tag(2.0, -0.65, -PI/2, "pharmacy_door")
