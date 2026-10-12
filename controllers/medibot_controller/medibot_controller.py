@@ -241,6 +241,7 @@ class MediBot:
         self.route_nodes = []
         self.detour_nodes = []
         self.dest = "-"
+        self.mission_destination = "WARD-3B"
         self.mission_no = 0
         self.step_no = 0
         self.last_ekf_print_t = -1.0
@@ -264,7 +265,7 @@ class MediBot:
 
         # Regression mode
         self.regression_mode = os.path.exists(os.path.join(HERE, "regression.flag"))
-        self.regression_scenario = None  # "A", "B", or "C"
+        self.regression_scenario = None  # "A", "B", or "D"
         self.regression_start_t = 0.0
         self.regression_results = []
 
@@ -292,7 +293,7 @@ class MediBot:
         print(__doc__)
         if self.regression_mode:
             print("[REGRESSION] Automatic regression mode enabled")
-            print("[REGRESSION] Running scenarios A, B, C sequentially...")
+            print("[REGRESSION] Running scenarios A, B, D sequentially...")
             self.run_regression()
         else:
             print("[MediBot] ready - state IDLE. Press S to start a delivery to WARD-3B.")
@@ -757,7 +758,7 @@ class MediBot:
         self.blocked_edges.clear()
         self.blocked_edge_expiry.clear()
         start = nearest_node(self.ekf.x[0], self.ekf.x[1])
-        if not self.plan(start, "WARD-3B"):
+        if not self.plan(start, self.mission_destination):
             return
         self.mission_no += 1
         self.mission_delivered = False
@@ -825,8 +826,8 @@ class MediBot:
                    0.01, 0.95, 0.05, 0x555555, 0, "Arial")
 
     def run_regression(self):
-        """Run regression scenarios A, B, C automatically."""
-        scenarios = ["A", "B", "C"]
+        """Run regression scenarios A, B, D automatically."""
+        scenarios = ["A", "B", "D"]
         results = []
 
         for scenario in scenarios:
@@ -841,6 +842,8 @@ class MediBot:
             self.regression_trolley_placed = False
             self.mission_delivered = False
             self.last_mission_result = None
+            self.mission_destination = "WARD-2A" if scenario == "D" else "WARD-3B"
+            self.tags_enabled = True
 
             # Setup for each scenario
             self.reset()
@@ -848,10 +851,6 @@ class MediBot:
             self.blocked_edge_expiry.clear()
             self.blocked_t = 0.0
             self.obst_printed = False
-            if scenario == "C":
-                # Turn tags OFF
-                self.tags_enabled = False
-
             # Start mission
             self.start_mission()
 
@@ -918,6 +917,7 @@ class MediBot:
                 f.write(f"  Route via ICU: {r['route_via_icu']}\n")
                 f.write(f"  Delivered: {r['delivered']}\n")
                 f.write(f"  Mission result: {r['mission_result']}\n")
+                f.write(f"  Destination: {'WARD-2A' if r['scenario'] == 'D' else 'WARD-3B'}\n")
 
                 # Determine PASS/FAIL
                 passed = True
@@ -931,21 +931,25 @@ class MediBot:
                               r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
                               r['mission_result'] == "mission complete - robot back at HOME" and
                               r['final_dist_home'] < 0.3)
-                elif r['scenario'] == "C":
+                elif r['scenario'] == "D":
                     passed = (r['completed'] and r['delivered'] and
                               r['mission_result'] == "mission complete - robot back at HOME" and
-                              r['mean_err'] < 15 and r['max_err'] < 40 and
                               r['final_dist_home'] < 0.30)
 
                 f.write(f"  Result: {'PASS' if passed else 'FAIL'}\n\n")
 
             # Overall summary
             all_passed = all(
-                (r['scenario'] == "C" or
-                 (r['scenario'] == "A" and r['completed'] and r['duration'] < 120 and
-                  r['final_dist_home'] < 0.3 and r['mean_err'] < 15 and r['max_err'] < 40) or
-                 (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and
-                  r['replans'] >= 1 and r['route_via_icu'] and r['delivered']))
+                (r['scenario'] == "A" and r['completed'] and r['duration'] < 120 and
+                 r['mission_result'] == "mission complete - robot back at HOME" and
+                 r['final_dist_home'] < 0.3 and r['mean_err'] < 15 and r['max_err'] < 40) or
+                (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and
+                 r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
+                 r['mission_result'] == "mission complete - robot back at HOME" and
+                 r['final_dist_home'] < 0.3) or
+                (r['scenario'] == "D" and r['completed'] and r['delivered'] and
+                 r['mission_result'] == "mission complete - robot back at HOME" and
+                 r['final_dist_home'] < 0.3)
                 for r in results)
             f.write(f"OVERALL: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}\n")
 

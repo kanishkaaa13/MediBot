@@ -276,7 +276,8 @@ else:
     check("wheel anchors found in .wbt", False)
 
 # Check robot translation z matches wheel_radius
-robot_translation = re.search(r"DEF MEDIBOT Robot.*translation ([\d.-]+) ([\d.-]+) ([\d.-]+)", wbt_content, re.DOTALL)
+robot_block = re.search(r"DEF MEDIBOT Robot\s*\{(.*?)\n\s*children\s*\[", wbt_content, re.DOTALL)
+robot_translation = re.search(r"(?m)^\s*translation ([\d.-]+) ([\d.-]+) ([\d.-]+)", robot_block.group(1)) if robot_block else None
 if robot_translation:
     z = float(robot_translation.group(3))
     check(f"robot translation z {z} matches wheel_radius {wheel_radius_cfg}", abs(z - wheel_radius_cfg) < 1e-6)
@@ -285,8 +286,10 @@ else:
 
 # Check camera translation matches config
 cam_cfg = CFG["camera"]
-camera_nodes = re.findall(r"(?m)^\s*Camera\s*\{[^}]*\}", wbt_content, re.DOTALL)
-camera_node = next((node for node in camera_nodes if re.search(r'name\s+"camera"', node)), "")
+camera_start = wbt_content.find('name "camera"')
+camera_open = wbt_content.rfind("Camera {", 0, camera_start)
+camera_close = wbt_content.find("\n    }", camera_start)
+camera_node = wbt_content[camera_open:camera_close] if camera_start >= 0 and camera_open >= 0 and camera_close >= 0 else ""
 cam_translation = re.search(r'translation ([\d.-]+) ([\d.-]+) ([\d.-]+)', camera_node)
 if cam_translation:
     cam_x = float(cam_translation.group(1))
