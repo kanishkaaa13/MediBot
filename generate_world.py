@@ -85,101 +85,69 @@ def generate_wall_tags():
     tags = []
     tag_id = 0
 
-    # Wall positions (based on world geometry)
-    # South corridor wall: y = -0.70
-    # North corridor wall: y = 3.70
-    # West wall: x = -2.60
-    # East wall: x = 9.20
-    # Door gaps: Pharmacy (x=1.4 to 2.6), ICU (x=6.4 to 7.6), Ward 2A (x=3.4 to 4.6), Ward 3B (x=6.4 to 7.6)
-
     def add_tag(x, y, yaw, zone):
         nonlocal tag_id
         tags.append((x, y, TAG_Z, yaw, zone, tag_id))
         tag_id += 1
 
-    # Zone 0-9: South corridor (HOME -> PHARMACY -> JUNCTION -> ICU)
-    # South wall (y = -0.70), tags facing north (yaw = 0)
-    # Door gaps: Pharmacy (1.4-2.6), ICU (6.4-7.6)
-    south_wall_y = -0.70
-    corridor_spacing = 1.5
+    # Zone 0-9: HOME -> PHARMACY corridor
+    # Head-on tag at PHARMACY end wall (facing west, yaw=PI)
+    add_tag(2.0, -0.70, PI, "pharmacy_end")
+    # Side wall tag at HOME end (angled 40 deg toward approaching robot)
+    add_tag(-0.5, -0.70, 0.0, "home_side")
 
-    # HOME -> PHARMACY edge (x: 0 to 2)
-    for x in [0.5, 1.0]:  # Before pharmacy door
-        add_tag(x, south_wall_y, 0.0, "south_corridor")
+    # Zone 10-19: PHARMACY -> JUNCTION corridor
+    # Head-on tag at JUNCTION (facing west, yaw=PI)
+    add_tag(4.0, -0.70, PI, "junction_south")
+    # Side wall tag (angled)
+    add_tag(3.0, -0.70, 0.0, "pharmacy_side")
 
-    # PHARMACY -> JUNCTION edge (x: 2 to 4)
-    # Skip door gap (1.4-2.6), add tags after
-    for x in [2.8, 3.3]:
-        add_tag(x, south_wall_y, 0.0, "south_corridor")
+    # Zone 20-29: JUNCTION -> ICU corridor
+    # Head-on tag at ICU end (facing west, yaw=PI)
+    add_tag(7.0, -0.70, PI, "icu_end")
+    # Side wall tag (angled)
+    add_tag(5.5, -0.70, 0.0, "junction_side")
 
-    # JUNCTION -> ICU edge (x: 4 to 7)
-    # Skip ICU door gap (6.4-7.6)
-    for x in [4.5, 5.0, 5.5, 6.0]:
-        add_tag(x, south_wall_y, 0.0, "south_corridor")
+    # Zone 30-39: JUNCTION -> WARD-2A vertical corridor
+    # Head-on tag at WARD-2A end (facing south, yaw=PI)
+    add_tag(4.0, 3.70, PI, "ward2a_end")
+    # Head-on tag at JUNCTION end (facing north, yaw=0)
+    add_tag(4.0, 0.0, 0.0, "junction_north")
+    # Side wall tags (angled 40 deg)
+    add_tag(3.88, 1.5, 0.0, "junction_west")
+    add_tag(3.88, 2.5, 0.0, "junction_west2")
 
-    # Zone 10-19: North corridor (JUNCTION -> WARD-2A -> WARD-3B)
-    # North wall (y = 3.70), tags facing south (yaw = PI)
-    # Door gaps: Ward 2A (3.4-4.6), Ward 3B (6.4-7.6)
-    north_wall_y = 3.70
+    # Zone 40-49: ICU -> WARD-3B vertical corridor
+    # Head-on tag at WARD-3B end (facing south, yaw=PI)
+    add_tag(7.0, 3.70, PI, "ward3b_end")
+    # Head-on tag at ICU end (facing north, yaw=0)
+    add_tag(7.0, 0.0, 0.0, "icu_north")
+    # Side wall tags (angled 40 deg)
+    add_tag(6.88, 1.5, 0.0, "icu_west")
+    add_tag(6.88, 2.5, 0.0, "icu_west2")
 
-    # JUNCTION -> WARD-2A edge (x: 4 to 4, actually this is vertical)
-    # This is the vertical corridor at x=4, y: 0 to 3
-    # West wall of this corridor (x=3.88, facing east, yaw=0)
-    # East wall of this corridor (x=4.12, facing west, yaw=PI)
-    west_wall_x = 3.88  # Just west of centre line
-    east_wall_x = 4.12  # Just east of centre line
+    # Zone 50-59: WARD-2A -> WARD-3B horizontal corridor
+    # Head-on tag at WARD-3B end (facing west, yaw=PI)
+    add_tag(7.0, 3.70, PI, "ward3b_north")
+    # Head-on tag at WARD-2A end (facing east, yaw=0)
+    add_tag(4.0, 3.70, 0.0, "ward2a_north")
+    # Side wall tag (angled)
+    add_tag(5.5, 3.70, PI, "ward_side")
 
-    # Vertical corridor JUNCTION -> WARD-2A (y: 0 to 3)
-    # Alternate sides, skip door gap at Ward 2A (y=3.4-4.6 for north corridor)
-    for y in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
-        # West wall facing east
-        add_tag(west_wall_x, y, 0.0, "west_corridor")
-
-    # Zone 20-29: East corridor (ICU -> WARD-3B)
-    # Vertical corridor at x=7, y: 0 to 3
-    # West wall (x=6.88, facing east, yaw=0)
-    # East wall (x=7.12, facing west, yaw=PI)
-    west_wall_x_icu = 6.88
-    east_wall_x_icu = 7.12
-
-    for y in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
-        # West wall facing east
-        add_tag(west_wall_x_icu, y, 0.0, "east_corridor")
-
-    # Zone 30-39: End walls and room entrances
-    # HOME end wall (x = -2.60, facing east, yaw = 0)
-    add_tag(-2.55, 0.0, 0.0, "home_end")
-
-    # ICU end wall (x = 9.20, facing west, yaw = PI)
-    add_tag(9.15, 0.0, PI, "icu_end")
-
-    # WARD-3B end wall (x = 9.20, facing west, yaw = PI)
-    add_tag(9.15, 3.0, PI, "ward3b_end")
-
-    # Room door frames (tags facing into corridor)
-    # Pharmacy door (x=2, y=-0.70, facing south, yaw=-PI/2)
+    # Zone 60-69: Room door frames (head-on tags facing corridor)
+    # Pharmacy door (facing south)
     add_tag(2.0, -0.65, -PI/2, "pharmacy_door")
-
-    # ICU door (x=7, y=-0.70, facing south, yaw=-PI/2)
+    # ICU door (facing south)
     add_tag(7.0, -0.65, -PI/2, "icu_door")
-
-    # Ward 2A door (x=4, y=3.70, facing north, yaw=PI/2)
+    # Ward 2A door (facing north)
     add_tag(4.0, 3.65, PI/2, "ward2a_door")
-
-    # Ward 3B door (x=7, y=3.70, facing north, yaw=PI/2)
+    # Ward 3B door (facing north)
     add_tag(7.0, 3.65, PI/2, "ward3b_door")
 
-    # Zone 40-49: Inside rooms (tags facing entry)
-    # Pharmacy (room centre ~1.9, -1.6), tag facing door (facing north, yaw=0)
+    # Zone 70-79: Inside rooms (tags facing entry)
     add_tag(1.9, -1.55, 0.0, "pharmacy_room")
-
-    # ICU (room centre ~7.1, -1.9), tag facing door (facing north, yaw=0)
     add_tag(7.1, -1.85, 0.0, "icu_room")
-
-    # Ward 2A (room centre ~3.8, 4.5), tag facing door (facing south, yaw=PI)
     add_tag(3.8, 4.45, PI, "ward2a_room")
-
-    # Ward 3B (room centre ~7.0, 4.5), tag facing door (facing south, yaw=PI)
     add_tag(7.0, 4.45, PI, "ward3b_room")
 
     return tags
@@ -1098,21 +1066,23 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     wh = 1.4
     wz = wh / 2
 
-    # Wall appearance with texture
-    wall_appearance = f"""PBRAppearance {{
+    # DEF/USE for texture reuse (performance optimization)
+    parts.append("""DEF WallAppearance PBRAppearance {
       baseColor 0.96 0.96 0.96
       roughness 0.8
       metalness 0
-      texture ImageTexture {{ url "../worlds/textures/wall_plaster.png" repeat TRUE }}
-    }}"""
-
-    # Floor appearance with corridor texture
-    floor_appearance = f"""PBRAppearance {{
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+DEF FloorAppearance PBRAppearance {
       baseColor 0.78 0.8 0.82
       roughness 0.6
       metalness 0
-      texture ImageTexture {{ url "../worlds/textures/floor_corridor.png" repeat TRUE }}
-    }}"""
+      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
+    }
+""")
+
+    wall_appearance = "USE WallAppearance"
+    floor_appearance = "USE FloorAppearance"
 
     # Outer perimeter boundary walls
     parts.append(box_solid_textured("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_appearance))

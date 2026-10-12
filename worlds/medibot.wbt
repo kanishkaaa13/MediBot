@@ -403,18 +403,25 @@ Solid {
     }
   ]
 }
+DEF WallAppearance PBRAppearance {
+      baseColor 0.96 0.96 0.96
+      roughness 0.8
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
+    }
+DEF FloorAppearance PBRAppearance {
+      baseColor 0.78 0.8 0.82
+      roughness 0.6
+      metalness 0
+      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
+    }
 Solid {
   translation 3.3 -2.8 0.7
   rotation 0 0 1 0
   name "wall_south_outer"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 12 0.12 1.4 }
     }
   ]
@@ -427,12 +434,7 @@ Solid {
   name "wall_north_outer"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 12 0.12 1.4 }
     }
   ]
@@ -445,12 +447,7 @@ Solid {
   name "wall_west_outer"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 8.4 1.4 }
     }
   ]
@@ -463,12 +460,7 @@ Solid {
   name "wall_east_outer"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 8.4 1.4 }
     }
   ]
@@ -481,12 +473,7 @@ Solid {
   name "wall_s_alcove"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 2.1 0.12 1.4 }
     }
   ]
@@ -499,12 +486,7 @@ Solid {
   name "wall_s_pharm_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.9 0.12 1.4 }
     }
   ]
@@ -517,12 +499,7 @@ Solid {
   name "wall_s_pharm_e"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.7 0.12 1.4 }
     }
   ]
@@ -535,12 +512,7 @@ Solid {
   name "wall_s_icu_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.7 0.12 1.4 }
     }
   ]
@@ -553,12 +525,7 @@ Solid {
   name "wall_s_icu_e"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 1.6 0.12 1.4 }
     }
   ]
@@ -571,12 +538,7 @@ Solid {
   name "div_pharm_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -589,12 +551,7 @@ Solid {
   name "div_pharm_e"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -607,12 +564,7 @@ Solid {
   name "div_icu_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -625,12 +577,7 @@ Solid {
   name "wall_n_ward2a_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 1.2 0.12 1.4 }
     }
   ]
@@ -643,12 +590,7 @@ Solid {
   name "wall_n_middle"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 1.8 0.12 1.4 }
     }
   ]
@@ -661,12 +603,7 @@ Solid {
   name "wall_n_ward3b_e"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 1.6 0.12 1.4 }
     }
   ]
@@ -679,12 +616,7 @@ Solid {
   name "div_ward2a_w"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 1.5 1.4 }
     }
   ]
@@ -697,12 +629,7 @@ Solid {
   name "div_wards_mid"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 0.12 1.5 1.4 }
     }
   ]
@@ -715,12 +642,7 @@ Solid {
   name "wall_w_home_n"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
+      USE WallAppearance
       geometry Box { size 2.1 0.12 1.4 }
     }
   ]
@@ -733,12 +655,7 @@ Solid {
   name "floor_main"
   children [
     Shape {
-      PBRAppearance {
-      baseColor 0.78 0.8 0.82
-      roughness 0.6
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
-    }
+      USE FloorAppearance
       geometry Box { size 12 8 0.02 }
     }
   ]
@@ -2277,8 +2194,8 @@ Solid {
   ]
 }
 Solid {
-  translation 0.5 -0.7 0.25
-  rotation 0 0 1 0
+  translation 2 -0.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2294,7 +2211,7 @@ Solid {
   name "tag_0"
 }
 Solid {
-  translation 1 -0.7 0.25
+  translation -0.5 -0.7 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2311,8 +2228,8 @@ Solid {
   name "tag_1"
 }
 Solid {
-  translation 2.8 -0.7 0.25
-  rotation 0 0 1 0
+  translation 4 -0.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2328,7 +2245,7 @@ Solid {
   name "tag_2"
 }
 Solid {
-  translation 3.3 -0.7 0.25
+  translation 3 -0.7 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2345,8 +2262,8 @@ Solid {
   name "tag_3"
 }
 Solid {
-  translation 4.5 -0.7 0.25
-  rotation 0 0 1 0
+  translation 7 -0.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2362,7 +2279,7 @@ Solid {
   name "tag_4"
 }
 Solid {
-  translation 5 -0.7 0.25
+  translation 5.5 -0.7 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2379,8 +2296,8 @@ Solid {
   name "tag_5"
 }
 Solid {
-  translation 5.5 -0.7 0.25
-  rotation 0 0 1 0
+  translation 4 3.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2396,7 +2313,7 @@ Solid {
   name "tag_6"
 }
 Solid {
-  translation 6 -0.7 0.25
+  translation 4 0 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2413,7 +2330,7 @@ Solid {
   name "tag_7"
 }
 Solid {
-  translation 3.88 0.5 0.25
+  translation 3.88 1.5 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2430,7 +2347,7 @@ Solid {
   name "tag_8"
 }
 Solid {
-  translation 3.88 1 0.25
+  translation 3.88 2.5 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2447,8 +2364,8 @@ Solid {
   name "tag_9"
 }
 Solid {
-  translation 3.88 1.5 0.25
-  rotation 0 0 1 0
+  translation 7 3.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2464,7 +2381,7 @@ Solid {
   name "tag_10"
 }
 Solid {
-  translation 3.88 2 0.25
+  translation 7 0 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2481,7 +2398,7 @@ Solid {
   name "tag_11"
 }
 Solid {
-  translation 3.88 2.5 0.25
+  translation 6.88 1.5 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2498,7 +2415,7 @@ Solid {
   name "tag_12"
 }
 Solid {
-  translation 3.88 3 0.25
+  translation 6.88 2.5 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2515,8 +2432,8 @@ Solid {
   name "tag_13"
 }
 Solid {
-  translation 6.88 0.5 0.25
-  rotation 0 0 1 0
+  translation 7 3.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2532,7 +2449,7 @@ Solid {
   name "tag_14"
 }
 Solid {
-  translation 6.88 1 0.25
+  translation 4 3.7 0.25
   rotation 0 0 1 0
   children [
     Shape {
@@ -2549,8 +2466,8 @@ Solid {
   name "tag_15"
 }
 Solid {
-  translation 6.88 1.5 0.25
-  rotation 0 0 1 0
+  translation 5.5 3.7 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2566,8 +2483,8 @@ Solid {
   name "tag_16"
 }
 Solid {
-  translation 6.88 2 0.25
-  rotation 0 0 1 0
+  translation 2 -0.65 0.25
+  rotation 0 0 1 -1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -2583,8 +2500,8 @@ Solid {
   name "tag_17"
 }
 Solid {
-  translation 6.88 2.5 0.25
-  rotation 0 0 1 0
+  translation 7 -0.65 0.25
+  rotation 0 0 1 -1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -2600,8 +2517,8 @@ Solid {
   name "tag_18"
 }
 Solid {
-  translation 6.88 3 0.25
-  rotation 0 0 1 0
+  translation 4 3.65 0.25
+  rotation 0 0 1 1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -2617,8 +2534,8 @@ Solid {
   name "tag_19"
 }
 Solid {
-  translation -2.55 0 0.25
-  rotation 0 0 1 0
+  translation 7 3.65 0.25
+  rotation 0 0 1 1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -2634,8 +2551,8 @@ Solid {
   name "tag_20"
 }
 Solid {
-  translation 9.15 0 0.25
-  rotation 0 0 1 3.14159
+  translation 1.9 -1.55 0.25
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
@@ -2651,8 +2568,8 @@ Solid {
   name "tag_21"
 }
 Solid {
-  translation 9.15 3 0.25
-  rotation 0 0 1 3.14159
+  translation 7.1 -1.85 0.25
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
@@ -2668,8 +2585,8 @@ Solid {
   name "tag_22"
 }
 Solid {
-  translation 2 -0.65 0.25
-  rotation 0 0 1 -1.5708
+  translation 3.8 4.45 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2685,8 +2602,8 @@ Solid {
   name "tag_23"
 }
 Solid {
-  translation 7 -0.65 0.25
-  rotation 0 0 1 -1.5708
+  translation 7 4.45 0.25
+  rotation 0 0 1 3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -2700,108 +2617,6 @@ Solid {
   ]
   boundingObject Box { size 0.2 0.2 0.01 }
   name "tag_24"
-}
-Solid {
-  translation 4 3.65 0.25
-  rotation 0 0 1 1.5708
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_25.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_25"
-}
-Solid {
-  translation 7 3.65 0.25
-  rotation 0 0 1 1.5708
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_26.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_26"
-}
-Solid {
-  translation 1.9 -1.55 0.25
-  rotation 0 0 1 0
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_27.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_27"
-}
-Solid {
-  translation 7.1 -1.85 0.25
-  rotation 0 0 1 0
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_28.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_28"
-}
-Solid {
-  translation 3.8 4.45 0.25
-  rotation 0 0 1 3.14159
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_29.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_29"
-}
-Solid {
-  translation 7 4.45 0.25
-  rotation 0 0 1 3.14159
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_30.png" }
-      }
-      geometry Box { size 0.2 0.2 0.01 }
-    }
-  ]
-  boundingObject Box { size 0.2 0.2 0.01 }
-  name "tag_30"
 }
 DEF TROLLEY Solid {
   translation -1.5 1.8 0.35

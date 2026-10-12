@@ -36,24 +36,139 @@ r = astar("JUNCTION", "WARD-3B", {edge_key("JUNCTION", "WARD-2A")})
 check("A* reroute via ICU when corridor blocked", r == ["JUNCTION", "ICU", "WARD-3B"], str(r))
 check("A* None when HOME cut off", astar("HOME", "WARD-3B", {edge_key("HOME", "PHARMACY")}) is None)
 
-# ---------------------------------------------------------------- 2. Tag detection and pose recovery (simplified)
-# Test that TagLocalizer can handle the new single-sided tag structure
-# We test a few representative tags from different zones
-test_tag_ids = [0, 10, 20, 30, 40]  # Sample from different zones
-for tag_id in test_tag_ids:
-    tag = next((t for t in CFG["tags"] if t["id"] == tag_id), None)
-    if tag:
-        tx, ty, tyaw = tag["x"], tag["y"], tag["yaw"]
-        # Robot position looking at the tag
-        d = 1.5
-        rx = tx - d * math.cos(tyaw)
-        ry = ty - d * math.sin(tyaw)
-        loc = TagLocalizer()
-        # Simulate camera view (empty image - just test the hint mechanism)
-        gray = np.zeros((CFG["camera"]["height"], CFG["camera"]["width"]), dtype=np.uint8)
-        meas = loc.measure(gray, hint=(rx, ry, tyaw))
-        # With empty image, detection will fail, but we test the structure is valid
-        check(f"tag {tag_id} structure valid", tag is not None and "id" in tag and "x" in tag and "y" in tag and "yaw" in tag and "z" in tag)
+# ---------------------------------------------------------------- 2. Synthetic renderer tag coverage test
+# For every tag, render it from robot positions along adjacent corridor edges
+# and verify detection with position error < 6 cm and yaw error < 4 deg
+
+cam = CFG["camera"]
+W, H = cam["width"], cam["height"]
+fx = W / (2 * math.tan(cam["fov"] / 2))
+loc = TagLocalizer()
+
+
+def project(px, py, pz, rx, ry, rth, cam_world_z):
+    """World point -> pixel for a camera on robot pose (rx, ry, rth)."""
+    dx, dy = px - rx, py - ry
+    f = dx * math.cos(rth) + dy * math.sin(rth) - cam["x"]
+    l = -dx * math.sin(rth) + dy * math.cos(rth)
+    u = pz - cam_world_z
+    if f <= 0.05:
+        return None
+    return (W / 2 - fx * l / f, H / 2 - fx * u / f)
+
+
+def render(rx, ry, rth, tag):
+    """Render the tag texture as seen from the robot."""
+    img = np.full((H, W), 120, np.uint8)
+    tex = gw.make_tag_image(tag["id"])
+    tag_size = CFG["tag"]["size"]
+    hw = tag_size / 2
+    Y = tag["yaw"]
+    right = (-math.sin(Y), math.cos(Y))
+    cz = CFG["robot"]["z"] + cam["z"]
+    pts = []
+    for sr, su in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+        px = tag["x"] + sr * hw * right[0]
+        py = tag["y"] + sr * hw * right[1]
+        pz = tag["z"] + su * hw
+        p = project(px, py, pz, rx, ry, rth, cz)
+        if p is None:
+            return None
+        pts.append(p)
+    src = np.float32([[0, 599], [599, 599], [599, 0], [0, 0]])
+    M = cv2.getPerspectiveTransform(src, np.float32(pts))
+    cv2.warpPerspective(tex, M, (W, H), dst=img, borderMode=cv2.BORDER_TRANSPARENT)
+    return img
+
+
+def incidence_angle(rx, ry, rth, tag):
+    """Compute angle between camera line of sight and tag normal (0 = head-on, 90 = grazing)."""
+    dx = tag["x"] - rx
+    dy = tag["y"] - ry
+    dist = math.hypot(dx, dy)
+    if dist < 0.01:
+        return 0.0
+    # Camera to tag direction
+    cam_to_tag = (dx / dist, dy / dist)
+    # Tag normal (facing direction from yaw)
+    tag_normal = (math.cos(tag["yaw"]), math.sin(tag["yaw"]))
+    # Dot product gives cosine of angle
+    dot = cam_to_tag[0] * tag_normal[0] + cam_to_tag[1] * tag_normal[1]
+    angle = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))  # Negative because camera looks opposite to normal
+    return angle
+
+
+# Test coverage along each edge
+edges = CFG["edges"]
+coverage_results = []
+
+for edge in edges:
+    start_node, end_node = edge
+    start_pos = CFG["nodes"][start_node]
+    end_pos = CFG["nodes"][end_node]
+    
+    # Compute edge direction and length
+    dx = end_pos[0] - start_pos[0]
+    dy = end_pos[1] - start_pos[1]
+    edge_length = math.hypot(dx, dy)
+    edge_yaw = math.atan2(dy, dx)
+    
+    # Step along edge every 0.25 m
+    num_steps = int(edge_length / 0.25) + 1
+    for step in range(num_steps):
+        t = step / num_steps if num_steps > 0 else 0
+        rx = start_pos[0] + t * dx
+        ry = start_pos[1] + t * dy
+        rth = edge_yaw
+        
+        # Check which tags are visible from this position
+        detected_tags = []
+        for tag in CFG["tags"]:
+            # Render tag
+            img = render(rx, ry, rth, tag)
+            if img is None:
+                continue
+            
+            # Try to detect
+            meas = loc.measure(img, hint=(rx, ry, rth))
+            if meas:
+                m = min(meas, key=lambda d: d["dist"])
+                pos_err = math.hypot(m["x"] - rx, m["y"] - ry) * 100
+                yaw_err = math.degrees(abs(wrap(m["yaw"] - rth)))
+                inc = incidence_angle(rx, ry, rth, tag)
+                
+                detected_tags.append({
+                    "tag_id": tag["id"],
+                    "pos_err": pos_err,
+                    "yaw_err": yaw_err,
+                    "incidence": inc
+                })
+        
+        # Check if at least one tag meets requirements
+        good_tags = [t for t in detected_tags if t["pos_err"] < 6.0 and t["yaw_err"] < 4.0]
+        coverage_results.append({
+            "edge": f"{start_node}->{end_node}",
+            "step": step,
+            "pos": (rx, ry),
+            "detected_count": len(detected_tags),
+            "good_count": len(good_tags),
+            "tags": detected_tags
+        })
+        
+        # Check requirement
+        check(f"Coverage {start_node}->{end_node} step {step}: {len(good_tags)} good tags",
+              len(good_tags) >= 1,
+              f"detected={len(detected_tags)}, good={len(good_tags)}")
+
+# Print coverage summary
+print("\n=== TAG COVERAGE SUMMARY ===")
+for edge in edges:
+    edge_name = f"{edge[0]}->{edge[1]}"
+    edge_results = [r for r in coverage_results if r["edge"] == edge_name]
+    if edge_results:
+        total_steps = len(edge_results)
+        good_steps = sum(1 for r in edge_results if r["good_count"] >= 1)
+        print(f"{edge_name}: {good_steps}/{total_steps} steps with good tag coverage")
 
 # ---------------------------------------------------------------- 3. EKF
 rng = np.random.default_rng(1)
