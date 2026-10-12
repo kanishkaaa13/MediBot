@@ -279,7 +279,7 @@ class MediBot:
         for k, v in d.items():
             if v < 1.0:
                 print(f"[WARNING] us_{k} reads {v*100:.0f} cm at startup (should be > 1.0 m in open space)")
-                print(f"  This may indicate the sensor ray is hitting the robot's own body.")
+                print("  This may indicate the sensor ray is hitting the robot's own body.")
 
     # ------------------------------------------------------------ helpers
     def now(self):
@@ -311,7 +311,7 @@ class MediBot:
         # Check for NaN in supervisor pose
         if not all(math.isfinite(v) for v in p + o):
             if "supervisor" not in self.nan_warning_printed:
-                print(f"[WARNING] supervisor pose returned NaN, using last valid estimate")
+                print("[WARNING] supervisor pose returned NaN, using last valid estimate")
                 self.nan_warning_printed.add("supervisor")
             return self.ekf.x[0], self.ekf.x[1], self.ekf.x[2]
         return p[0], p[1], math.atan2(o[3], o[0])
@@ -372,7 +372,7 @@ class MediBot:
         gz_raw = self.gyro.getValues()[2]
         if not math.isfinite(gz_raw):
             if "gyro" not in self.nan_warning_printed:
-                print(f"[WARNING] gyro returned NaN, using last valid value")
+                print("[WARNING] gyro returned NaN, using last valid value")
                 self.nan_warning_printed.add("gyro")
             gz = self.last_valid_gyro + GYRO_BIAS
         else:
@@ -383,7 +383,7 @@ class MediBot:
 
         # Assert EKF state is finite after predict
         if not np.all(np.isfinite(self.ekf.x)):
-            print(f"[ERROR] EKF state became NaN after predict! Re-initialising from last finite state.")
+            print("[ERROR] EKF state became NaN after predict! Re-initialising from last finite state.")
             sx, sy, sth = CFG["robot"]["start"]
             self.ekf = EKF([sx, sy, sth])
 
@@ -424,7 +424,7 @@ class MediBot:
 
             # Assert EKF state is finite after update
             if not np.all(np.isfinite(self.ekf.x)):
-                print(f"[ERROR] EKF state became NaN after update! Re-initialising from last finite state.")
+                print("[ERROR] EKF state became NaN after update! Re-initialising from last finite state.")
                 sx, sy, sth = CFG["robot"]["start"]
                 self.ekf = EKF([sx, sy, sth])
                 return

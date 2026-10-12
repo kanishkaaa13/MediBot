@@ -75,7 +75,9 @@ def render(rx, ry, rth, tag):
         if p is None:
             return None
         pts.append(p)
-    src = np.float32([[0, 599], [599, 599], [599, 0], [0, 0]])
+    # Map only the marker area onto the physical AprilTag; the surrounding
+    # white margin and printed ID are part of the 1024px texture, not the tag.
+    src = np.float32([[160, 864], [864, 864], [864, 160], [160, 160]])
     M = cv2.getPerspectiveTransform(src, np.float32(pts))
     cv2.warpPerspective(tex, M, (W, H), dst=img, borderMode=cv2.BORDER_TRANSPARENT)
     # Convert BGR to grayscale for AprilTag detector

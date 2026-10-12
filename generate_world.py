@@ -162,7 +162,7 @@ def tag_plate(tag_id, x, y, z, yaw):
             f"        baseColor 1 1 1\n"
             f"        roughness 0.5\n"
             f"        metalness 0\n"
-            f"        baseColorMap ImageTexture {{ url [ \"textures/tag_{tag_id:02d}.png\" ] }}\n"
+            f"        baseColorMap ImageTexture {{ url [ \"textures/tag_{tag_id:02d}.png\" ] filtering 0 }}\n"
             f"      }}\n"
             f"      geometry Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
             f"    }}\n"

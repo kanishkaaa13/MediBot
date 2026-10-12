@@ -12,7 +12,7 @@ sys.path.insert(0, CONTROLLER_DIR)
 class Device:
     def __init__(self, name=""):
         self.name = name
-        self.value = 0.0
+        self.value = 4.0 if name.startswith("us_") else 0.0
 
     def enable(self, *_args): pass
     def setPosition(self, *_args): pass
