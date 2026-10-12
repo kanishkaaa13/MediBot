@@ -58,7 +58,7 @@ class FakeSupervisor:
         self.steps += 1
         self.time += timestep / 1000.0
         return 0 if self.steps <= 200 else -1
-    def simulationQuit(self): pass
+    def simulationQuit(self, *_args): pass
 
 
 fake_controller = types.ModuleType("controller")
@@ -67,7 +67,15 @@ sys.modules["controller"] = fake_controller
 sys.modules.pop("medibot_controller", None)
 
 controller_module = importlib.import_module("medibot_controller")
-bot = controller_module.MediBot()
+_exists = os.path.exists
+_regression_flag = os.path.normcase(os.path.abspath(
+    os.path.join(CONTROLLER_DIR, "regression.flag")))
+os.path.exists = lambda path: (False if os.path.normcase(os.path.abspath(path)) == _regression_flag
+                               else _exists(path))
+try:
+    bot = controller_module.MediBot()
+finally:
+    os.path.exists = _exists
 bot.route = ["HOME", "PHARMACY", "JUNCTION", "WARD-2A", "WARD-3B"]
 bot.idx = 3
 bot.ekf.x = [4.0, 0.0, 1.57]

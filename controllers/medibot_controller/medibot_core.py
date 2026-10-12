@@ -169,9 +169,9 @@ class TagLocalizer:
             t = tvec.reshape(3)
             f = t[2] + self.cam_x     # tag position in robot frame: forward
             l = -t[0]                 # ... and left
-            # Vertical tag normal is horizontal in world coordinates. In camera
-            # coordinates n=(right, down, forward); solve its relative yaw.
-            phi = math.atan2(-n[0], -n[2])
+            # For a vertical wall tag, its surveyed normal remains horizontal;
+            # n=(right, down, forward) gives its relative heading in the camera.
+            phi = math.atan2(-n[0], n[2])
             yaw = wrap(tag["yaw"] - phi)
             cs, sn = math.cos(yaw), math.sin(yaw)
             entry = {
@@ -181,16 +181,15 @@ class TagLocalizer:
                 "dist": float(np.linalg.norm(t)),
                 "bearing": math.atan2(l, f),
                 "reproj": float(np.ravel(err)[0]),
-                "_nz": float(n[2]),   # tag normal z; should be < -0.25 for valid (facing camera)
             }
             all_raw.append(entry)
-            if n[2] <= -0.25:         # normal points toward camera: valid geometry
+            if t[2] > 0.0:
                 cands.append(entry)
 
-        # Fallback: if IPPE_SQUARE degenerated (e.g. near-square perturbed view), keep the
-        # solution with the most negative n[2]. The hint will still pick the better one.
+        # Vertical tags can be viewed from the side, so normal.z need not be
+        # negative. Use surveyed pose, odometry heading and reprojection instead.
         if not cands and all_raw:
-            cands = [min(all_raw, key=lambda e: -e["_nz"])]
+            cands = all_raw
 
         # Remove internal key before returning
         for c in cands:
@@ -253,8 +252,9 @@ class TagLocalizer:
 
             # --- 5. Hint-based disambiguation: pick candidate closest to hint ---
             if hint and len(tag_cands) > 1:
-                tag_cands = [min(tag_cands,
-                                 key=lambda c: math.hypot(c["x"] - hint[0], c["y"] - hint[1]))]
+                tag_cands = [min(tag_cands, key=lambda c:
+                                 math.hypot(c["x"] - hint[0], c["y"] - hint[1]) +
+                                 0.25 * abs(wrap(c["yaw"] - hint[2])))]
 
             cand = tag_cands[0]
 

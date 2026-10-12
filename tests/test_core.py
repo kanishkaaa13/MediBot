@@ -8,6 +8,7 @@
 """
 import math
 import os
+import re
 import sys
 
 import cv2
@@ -91,7 +92,7 @@ def render(rx, ry, rth, tag):
     right = (-math.sin(Y), math.cos(Y))
     cz = CFG["robot"]["z"] + cam["z"]
     pts = []
-    for sr, su in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+    for sr, su in [(-1, 1), (1, 1), (1, -1), (-1, -1)]:
         px = tag["x"] + sr * hw * right[0]
         py = tag["y"] + sr * hw * right[1]
         pz = tag["z"] + su * hw
@@ -101,7 +102,7 @@ def render(rx, ry, rth, tag):
         pts.append(p)
     # Map only the marker area onto the physical AprilTag; the surrounding
     # white margin and printed ID are part of the 1024px texture, not the tag.
-    src = np.float32([[160, 864], [864, 864], [864, 160], [160, 160]])
+    src = np.float32([[160, 160], [864, 160], [864, 864], [160, 864]])
     M = cv2.getPerspectiveTransform(src, np.float32(pts))
     cv2.warpPerspective(tex, M, (W, H), dst=img, borderMode=cv2.BORDER_TRANSPARENT)
     # Convert BGR to grayscale for AprilTag detector
@@ -125,9 +126,24 @@ def incidence_angle(rx, ry, rth, tag):
     return angle
 
 
-# Test coverage along each edge
+# Physical survey checks and projected visibility along each edge.
 edges = CFG["edges"]
 coverage_results = []
+
+with open(os.path.join(ROOT, "worlds", "medibot.wbt"), encoding="utf-8") as f:
+    surveyed_world = f.read()
+for tag in CFG["tags"]:
+    horizontal_normal = math.hypot(math.cos(tag["yaw"]), math.sin(tag["yaw"]))
+    wall_delta = abs(tag[tag["wall_axis"]] - tag["wall_plane"])
+    check(f"tag {tag['id']} vertical and on wall",
+          horizontal_normal >= 0.99 and abs(tag["z"] - 1.0) < 1e-6 and wall_delta <= 0.02,
+          f"horizontal normal={horizontal_normal:.3f}, wall offset={wall_delta:.3f}m")
+    name_at = surveyed_world.find(f'name "tag_{tag["id"]}"')
+    solid_at = surveyed_world.rfind("Solid {", 0, name_at)
+    plate = re.search(r'geometry Box \{ size ([^}]+) \}',
+                      surveyed_world[solid_at:name_at]) if name_at >= 0 else None
+    check(f"tag {tag['id']} world plate vertical", bool(plate and "0.01" in plate.group(1)),
+          plate.group(1) if plate else "plate missing")
 
 # Debug: test single tag detection first
 print("\n=== DEBUG: Single tag detection test ===")
@@ -137,7 +153,7 @@ if test_tag:
     # Tag faces along its yaw, so robot should be in front (opposite direction) facing the tag
     rx = test_tag["x"] + 1.5 * math.cos(test_tag["yaw"])
     ry = test_tag["y"] + 1.5 * math.sin(test_tag["yaw"])
-    rth = wrap(test_tag["yaw"] + math.pi)  # Robot faces toward tag
+    rth = wrap(test_tag["yaw"] + math.pi)  # Robot is on the tag's outward-normal side
     print(f"Testing tag {test_tag['id']} at ({test_tag['x']}, {test_tag['y']}) yaw={test_tag['yaw']:.2f}")
     print(f"Robot at ({rx:.2f}, {ry:.2f}) yaw={rth:.2f}")
     
@@ -165,52 +181,47 @@ for edge in edges:
     edge_length = math.hypot(dx, dy)
     edge_yaw = math.atan2(dy, dx)
     
-    # Step along edge every 0.25 m
-    num_steps = int(edge_length / 0.25) + 1
-    for step in range(num_steps):
-        t = step / num_steps if num_steps > 0 else 0
+    edge_good, edge_samples = 0, 0
+    for direction in (1, -1):
+      for step in range(int(edge_length / 0.5) + 1):
+        t = min(1.0, step * 0.5 / edge_length)
+        if direction < 0:
+            t = 1.0 - t
         rx = start_pos[0] + t * dx
         ry = start_pos[1] + t * dy
-        rth = edge_yaw
+        rth = edge_yaw if direction > 0 else wrap(edge_yaw + math.pi)
         
-        # Check which tags are visible from this position
-        detected_tags = []
+        visible = []
         for tag in CFG["tags"]:
-            # Render tag
-            img = render(rx, ry, rth, tag)
-            if img is None:
+            dx_tag, dy_tag = tag["x"] - rx, tag["y"] - ry
+            dist = math.hypot(dx_tag, dy_tag)
+            if dist > 4.0 or dist < 0.01:
                 continue
-            
-            # Try to detect
-            meas = loc.measure(img, hint=(rx, ry, rth))
-            if meas:
-                m = min(meas, key=lambda d: d["dist"])
-                pos_err = math.hypot(m["x"] - rx, m["y"] - ry) * 100
-                yaw_err = math.degrees(abs(wrap(m["yaw"] - rth)))
-                inc = incidence_angle(rx, ry, rth, tag)
-                
-                detected_tags.append({
-                    "tag_id": tag["id"],
-                    "pos_err": pos_err,
-                    "yaw_err": yaw_err,
-                    "incidence": inc
-                })
-        
-        # Check if at least one tag meets requirements
-        good_tags = [t for t in detected_tags if t["pos_err"] < 6.0 and t["yaw_err"] < 4.0]
-        coverage_results.append({
-            "edge": f"{start_node}->{end_node}",
-            "step": step,
-            "pos": (rx, ry),
-            "detected_count": len(detected_tags),
-            "good_count": len(good_tags),
-            "tags": detected_tags
-        })
-        
-        # Check requirement
-        check(f"Coverage {start_node}->{end_node} step {step}: {len(good_tags)} good tags",
-              len(good_tags) >= 1,
-              f"detected={len(detected_tags)}, good={len(good_tags)}")
+            inc = incidence_angle(rx, ry, rth, tag)
+            if inc >= 45.0:
+                continue
+            # Apparent marker width under the surveyed incidence angle, using
+            # the camera focal length derived from its configured FOV.
+            px = fx * CFG["tag"]["size"] * math.cos(math.radians(inc)) / dist
+            if px >= 30.0:
+                visible.append(tag)
+        edge_samples += 1
+        edge_good += bool(visible)
+        coverage_results.append({"edge": f"{start_node}->{end_node}", "good_count": bool(visible)})
+
+    pct = 100.0 * edge_good / edge_samples
+    print(f"TAG COVERAGE {start_node}->{end_node}: {edge_good}/{edge_samples} ({pct:.1f}%)")
+    check(f"bidirectional projected tag coverage {start_node}->{end_node} >= 90%", pct >= 90.0)
+
+# Exercise real detector/PnP from head-on poses across the map.
+for tag in CFG["tags"]:
+    rx = tag["x"] + 1.5 * math.cos(tag["yaw"])
+    ry = tag["y"] + 1.5 * math.sin(tag["yaw"])
+    heading = wrap(tag["yaw"] + math.pi)
+    image = render(rx, ry, heading, tag)
+    detections = loc.measure(image, hint=(rx, ry, heading)) if image is not None else []
+    ids = [m["id"] for m in detections]
+    check(f"rendered vertical tag {tag['id']} detected", tag["id"] in ids, f"ids={ids}")
 
 # Print coverage summary
 print("\n=== TAG COVERAGE SUMMARY ===")

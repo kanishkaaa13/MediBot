@@ -3314,7 +3314,7 @@ Solid {
   name "tag_0"
 }
 Solid {
-  translation 2.95 -0.63 1
+  translation 3 -0.63 1
   rotation 0 0 1 0
   children [
     Shape {
@@ -3331,7 +3331,7 @@ Solid {
   name "tag_1"
 }
 Solid {
-  translation 5 -0.63 1
+  translation 5.9 -0.63 1
   rotation 0 0 1 0
   children [
     Shape {
@@ -3365,7 +3365,7 @@ Solid {
   name "tag_3"
 }
 Solid {
-  translation 1 3.63 1
+  translation 2.5 3.63 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3382,7 +3382,7 @@ Solid {
   name "tag_4"
 }
 Solid {
-  translation 3 3.63 1
+  translation 5.5 3.63 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3399,7 +3399,7 @@ Solid {
   name "tag_5"
 }
 Solid {
-  translation 5.6 3.63 1
+  translation 8.5 3.63 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3416,8 +3416,8 @@ Solid {
   name "tag_6"
 }
 Solid {
-  translation 8.5 3.63 1
-  rotation 0 0 1 -3.14159
+  translation 1 -0.63 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
@@ -3433,7 +3433,7 @@ Solid {
   name "tag_7"
 }
 Solid {
-  translation 1 -0.63 1
+  translation 6 -0.63 1
   rotation 0 0 1 0
   children [
     Shape {
@@ -3450,7 +3450,7 @@ Solid {
   name "tag_8"
 }
 Solid {
-  translation 3.35 -0.63 1
+  translation 8 -0.63 1
   rotation 0 0 1 0
   children [
     Shape {
@@ -3467,8 +3467,8 @@ Solid {
   name "tag_9"
 }
 Solid {
-  translation 5.65 -0.63 1
-  rotation 0 0 1 0
+  translation 3.15 3.63 1
+  rotation 0 0 1 -3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -3484,8 +3484,8 @@ Solid {
   name "tag_10"
 }
 Solid {
-  translation 8 -0.63 1
-  rotation 0 0 1 0
+  translation 4.9 3.63 1
+  rotation 0 0 1 -3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -3501,7 +3501,7 @@ Solid {
   name "tag_11"
 }
 Solid {
-  translation 3.15 3.63 1
+  translation 6 3.63 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3518,7 +3518,7 @@ Solid {
   name "tag_12"
 }
 Solid {
-  translation 4.9 3.63 1
+  translation 8 3.63 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3535,8 +3535,8 @@ Solid {
   name "tag_13"
 }
 Solid {
-  translation 6 3.63 1
-  rotation 0 0 1 -3.14159
+  translation -2.53 0 1
+  rotation 0 0 1 -1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -3552,8 +3552,8 @@ Solid {
   name "tag_14"
 }
 Solid {
-  translation 8 3.63 1
-  rotation 0 0 1 -3.14159
+  translation 9.13 0 1
+  rotation 0 0 1 1.5708
   children [
     Shape {
       appearance PBRAppearance {
@@ -3569,8 +3569,8 @@ Solid {
   name "tag_15"
 }
 Solid {
-  translation 0.07 1 1
-  rotation 0 0 1 -1.5708
+  translation 1.9 -2.73 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
@@ -3586,8 +3586,8 @@ Solid {
   name "tag_16"
 }
 Solid {
-  translation 4 3.63 1
-  rotation 0 0 1 -3.14159
+  translation 7 -2.73 1
+  rotation 0 0 1 0
   children [
     Shape {
       appearance PBRAppearance {
@@ -3603,7 +3603,7 @@ Solid {
   name "tag_17"
 }
 Solid {
-  translation 7 3.63 1
+  translation 3.8 5.13 1
   rotation 0 0 1 -3.14159
   children [
     Shape {
@@ -3620,8 +3620,8 @@ Solid {
   name "tag_18"
 }
 Solid {
-  translation 1.9 -2.73 1
-  rotation 0 0 1 0
+  translation 7 5.13 1
+  rotation 0 0 1 -3.14159
   children [
     Shape {
       appearance PBRAppearance {
@@ -3635,57 +3635,6 @@ Solid {
   ]
   boundingObject Box { size 0.363636 0.01 0.363636 }
   name "tag_19"
-}
-Solid {
-  translation 7 -2.73 1
-  rotation 0 0 1 0
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        baseColorMap ImageTexture { url [ "textures/tag_20.png" ] filtering 0 }
-      }
-      geometry Box { size 0.363636 0.01 0.363636 }
-    }
-  ]
-  boundingObject Box { size 0.363636 0.01 0.363636 }
-  name "tag_20"
-}
-Solid {
-  translation 3.8 5.13 1
-  rotation 0 0 1 -3.14159
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        baseColorMap ImageTexture { url [ "textures/tag_21.png" ] filtering 0 }
-      }
-      geometry Box { size 0.363636 0.01 0.363636 }
-    }
-  ]
-  boundingObject Box { size 0.363636 0.01 0.363636 }
-  name "tag_21"
-}
-Solid {
-  translation 7 5.13 1
-  rotation 0 0 1 -3.14159
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 1 1 1
-        roughness 0.5
-        metalness 0
-        baseColorMap ImageTexture { url [ "textures/tag_22.png" ] filtering 0 }
-      }
-      geometry Box { size 0.363636 0.01 0.363636 }
-    }
-  ]
-  boundingObject Box { size 0.363636 0.01 0.363636 }
-  name "tag_22"
 }
 DEF TROLLEY Solid {
   translation -1.5 1.8 0.1

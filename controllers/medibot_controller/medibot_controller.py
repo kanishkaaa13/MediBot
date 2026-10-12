@@ -50,7 +50,7 @@ BLOCKED_EDGE_TTL = 180.0        # s   keep an obstacle blocked through outbound/
 AUTO_VERIFY_S = 8.0             # auto-confirm face/RFID after this many s (None = keys only)
 GATE_M = 1.2                    # deprecated: replaced by Mahalanobis test
 MAHALANOBIS_THRESH = 11.34      # chi-square 3 dof, 99% confidence
-MIN_ACCEPT_RADIUS = 0.4         # minimum accept radius for tag fixes
+MIN_ACCEPT_RADIUS = 0.02        # keep EKF tag corrections smooth, even for small drift
 REJECT_BUFFER_TIME = 2.0         # seconds to keep rejected fixes
 REJECT_AGREE_POS = 0.25         # position agreement threshold (m)
 REJECT_AGREE_TH = 0.2           # heading agreement threshold (rad)
@@ -244,6 +244,7 @@ class MediBot:
         self.mission_no = 0
         self.step_no = 0
         self.last_ekf_print_t = -1.0
+        self.last_tag_print_t = -1.0
         self.calibrating = False
         self.calib_start_pose = None
         self.rejected_fixes = []  # Buffer for rejected tag fixes
@@ -425,6 +426,11 @@ class MediBot:
         if not meas:
             return
         m = min(meas, key=lambda d: d["dist"])
+        now = self.now()
+        if self.state != "IDLE" and now - self.last_tag_print_t >= 1.0:
+            self.last_tag_print_t = now
+            print(f"[TAG id={m['id']} range={m['dist']:.2f} "
+                  f"bearing={math.degrees(m['bearing']):.1f}deg]")
         if not self.tags_enabled:
             self.last_tag_msg = f"tag {m['id']} seen (correction OFF)"
             return
@@ -443,7 +449,7 @@ class MediBot:
         # Minimum accept radius check
         dist_error = math.hypot(m["x"] - x, m["y"] - y)
 
-        if mahalanobis < MAHALANOBIS_THRESH and dist_error >= MIN_ACCEPT_RADIUS:
+        if mahalanobis < MAHALANOBIS_THRESH and dist_error > MIN_ACCEPT_RADIUS:
             # Accept the tag fix
             before = self.true_err() * 100
             self.ekf.update([m["x"], m["y"], m["yaw"]], sp, st)

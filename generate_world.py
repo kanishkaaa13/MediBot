@@ -103,25 +103,24 @@ def generate_wall_tags():
         tag_id += 1
     # Long south corridor wall; the face toward the corridor is y=-0.64.
     # Long north wall tags are offset toward the corridor and alternate with these.
-    for x, zone in [(0.0, "home_south"), (2.95, "pharmacy_south"),
-                    (5.0, "junction_south"), (8.4, "icu_south")]:
+    for x, zone in [(0.0, "home_south"), (3.0, "pharmacy_south_door_east"),
+                    (5.9, "junction_south"), (8.4, "icu_south")]:
         add_tag(x, -0.63, PI / 2, zone, "y", -0.64)
-    for x, zone in [(1.0, "home_north"), (3.0, "junction_north"),
-                    (5.6, "ward2a_north_approach"), (8.5, "ward3b_north_approach")]:
+    for x, zone in [(2.5, "home_north"), (5.5, "ward2a_north_approach"),
+                    (8.5, "ward3b_north_approach")]:
         add_tag(x, 3.63, -PI / 2, zone, "y", 3.64)
 
     # Door-adjacent markers on the corridor side, clear of the door openings.
-    for x, zone in [(1.0, "pharmacy_door_west"), (3.35, "pharmacy_door_east"),
-                    (5.65, "icu_door_west"), (8.0, "icu_door_east")]:
+    for x, zone in [(1.0, "pharmacy_door_west"),
+                    (6.0, "icu_door_west"), (8.0, "icu_door_east")]:
         add_tag(x, -0.63, PI / 2, zone, "y", -0.64)
     for x, zone in [(3.15, "ward2a_door_west"), (4.9, "ward2a_door_east"),
                     (6.0, "ward3b_door_west"), (8.0, "ward3b_door_east")]:
         add_tag(x, 3.63, -PI / 2, zone, "y", 3.64)
 
-    # Head-on tags at corridor ends/turns (on wall surfaces, not at graph nodes).
-    add_tag(0.07, 1.0, 0.0, "home_end", "x", 0.06)
-    add_tag(4.0, 3.63, -PI / 2, "ward2a_corridor_end", "y", 3.64)
-    add_tag(7.0, 3.63, -PI / 2, "ward3b_corridor_end", "y", 3.64)
+    # Head-on tags at corridor ends, flush to the west/east perimeter walls.
+    add_tag(-2.53, 0.0, 0.0, "home_end", "x", -2.54)
+    add_tag(9.13, 0.0, PI, "east_corridor_end", "x", 9.14)
 
     # One handover tag on the interior wall facing each room entrance.
     add_tag(1.9, -2.73, PI / 2, "pharmacy_room", "y", -2.74)
