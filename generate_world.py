@@ -70,46 +70,222 @@ TROLLEY_PARK = (-1.5, 1.8)
 
 
 # ----------------------------------------------------------------------------
-# Automatic AprilTag board placement
+# Automatic Wall-Mounted AprilTag Placement
 # ----------------------------------------------------------------------------
-def generate_boards():
-    """Double-sided boards along every graph edge and near room doors / dead-ends."""
-    boards = [
-        # Edge: HOME -> PHARMACY (direction +x, yaw 0.0)
-        (1.0, 0.55, 0.0),
-        # Edge: PHARMACY -> JUNCTION (direction +x, yaw 0.0, alternating right side)
-        (3.0, -0.55, 0.0),
-        # Edge: JUNCTION -> ICU (direction +x, yaw 0.0, right side avoids nurse station)
-        (5.5, -0.55, 0.0),
-        # Edge: JUNCTION -> WARD-2A (direction +y, yaw PI/2, west side avoids nurse station)
-        (3.45, 1.5, PI / 2),
-        # Edge: WARD-2A -> WARD-3B (direction +x, yaw 0.0, north side avoids nurse station)
-        (5.5, 3.55, 0.0),
-        # Edge: ICU -> WARD-3B (direction +y, yaw PI/2, east side avoids nurse station)
-        (7.55, 1.5, PI / 2),
-        # Endpoint / dead-end boards (vital for approach/return accuracy):
-        (-1.2, 0.0, 0.0),          # Behind HOME (seen while returning to HOME)
-        (8.0, 3.0, PI),            # Behind WARD-3B (seen while approaching WARD-3B)
-        (4.0, -0.85, PI / 2),      # South of JUNCTION (seen when driving south to JUNCTION)
-        (7.0, -0.85, PI / 2),      # South of ICU (seen when approaching ICU)
-        (4.0, 3.85, -PI / 2),      # North of WARD-2A door (seen when approaching WARD-2A)
-        (2.0, -0.85, PI / 2),      # South of PHARMACY door (seen when approaching PHARMACY)
-    ]
-    return boards
+def generate_wall_tags():
+    """Generate wall-mounted tag plates based on graph edges and room geometry.
+
+    Returns list of (x, y, z, yaw, zone_name, tag_id) where:
+    - x, y, z: tag centre position
+    - yaw: direction of plate's outward normal (facing corridor)
+    - zone_name: descriptive location name
+    - tag_id: assigned ID
+    """
+    tags = []
+    tag_id = 0
+
+    # Wall positions (based on world geometry)
+    # South corridor wall: y = -0.70
+    # North corridor wall: y = 3.70
+    # West wall: x = -2.60
+    # East wall: x = 9.20
+    # Door gaps: Pharmacy (x=1.4 to 2.6), ICU (x=6.4 to 7.6), Ward 2A (x=3.4 to 4.6), Ward 3B (x=6.4 to 7.6)
+
+    def add_tag(x, y, yaw, zone):
+        nonlocal tag_id
+        tags.append((x, y, TAG_Z, yaw, zone, tag_id))
+        tag_id += 1
+
+    # Zone 0-9: South corridor (HOME -> PHARMACY -> JUNCTION -> ICU)
+    # South wall (y = -0.70), tags facing north (yaw = 0)
+    # Door gaps: Pharmacy (1.4-2.6), ICU (6.4-7.6)
+    south_wall_y = -0.70
+    corridor_spacing = 1.5
+
+    # HOME -> PHARMACY edge (x: 0 to 2)
+    for x in [0.5, 1.0]:  # Before pharmacy door
+        add_tag(x, south_wall_y, 0.0, "south_corridor")
+
+    # PHARMACY -> JUNCTION edge (x: 2 to 4)
+    # Skip door gap (1.4-2.6), add tags after
+    for x in [2.8, 3.3]:
+        add_tag(x, south_wall_y, 0.0, "south_corridor")
+
+    # JUNCTION -> ICU edge (x: 4 to 7)
+    # Skip ICU door gap (6.4-7.6)
+    for x in [4.5, 5.0, 5.5, 6.0]:
+        add_tag(x, south_wall_y, 0.0, "south_corridor")
+
+    # Zone 10-19: North corridor (JUNCTION -> WARD-2A -> WARD-3B)
+    # North wall (y = 3.70), tags facing south (yaw = PI)
+    # Door gaps: Ward 2A (3.4-4.6), Ward 3B (6.4-7.6)
+    north_wall_y = 3.70
+
+    # JUNCTION -> WARD-2A edge (x: 4 to 4, actually this is vertical)
+    # This is the vertical corridor at x=4, y: 0 to 3
+    # West wall of this corridor (x=3.88, facing east, yaw=0)
+    # East wall of this corridor (x=4.12, facing west, yaw=PI)
+    west_wall_x = 3.88  # Just west of centre line
+    east_wall_x = 4.12  # Just east of centre line
+
+    # Vertical corridor JUNCTION -> WARD-2A (y: 0 to 3)
+    # Alternate sides, skip door gap at Ward 2A (y=3.4-4.6 for north corridor)
+    for y in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+        # West wall facing east
+        add_tag(west_wall_x, y, 0.0, "west_corridor")
+
+    # Zone 20-29: East corridor (ICU -> WARD-3B)
+    # Vertical corridor at x=7, y: 0 to 3
+    # West wall (x=6.88, facing east, yaw=0)
+    # East wall (x=7.12, facing west, yaw=PI)
+    west_wall_x_icu = 6.88
+    east_wall_x_icu = 7.12
+
+    for y in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]:
+        # West wall facing east
+        add_tag(west_wall_x_icu, y, 0.0, "east_corridor")
+
+    # Zone 30-39: End walls and room entrances
+    # HOME end wall (x = -2.60, facing east, yaw = 0)
+    add_tag(-2.55, 0.0, 0.0, "home_end")
+
+    # ICU end wall (x = 9.20, facing west, yaw = PI)
+    add_tag(9.15, 0.0, PI, "icu_end")
+
+    # WARD-3B end wall (x = 9.20, facing west, yaw = PI)
+    add_tag(9.15, 3.0, PI, "ward3b_end")
+
+    # Room door frames (tags facing into corridor)
+    # Pharmacy door (x=2, y=-0.70, facing south, yaw=-PI/2)
+    add_tag(2.0, -0.65, -PI/2, "pharmacy_door")
+
+    # ICU door (x=7, y=-0.70, facing south, yaw=-PI/2)
+    add_tag(7.0, -0.65, -PI/2, "icu_door")
+
+    # Ward 2A door (x=4, y=3.70, facing north, yaw=PI/2)
+    add_tag(4.0, 3.65, PI/2, "ward2a_door")
+
+    # Ward 3B door (x=7, y=3.70, facing north, yaw=PI/2)
+    add_tag(7.0, 3.65, PI/2, "ward3b_door")
+
+    # Zone 40-49: Inside rooms (tags facing entry)
+    # Pharmacy (room centre ~1.9, -1.6), tag facing door (facing north, yaw=0)
+    add_tag(1.9, -1.55, 0.0, "pharmacy_room")
+
+    # ICU (room centre ~7.1, -1.9), tag facing door (facing north, yaw=0)
+    add_tag(7.1, -1.85, 0.0, "icu_room")
+
+    # Ward 2A (room centre ~3.8, 4.5), tag facing door (facing south, yaw=PI)
+    add_tag(3.8, 4.45, PI, "ward2a_room")
+
+    # Ward 3B (room centre ~7.0, 4.5), tag facing door (facing south, yaw=PI)
+    add_tag(7.0, 4.45, PI, "ward3b_room")
+
+    return tags
+
+
+def tag_plate(tag_id, x, y, z, yaw):
+    """Thin wall-mounted tag plate (0.01 m thick) with AprilTag texture."""
+    return (f"Solid {{\n"
+            f"  translation {x:g} {y:g} {z:g}\n"
+            f"  rotation 0 0 1 {yaw:g}\n"
+            f"  children [\n"
+            f"    Shape {{\n"
+            f"      appearance PBRAppearance {{\n"
+            f"        baseColor 1 1 1\n"
+            f"        roughness 0.5\n"
+            f"        metalness 0\n"
+            f"        texture ImageTexture {{ url \"../worlds/textures/tag_{tag_id:02d}.png\" }}\n"
+            f"      }}\n"
+            f"      geometry Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
+            f"    }}\n"
+            f"  ]\n"
+            f"  boundingObject Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
+            f"  name \"tag_{tag_id}\"\n"
+            f"}}\n")
+
+
+def generate_tag_map(tags):
+    """Generate tag_map.md with tag details."""
+    md = "# AprilTag Map\n\n"
+    md += "| ID | Location | Wall | Room | Position (x, y, z) | Yaw |\n"
+    md += "|----|----------|------|------|-------------------|-----|\n"
+
+    for x, y, z, yaw, zone, tag_id in tags:
+        wall = "unknown"
+        if "south" in zone:
+            wall = "south"
+        elif "north" in zone:
+            wall = "north"
+        elif "west" in zone:
+            wall = "west"
+        elif "east" in zone:
+            wall = "east"
+        elif "door" in zone:
+            wall = "door_frame"
+        elif "room" in zone:
+            wall = "room_wall"
+        elif "end" in zone:
+            wall = "end_wall"
+
+        room = "corridor"
+        if "pharmacy" in zone:
+            room = "pharmacy"
+        elif "icu" in zone:
+            room = "icu"
+        elif "ward2a" in zone:
+            room = "ward_2a"
+        elif "ward3b" in zone:
+            room = "ward_3b"
+        elif "home" in zone:
+            room = "home"
+
+        md += f"| {tag_id} | {zone} | {wall} | {room} | ({x:.2f}, {y:.2f}, {z:.2f}) | {yaw:.2f} |\n"
+
+    return md
 
 
 # ----------------------------------------------------------------------------
 # Signage and Texture Generation (Pillow + OpenCV)
 # ----------------------------------------------------------------------------
 def make_tag_image(tag_id):
-    """Return a 600x600 uint8 image: 400 px tag36h11 marker + 100 px white margin."""
+    """Return a 600x600 uint8 image: 400 px tag36h11 marker + 100 px white margin with ID text."""
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
     if hasattr(cv2.aruco, "generateImageMarker"):
         marker = cv2.aruco.generateImageMarker(dictionary, tag_id, 80, borderBits=1)
     else:  # OpenCV < 4.7
         marker = cv2.aruco.drawMarker(dictionary, tag_id, 80, borderBits=1)
     marker = cv2.resize(marker, (400, 400), interpolation=cv2.INTER_NEAREST)
-    return cv2.copyMakeBorder(marker, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=255)
+    img = cv2.copyMakeBorder(marker, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=255)
+
+    # Add ID text below the tag (in the white margin)
+    img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(img_pil)
+
+    # Try to load a font for the ID text
+    font = None
+    for font_path in [
+        "C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/calibrib.ttf",
+    ]:
+        if os.path.exists(font_path):
+            try:
+                font = ImageFont.truetype(font_path, 40)
+                break
+            except Exception:
+                pass
+    if font is None:
+        font = ImageFont.load_default()
+
+    # Draw ID text centered below the tag
+    text = str(tag_id)
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+    x = (600 - tw) / 2
+    y = 520  # Below the tag (tag is at y=100 to 500)
+    draw.text((x, y), text, fill=(0, 0, 0), font=font)
+
+    return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
 
 
 def make_sign_textures(tex_dir):
@@ -821,14 +997,12 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
             parts.append(box_solid(f"ward3b_curtain_{idx}", bx - 0.4, 4.5, 0.75, 0.03, 1.2, 1.4,
                                    (0.35, 0.7, 0.7), collide=False))
 
-    # 9. AprilTag boards (Automatic placement along edges and dead-ends)
-    boards = generate_boards()
+    # 9. Wall-mounted AprilTag plates (thin plates on walls)
+    wall_tags = generate_wall_tags()
     tags = []
-    for i, (bx, by, byaw) in enumerate(boards):
-        parts.append(tag_board(i, bx, by, byaw))
-        tags.append({"id": 2 * i, "x": bx, "y": by, "yaw": byaw, "z": TAG_Z, "board": i})
-        yb = (byaw + PI + PI) % (2 * PI) - PI
-        tags.append({"id": 2 * i + 1, "x": bx, "y": by, "yaw": yb, "z": TAG_Z, "board": i})
+    for x, y, z, yaw, zone, tag_id in wall_tags:
+        parts.append(tag_plate(tag_id, x, y, z, yaw))
+        tags.append({"id": tag_id, "x": x, "y": y, "yaw": yaw, "z": z, "zone": zone})
 
     # 10. Trolley Obstacle (DEF TROLLEY) - with physics for collision detection
     parts.append(box_solid("trolley", TROLLEY_PARK[0], TROLLEY_PARK[1], 0.35, 0.5, 0.45, 0.7,
@@ -908,7 +1082,13 @@ def main():
     # 3. Check clearance violations
     check_clearance(world.split("\n"))
 
-    # 3. Generate AprilTag markers
+    # 4. Generate tag_map.md
+    wall_tags = generate_wall_tags()
+    tag_map_md = generate_tag_map(wall_tags)
+    with open(os.path.join(ROOT, "tag_map.md"), "w", encoding="utf-8") as f:
+        f.write(tag_map_md)
+
+    # 5. Generate AprilTag markers
     for t in tags:
         cv2.imwrite(os.path.join(TEX_DIR, f"tag_{t['id']:02d}.png"), make_tag_image(t["id"]))
 
@@ -916,17 +1096,17 @@ def main():
     with open(os.path.join(WORLD_DIR, "medibot.wbt"), "w", encoding="utf-8") as f:
         f.write(world)
 
-    # 5. Write controllers/medibot_controller/config.json
+    # 6. Write controllers/medibot_controller/config.json
     cfg = {
         "nodes": {k: list(v) for k, v in NODES.items()},
-        "edges": [list(e) for e in EDGES],
-        "tags": tags,
+        "edges": EDGES,
+        "tags": [{"id": t["id"], "x": t["x"], "y": t["y"], "yaw": t["yaw"], "z": t["z"], "zone": t["zone"]} for t in tags],
         "tag": {"size": TAG_SIZE},
         "camera": CAM,
         "face_camera": FACE_CAM,
         "robot": {
             "wheel_radius": WHEEL_R,
-            "track": TRACK,
+            "track": 2 * WHEEL_Y,
             "start": [0.0, 0.0, 0.0],
             "z": WHEEL_R,
             "footprint": list(CHASSIS),

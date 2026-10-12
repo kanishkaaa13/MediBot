@@ -234,6 +234,8 @@ class MediBot:
         self.last_valid_gyro = 0.0
         self.last_valid_ps = {k: 0.0 for k in ("fl", "fr", "rl", "rr")}
         self.nan_warning_printed = set()  # Track which sensors have warned about NaN
+        self.last_tag_id = None
+        self.last_tag_zone = None
 
         # Regression mode
         self.regression_mode = os.path.exists(os.path.join(HERE, "regression.flag"))
@@ -427,8 +429,10 @@ class MediBot:
 
             after = self.true_err() * 100
             self.n_corrections += 1
-            self.last_tag_msg = (f"tag {m['id']} d={m['dist']:.1f}m  err {before:.1f} -> {after:.1f} cm  "
-                                 f"var(P)={self.ekf.pos_variance:.4f}")
+            # Get tag zone for display
+            tag_info = next((t for t in CFG["tags"] if t["id"] == m["id"]), None)
+            zone = tag_info.get("zone", "unknown") if tag_info else "unknown"
+            self.last_tag_msg = (f"Tag {m['id']} ({zone}) d={m['dist']:.1f}m  err {before:.1f} -> {after:.1f} cm")
             t = self.now()
             if self.state != "IDLE" and (t - self.last_ekf_print_t >= 1.0):
                 self.last_ekf_print_t = t
