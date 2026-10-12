@@ -70,6 +70,21 @@ FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.88}
 TROLLEY_PARK = (-1.5, 1.8)
 
 
+def _indent(text, spaces=4):
+    """Re-indent every line of a multi-line VRML snippet by `spaces` spaces.
+
+    When a helper function returns a multi-line VRML block and that block is
+    interpolated into an f-string template, Python only indents the first line
+    (because the f-string prefix is only prepended to the first token).  All
+    subsequent lines keep their original indentation.  Calling _indent() on the
+    whole block before embedding it ensures every line sits at the correct depth
+    in the output .wbt file, so Webots can parse the brace structure correctly.
+    """
+    pad = " " * spaces
+    return "\n".join(pad + line if line.strip() else line
+                     for line in text.splitlines())
+
+
 # ----------------------------------------------------------------------------
 # Automatic Wall-Mounted AprilTag Placement
 # ----------------------------------------------------------------------------
@@ -147,7 +162,7 @@ def tag_plate(tag_id, x, y, z, yaw):
             f"        baseColor 1 1 1\n"
             f"        roughness 0.5\n"
             f"        metalness 0\n"
-            f"        texture ImageTexture {{ url \"../worlds/textures/tag_{tag_id:02d}.png\" }}\n"
+            f"        texture ImageTexture {{ url \"textures/tag_{tag_id:02d}.png\" }}\n"
             f"      }}\n"
             f"      geometry Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
             f"    }}\n"
@@ -489,7 +504,7 @@ def floor_marker(name, x, y, texture):
             f"        baseColor 1 1 1\n"
             f"        roughness 0.9\n"
             f"        metalness 0\n"
-            f"        texture ImageTexture {{ url \"../worlds/textures/{texture}\" }}\n"
+            f"        texture ImageTexture {{ url \"textures/{texture}\" }}\n"
             f"      }}\n"
             f"      geometry Box {{ size 0.5 0.5 0.01 }}\n"
             f"    }}\n"
@@ -792,14 +807,30 @@ def compartment(n, x, anchor_x, cargo_col):
 
 def robot_node():
     cx, cy, cz = CHASSIS
-    wheels = "".join([
-        wheel("fl", WHEEL_X, WHEEL_Y), wheel("fr", WHEEL_X, -WHEEL_Y),
-        wheel("rl", -WHEEL_X, WHEEL_Y), wheel("rr", -WHEEL_X, -WHEEL_Y),
-    ])
+
+    # Build wheel and compartment snippets, then re-indent every line so they
+    # sit at the correct depth (4 spaces = one level inside "children [").
+    # Without _indent() the f-string only indents the first line of each
+    # multi-line block, leaving every subsequent line at column 0, which makes
+    # Webots see those nodes as top-level world children and reject the file.
+    wheels = _indent(
+        "".join([
+            wheel("fl",  WHEEL_X,  WHEEL_Y),
+            wheel("fr",  WHEEL_X, -WHEEL_Y),
+            wheel("rl", -WHEEL_X,  WHEEL_Y),
+            wheel("rr", -WHEEL_X, -WHEEL_Y),
+        ]),
+        4,
+    )
     # 3 lockable medicine compartments
-    comp1 = compartment(1, 0.04, 0.08, (0.85, 0.15, 0.15))   # Compartment 1 (red cargo box)
-    comp2 = compartment(2, -0.06, -0.02, (0.15, 0.45, 0.85)) # Compartment 2 (blue cargo box)
-    comp3 = compartment(3, -0.16, -0.12, (0.15, 0.75, 0.35)) # Compartment 3 (green cargo box)
+    comp1 = _indent(compartment(1,  0.04,  0.08, (0.85, 0.15, 0.15)), 4)
+    comp2 = _indent(compartment(2, -0.06, -0.02, (0.15, 0.45, 0.85)), 4)
+    comp3 = _indent(compartment(3, -0.16, -0.12, (0.15, 0.75, 0.35)), 4)
+
+    # Sonar snippets (single-line helpers, still benefit from consistent indenting)
+    s_front = _indent(sonar("us_front", 0.236,  0.0,    0.0   ), 4)
+    s_left  = _indent(sonar("us_left",  0.226,  0.08,   0.7854), 4)
+    s_right = _indent(sonar("us_right", 0.226, -0.08,  -0.7854), 4)
 
     return f"""DEF MEDIBOT Robot {{
   translation 0 0 {WHEEL_R:g}
@@ -938,19 +969,19 @@ def robot_node():
       near 0.05
     }}
     # Front Sonars
-    {sonar("us_front", 0.236, 0.0, 0.0)}
-    {sonar("us_left", 0.226, 0.08, 0.7854)}
-    {sonar("us_right", 0.226, -0.08, -0.7854)}
+{s_front}
+{s_left}
+{s_right}
     # IMU, Gyro, Accelerometer
     InertialUnit {{ translation 0 0 0.04 name "imu" }}
     Gyro {{ translation 0 0 0.04 name "gyro" }}
     Accelerometer {{ translation 0 0 0.04 name "accel" }}
     # 3 Lockable Medicine Compartments
-    {comp1}
-    {comp2}
-    {comp3}
+{comp1}
+{comp2}
+{comp3}
     # 4 Wheels
-    {wheels}
+{wheels}
   ]
   # Low BoundingObject and Stable Physics Center of Mass (Cannot tip over)
   boundingObject Pose {{
@@ -1049,26 +1080,30 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     wh = 1.4
     wz = wh / 2
 
-    # DEF/USE for texture reuse (performance optimization)
-    parts.append("""DEF WallAppearance PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
-DEF FloorAppearance PBRAppearance {
-      baseColor 0.78 0.8 0.82
-      roughness 0.6
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
-    }
-""")
-
+    # DEF/USE for texture reuse (performance optimization).
+    # The DEF must appear *inside a Shape's appearance field* (not at top level).
+    # We pass the full inline appearance for the first wall, then USE it for the rest.
+    wall_appearance_def = (
+        'DEF WallAppearance PBRAppearance {\n'
+        '        baseColor 0.96 0.96 0.96\n'
+        '        roughness 0.8\n'
+        '        metalness 0\n'
+        '        texture ImageTexture { url "textures/wall_plaster.png" }\n'
+        '      }'
+    )
+    floor_appearance_def = (
+        'DEF FloorAppearance PBRAppearance {\n'
+        '        baseColor 0.78 0.8 0.82\n'
+        '        roughness 0.6\n'
+        '        metalness 0\n'
+        '        texture ImageTexture { url "textures/floor_corridor.png" }\n'
+        '      }'
+    )
     wall_appearance = "USE WallAppearance"
     floor_appearance = "USE FloorAppearance"
 
-    # Outer perimeter boundary walls
-    parts.append(box_solid_textured("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_appearance))
+    # Outer perimeter boundary walls (first one carries the DEF, rest USE it)
+    parts.append(box_solid_textured("wall_south_outer", 3.3, -2.80, wz, 12.0, 0.12, wh, wall_appearance_def))
     parts.append(box_solid_textured("wall_north_outer", 3.3, 5.20, wz, 12.0, 0.12, wh, wall_appearance))
     parts.append(box_solid_textured("wall_west_outer", -2.60, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
     parts.append(box_solid_textured("wall_east_outer", 9.20, 1.2, wz, 0.12, 8.4, wh, wall_appearance))
@@ -1098,7 +1133,7 @@ DEF FloorAppearance PBRAppearance {
     parts.append(box_solid_textured("wall_w_home_n", -1.55, 0.70, wz, 2.1, 0.12, wh, wall_appearance))
 
     # Floor with corridor texture
-    parts.append(box_solid_textured("floor_main", 3.3, 1.5, 0.01, 12.0, 8.0, 0.02, floor_appearance))
+    parts.append(box_solid_textured("floor_main", 3.3, 1.5, 0.01, 12.0, 8.0, 0.02, floor_appearance_def))
 
     # Floor markers (A at HOME, B at WARD-3B)
     parts.append(floor_marker("marker_a", 0.0, 0.0, "marker_a.png"))
@@ -1177,10 +1212,26 @@ DEF FloorAppearance PBRAppearance {
         tags.append({"id": tag_id, "x": x, "y": y, "yaw": yaw, "z": z, "zone": zone})
 
     # 10. Trolley Obstacle (DEF TROLLEY) - with physics for collision detection
-    parts.append(box_solid("trolley", TROLLEY_PARK[0], TROLLEY_PARK[1], 0.35, 0.5, 0.45, 0.7,
-                           (0.95, 0.55, 0.1), def_name="TROLLEY"))
-    # Add physics to trolley (manually since box_solid doesn't add it by default)
-    parts[-1] = parts[-1].rstrip("}\n") + "  physics Physics { density -1 mass 15 }\n}\n"
+    tx, ty = TROLLEY_PARK
+    parts.append(
+        f"DEF TROLLEY Solid {{\n"
+        f"  translation {tx:g} {ty:g} 0.35\n"
+        f"  rotation 0 0 1 0\n"
+        f"  name \"trolley\"\n"
+        f"  children [\n"
+        f"    Shape {{\n"
+        f"      appearance PBRAppearance {{\n"
+        f"        baseColor 0.95 0.55 0.1\n"
+        f"        roughness 1\n"
+        f"        metalness 0\n"
+        f"      }}\n"
+        f"      geometry Box {{ size 0.5 0.45 0.7 }}\n"
+        f"    }}\n"
+        f"  ]\n"
+        f"  boundingObject Box {{ size 0.5 0.45 0.7 }}\n"
+        f"  physics Physics {{ density -1 mass 15 }}\n"
+        f"}}\n"
+    )
 
     # 11. Robot (DEF MEDIBOT)
     parts.append(robot_node())

@@ -181,52 +181,88 @@ class TagLocalizer:
             c.pop("_nz", None)
         return cands
 
-    def measure(self, gray, hint=None, max_dist=3.3):
-        """Return list of {id, x, y, yaw, dist}: one robot-pose estimate per visible known tag.
+    def measure(self, gray, hint=None, max_dist=3.3, max_reproj=8.0):
+        """Return list of {id, x, y, yaw, dist, incidence}: robot-pose estimates from visible tags.
 
-        `hint` = current (x, y, yaw) estimate. A square tag seen almost head-on has two valid
-        interpretations (front/back). The hint disambiguates by picking the one closer to the hint.
-        Rejects detections with incidence angle > 55 deg to avoid grazing-angle pose errors.
+        `hint` = current (x, y, yaw) estimate used to:
+          - skip tags that are geometrically too far away (fast reject),
+          - compute the incidence angle (angle between camera ray and tag normal),
+          - disambiguate the two IPPE pose solutions (pick the one closest to hint).
+
+        Filters applied:
+          * incidence > 55 deg  → reject (grazing view gives wildly wrong pose)
+          * reprojection error  > max_reproj pixels → reject (bad corner detection)
+
+        The incidence angle is computed from the HINT position (current EKF estimate), not
+        from the tag-derived candidate position.  Using the candidate for incidence would be
+        circular: a grazing view produces a wrong candidate, whose direction to the tag then
+        appears head-on, defeating the filter.
         """
-        cands = []
+        # Run the detector ONCE for the whole image (not per-tag).
+        corners_all, ids_all, _ = self._detect(gray)
+        if ids_all is None:
+            return []
+
+        results = []
         for tag in self.tags.values():
             tx, ty, tyaw = tag["x"], tag["y"], tag["yaw"]
-            # Quick distance check
-            if hint:
-                dx, dy = hint[0] - tx, hint[1] - ty
-                if math.hypot(dx, dy) > max_dist:
-                    continue
-            # Detect tag
-            corners, ids, _ = self._detect(gray)
-            if ids is None:
+
+            # --- 1. Distance pre-filter (uses hint if available) ---
+            ref_x = hint[0] if hint else tx
+            ref_y = hint[1] if hint else ty
+            if math.hypot(ref_x - tx, ref_y - ty) > max_dist:
                 continue
-            for i, cid in enumerate(ids):
+
+            # --- 2. Find this tag's corners in the detector output ---
+            corners_for_tag = None
+            for i, cid in enumerate(ids_all):
                 if int(cid) == tag["id"]:
-                    # Use _candidates which handles IPPE_SQUARE properly
-                    tag_cands = self._candidates(corners[i], tag)
-                    for cand in tag_cands:
-                        # Disambiguate with hint
-                        if hint:
-                            d0 = math.hypot(cand["x"] - hint[0], cand["y"] - hint[1])
-                            # Check alternative interpretation
-                            # For now, just use the one that's closer to hint
-                        # Compute incidence angle
-                        dx = tx - cand["x"]
-                        dy = ty - cand["y"]
-                        dist = math.hypot(dx, dy)
-                        if dist < 0.01:
-                            inc = 0.0
-                        else:
-                            cam_to_tag = (dx / dist, dy / dist)
-                            tag_normal = (math.cos(tyaw), math.sin(tyaw))
-                            dot = cam_to_tag[0] * tag_normal[0] + cam_to_tag[1] * tag_normal[1]
-                            inc = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))
-                        # Reject if incidence > 55 deg
-                        if inc > 55.0:
-                            continue
-                        cand["incidence"] = inc
-                        cands.append(cand)
-        return cands
+                    corners_for_tag = corners_all[i]
+                    break
+            if corners_for_tag is None:
+                continue
+
+            # --- 3. Solve for pose (both IPPE solutions) ---
+            tag_cands = self._candidates(corners_for_tag, tag)
+
+            # --- 4. Reprojection filter ---
+            tag_cands = [c for c in tag_cands if c["reproj"] <= max_reproj]
+            if not tag_cands:
+                continue
+
+            # --- 5. Hint-based disambiguation: pick candidate closest to hint ---
+            if hint and len(tag_cands) > 1:
+                tag_cands = [min(tag_cands,
+                                 key=lambda c: math.hypot(c["x"] - hint[0], c["y"] - hint[1]))]
+
+            cand = tag_cands[0]
+
+            # --- 6. Incidence angle from HINT position (not from candidate) ---
+            # Use the hint if available; otherwise fall back to candidate (first call).
+            obs_x = hint[0] if hint else cand["x"]
+            obs_y = hint[1] if hint else cand["y"]
+            dx = tx - obs_x
+            dy = ty - obs_y
+            dist_hint = math.hypot(dx, dy)
+            if dist_hint < 0.01:
+                inc = 0.0
+            else:
+                # cam_to_tag: unit vector from observer toward tag
+                cam_to_tag = (dx / dist_hint, dy / dist_hint)
+                # tag_normal: direction the tag face points (away from the wall)
+                tag_normal = (math.cos(tyaw), math.sin(tyaw))
+                # For a head-on view (tag facing robot), cam_to_tag ≈ −tag_normal → dot ≈ −1 → inc ≈ 0°
+                dot = cam_to_tag[0] * tag_normal[0] + cam_to_tag[1] * tag_normal[1]
+                inc = math.degrees(math.acos(max(-1.0, min(1.0, -dot))))
+
+            if inc > 55.0:
+                continue
+
+            cand["id"] = tag["id"]
+            cand["incidence"] = inc
+            results.append(cand)
+
+        return results
 
     @staticmethod
     def noise(dist):

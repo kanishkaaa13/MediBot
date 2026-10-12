@@ -403,25 +403,18 @@ Solid {
     }
   ]
 }
-DEF WallAppearance PBRAppearance {
-      baseColor 0.96 0.96 0.96
-      roughness 0.8
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/wall_plaster.png" repeat TRUE }
-    }
-DEF FloorAppearance PBRAppearance {
-      baseColor 0.78 0.8 0.82
-      roughness 0.6
-      metalness 0
-      texture ImageTexture { url "../worlds/textures/floor_corridor.png" repeat TRUE }
-    }
 Solid {
   translation 3.3 -2.8 0.7
   rotation 0 0 1 0
   name "wall_south_outer"
   children [
     Shape {
-      USE WallAppearance
+      DEF WallAppearance PBRAppearance {
+        baseColor 0.96 0.96 0.96
+        roughness 0.8
+        metalness 0
+        texture ImageTexture { url "textures/wall_plaster.png" }
+      }
       geometry Box { size 12 0.12 1.4 }
     }
   ]
@@ -655,7 +648,12 @@ Solid {
   name "floor_main"
   children [
     Shape {
-      USE FloorAppearance
+      DEF FloorAppearance PBRAppearance {
+        baseColor 0.78 0.8 0.82
+        roughness 0.6
+        metalness 0
+        texture ImageTexture { url "textures/floor_corridor.png" }
+      }
       geometry Box { size 12 8 0.02 }
     }
   ]
@@ -670,7 +668,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.9
         metalness 0
-        texture ImageTexture { url "../worlds/textures/marker_a.png" }
+        texture ImageTexture { url "textures/marker_a.png" }
       }
       geometry Box { size 0.5 0.5 0.01 }
     }
@@ -685,7 +683,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.9
         metalness 0
-        texture ImageTexture { url "../worlds/textures/marker_b.png" }
+        texture ImageTexture { url "textures/marker_b.png" }
       }
       geometry Box { size 0.5 0.5 0.01 }
     }
@@ -2202,7 +2200,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_00.png" }
+        texture ImageTexture { url "textures/tag_00.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2219,7 +2217,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_01.png" }
+        texture ImageTexture { url "textures/tag_01.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2236,7 +2234,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_02.png" }
+        texture ImageTexture { url "textures/tag_02.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2253,7 +2251,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_03.png" }
+        texture ImageTexture { url "textures/tag_03.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2270,7 +2268,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_04.png" }
+        texture ImageTexture { url "textures/tag_04.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2287,7 +2285,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_05.png" }
+        texture ImageTexture { url "textures/tag_05.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2304,7 +2302,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_06.png" }
+        texture ImageTexture { url "textures/tag_06.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2321,7 +2319,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_07.png" }
+        texture ImageTexture { url "textures/tag_07.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2338,7 +2336,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_08.png" }
+        texture ImageTexture { url "textures/tag_08.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2355,7 +2353,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_09.png" }
+        texture ImageTexture { url "textures/tag_09.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2372,7 +2370,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_10.png" }
+        texture ImageTexture { url "textures/tag_10.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2389,7 +2387,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_11.png" }
+        texture ImageTexture { url "textures/tag_11.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2406,7 +2404,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_12.png" }
+        texture ImageTexture { url "textures/tag_12.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2423,7 +2421,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_13.png" }
+        texture ImageTexture { url "textures/tag_13.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2440,7 +2438,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_14.png" }
+        texture ImageTexture { url "textures/tag_14.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2457,7 +2455,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_15.png" }
+        texture ImageTexture { url "textures/tag_15.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2474,7 +2472,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_16.png" }
+        texture ImageTexture { url "textures/tag_16.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2491,7 +2489,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_17.png" }
+        texture ImageTexture { url "textures/tag_17.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2508,7 +2506,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_18.png" }
+        texture ImageTexture { url "textures/tag_18.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2525,7 +2523,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "../worlds/textures/tag_19.png" }
+        texture ImageTexture { url "textures/tag_19.png" }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2547,7 +2545,8 @@ DEF TROLLEY Solid {
       geometry Box { size 0.5 0.45 0.7 }
     }
   ]
-  boundingObject Box { size 0.5 0.45 0.7   physics Physics { density -1 mass 15 }
+  boundingObject Box { size 0.5 0.45 0.7 }
+  physics Physics { density -1 mass 15 }
 }
 DEF MEDIBOT Robot {
   translation 0 0 0.06
@@ -2687,357 +2686,350 @@ DEF MEDIBOT Robot {
     }
     # Front Sonars
     DistanceSensor {
-  translation 0.236 0 0.04
-  rotation 0 0 1 0
-  name "us_front"
-  type "sonar"
-  lookupTable [ 0 0 0, 4 4 0 ]
-  numberOfRays 3
-  aperture 0.3
-}
-
+      translation 0.236 0 0.04
+      rotation 0 0 1 0
+      name "us_front"
+      type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
+      numberOfRays 3
+      aperture 0.3
+    }
     DistanceSensor {
-  translation 0.226 0.08 0.04
-  rotation 0 0 1 0.7854
-  name "us_left"
-  type "sonar"
-  lookupTable [ 0 0 0, 4 4 0 ]
-  numberOfRays 3
-  aperture 0.3
-}
-
+      translation 0.226 0.08 0.04
+      rotation 0 0 1 0.7854
+      name "us_left"
+      type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
+      numberOfRays 3
+      aperture 0.3
+    }
     DistanceSensor {
-  translation 0.226 -0.08 0.04
-  rotation 0 0 1 -0.7854
-  name "us_right"
-  type "sonar"
-  lookupTable [ 0 0 0, 4 4 0 ]
-  numberOfRays 3
-  aperture 0.3
-}
-
+      translation 0.226 -0.08 0.04
+      rotation 0 0 1 -0.7854
+      name "us_right"
+      type "sonar"
+      lookupTable [ 0 0 0, 4 4 0 ]
+      numberOfRays 3
+      aperture 0.3
+    }
     # IMU, Gyro, Accelerometer
     InertialUnit { translation 0 0 0.04 name "imu" }
     Gyro { translation 0 0 0.04 name "gyro" }
     Accelerometer { translation 0 0 0.04 name "accel" }
     # 3 Lockable Medicine Compartments
-    
-    # Compartment 1 tray rim
-    Pose {
-      translation 0.04 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
-          geometry Box { size 0.09 0.2 0.006 }
+
+        # Compartment 1 tray rim
+        Pose {
+          translation 0.04 0 0.122
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
+            }
+          ]
         }
-      ]
-    }
-    # Lock Indicator LED 1 (red when locked, green when unlocked)
-    LED {
-      translation 0.04 0.115 0.135
-      name "led_lock_1"
-      gradual TRUE
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
-          geometry Sphere { radius 0.008 }
+        # Lock Indicator LED 1 (red when locked, green when unlocked)
+        LED {
+          translation 0.04 0.115 0.135
+          name "led_lock_1"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-      ]
-    }
-    # Medicine Cargo Box 1
-    DEF CARGO_1 Solid {
-      translation 0.04 0 0.09
-      name "cargo_1"
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.85 0.15 0.15 roughness 0.4 }
-          geometry Box { size 0.045 0.07 0.035 }
+        # Medicine Cargo Box 1
+        DEF CARGO_1 Solid {
+          translation 0.04 0 0.09
+          name "cargo_1"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.85 0.15 0.15 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-    }
-    # Hinged Compartment Lid 1
-    HingeJoint {
-      jointParameters HingeJointParameters { axis 0 1 0 anchor 0.08 0 0.13 }
-      device [
-        RotationalMotor { name "lid_1" minPosition -1.6 maxPosition 0 maxVelocity 3 }
-        PositionSensor { name "lid_1_ps" }
-      ]
-      endPoint Solid {
-        translation 0.08 0 0.13
-        name "lid_1_solid"
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 1
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor 0.08 0 0.13 }
+          device [
+            RotationalMotor { name "lid_1" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_1_ps" }
+          ]
+          endPoint Solid {
+            translation 0.08 0 0.13
+            name "lid_1_solid"
             children [
-              Shape {
-                appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
-                geometry Box { size 0.08 0.19 0.008 }
-              }
-              # Embossed Compartment Number Tag
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
-                    geometry Box { size 0.03 0.03 0.002 }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
+            }
+            physics Physics { density -1 mass 0.03 }
           }
-        ]
-        boundingObject Pose {
-          translation -0.04 0 0.004
-          children [ Box { size 0.08 0.19 0.008 } ]
         }
-        physics Physics { density -1 mass 0.03 }
-      }
-    }
 
-    
-    # Compartment 2 tray rim
-    Pose {
-      translation -0.06 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
-          geometry Box { size 0.09 0.2 0.006 }
+        # Compartment 2 tray rim
+        Pose {
+          translation -0.06 0 0.122
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
+            }
+          ]
         }
-      ]
-    }
-    # Lock Indicator LED 2 (red when locked, green when unlocked)
-    LED {
-      translation -0.06 0.115 0.135
-      name "led_lock_2"
-      gradual TRUE
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
-          geometry Sphere { radius 0.008 }
+        # Lock Indicator LED 2 (red when locked, green when unlocked)
+        LED {
+          translation -0.06 0.115 0.135
+          name "led_lock_2"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-      ]
-    }
-    # Medicine Cargo Box 2
-    DEF CARGO_2 Solid {
-      translation -0.06 0 0.09
-      name "cargo_2"
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.15 0.45 0.85 roughness 0.4 }
-          geometry Box { size 0.045 0.07 0.035 }
+        # Medicine Cargo Box 2
+        DEF CARGO_2 Solid {
+          translation -0.06 0 0.09
+          name "cargo_2"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.15 0.45 0.85 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-    }
-    # Hinged Compartment Lid 2
-    HingeJoint {
-      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.02 0 0.13 }
-      device [
-        RotationalMotor { name "lid_2" minPosition -1.6 maxPosition 0 maxVelocity 3 }
-        PositionSensor { name "lid_2_ps" }
-      ]
-      endPoint Solid {
-        translation -0.02 0 0.13
-        name "lid_2_solid"
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 2
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor -0.02 0 0.13 }
+          device [
+            RotationalMotor { name "lid_2" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_2_ps" }
+          ]
+          endPoint Solid {
+            translation -0.02 0 0.13
+            name "lid_2_solid"
             children [
-              Shape {
-                appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
-                geometry Box { size 0.08 0.19 0.008 }
-              }
-              # Embossed Compartment Number Tag
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
-                    geometry Box { size 0.03 0.03 0.002 }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
+            }
+            physics Physics { density -1 mass 0.03 }
           }
-        ]
-        boundingObject Pose {
-          translation -0.04 0 0.004
-          children [ Box { size 0.08 0.19 0.008 } ]
         }
-        physics Physics { density -1 mass 0.03 }
-      }
-    }
 
-    
-    # Compartment 3 tray rim
-    Pose {
-      translation -0.16 0 0.122
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
-          geometry Box { size 0.09 0.2 0.006 }
+        # Compartment 3 tray rim
+        Pose {
+          translation -0.16 0 0.122
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.2 0.24 0.3 roughness 0.5 }
+              geometry Box { size 0.09 0.2 0.006 }
+            }
+          ]
         }
-      ]
-    }
-    # Lock Indicator LED 3 (red when locked, green when unlocked)
-    LED {
-      translation -0.16 0.115 0.135
-      name "led_lock_3"
-      gradual TRUE
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
-          geometry Sphere { radius 0.008 }
+        # Lock Indicator LED 3 (red when locked, green when unlocked)
+        LED {
+          translation -0.16 0.115 0.135
+          name "led_lock_3"
+          gradual TRUE
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 1 0 0 roughness 0.2 emissiveColor 1 0 0 }
+              geometry Sphere { radius 0.008 }
+            }
+          ]
         }
-      ]
-    }
-    # Medicine Cargo Box 3
-    DEF CARGO_3 Solid {
-      translation -0.16 0 0.09
-      name "cargo_3"
-      children [
-        Shape {
-          appearance PBRAppearance { baseColor 0.15 0.75 0.35 roughness 0.4 }
-          geometry Box { size 0.045 0.07 0.035 }
+        # Medicine Cargo Box 3
+        DEF CARGO_3 Solid {
+          translation -0.16 0 0.09
+          name "cargo_3"
+          children [
+            Shape {
+              appearance PBRAppearance { baseColor 0.15 0.75 0.35 roughness 0.4 }
+              geometry Box { size 0.045 0.07 0.035 }
+            }
+          ]
         }
-      ]
-    }
-    # Hinged Compartment Lid 3
-    HingeJoint {
-      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.12 0 0.13 }
-      device [
-        RotationalMotor { name "lid_3" minPosition -1.6 maxPosition 0 maxVelocity 3 }
-        PositionSensor { name "lid_3_ps" }
-      ]
-      endPoint Solid {
-        translation -0.12 0 0.13
-        name "lid_3_solid"
-        children [
-          Pose {
-            translation -0.04 0 0.004
+        # Hinged Compartment Lid 3
+        HingeJoint {
+          jointParameters HingeJointParameters { axis 0 1 0 anchor -0.12 0 0.13 }
+          device [
+            RotationalMotor { name "lid_3" minPosition -1.6 maxPosition 0 maxVelocity 3 }
+            PositionSensor { name "lid_3_ps" }
+          ]
+          endPoint Solid {
+            translation -0.12 0 0.13
+            name "lid_3_solid"
             children [
-              Shape {
-                appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
-                geometry Box { size 0.08 0.19 0.008 }
-              }
-              # Embossed Compartment Number Tag
               Pose {
-                translation 0 0 0.005
+                translation -0.04 0 0.004
                 children [
                   Shape {
-                    appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
-                    geometry Box { size 0.03 0.03 0.002 }
+                    appearance PBRAppearance { baseColor 0.18 0.55 0.85 roughness 0.4 metalness 0.1 }
+                    geometry Box { size 0.08 0.19 0.008 }
+                  }
+                  # Embossed Compartment Number Tag
+                  Pose {
+                    translation 0 0 0.005
+                    children [
+                      Shape {
+                        appearance PBRAppearance { baseColor 1 1 1 roughness 0.3 }
+                        geometry Box { size 0.03 0.03 0.002 }
+                      }
+                    ]
                   }
                 ]
               }
             ]
+            boundingObject Pose {
+              translation -0.04 0 0.004
+              children [ Box { size 0.08 0.19 0.008 } ]
+            }
+            physics Physics { density -1 mass 0.03 }
           }
-        ]
-        boundingObject Pose {
-          translation -0.04 0 0.004
-          children [ Box { size 0.08 0.19 0.008 } ]
         }
-        physics Physics { density -1 mass 0.03 }
-      }
-    }
-
     # 4 Wheels
     HingeJoint {
-  jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 0.14 0 }
-  device [
-    RotationalMotor { name "wheel_fl" maxVelocity 20 }
-    PositionSensor { name "ps_fl" }
-  ]
-  endPoint Solid {
-    translation 0.14 0.14 0
-    rotation 1 0 0 1.5708
-    children [
-      Shape {
-        appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
-        geometry Cylinder { height 0.032 radius 0.06 }
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 0.14 0 }
+      device [
+        RotationalMotor { name "wheel_fl" maxVelocity 20 }
+        PositionSensor { name "ps_fl" }
+      ]
+      endPoint Solid {
+        translation 0.14 0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
+          }
+          Shape {
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
+          }
+        ]
+        name "wheel_fl_solid"
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
-      Shape {
-        appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
-        geometry Cylinder { height 0.034 radius 0.03 }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 -0.14 0 }
+      device [
+        RotationalMotor { name "wheel_fr" maxVelocity 20 }
+        PositionSensor { name "ps_fr" }
+      ]
+      endPoint Solid {
+        translation 0.14 -0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
+          }
+          Shape {
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
+          }
+        ]
+        name "wheel_fr_solid"
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
-    ]
-    name "wheel_fl_solid"
-    boundingObject Cylinder { height 0.032 radius 0.06 }
-    physics Physics { density -1 mass 0.25 }
-  }
-}
-HingeJoint {
-  jointParameters HingeJointParameters { axis 0 1 0 anchor 0.14 -0.14 0 }
-  device [
-    RotationalMotor { name "wheel_fr" maxVelocity 20 }
-    PositionSensor { name "ps_fr" }
-  ]
-  endPoint Solid {
-    translation 0.14 -0.14 0
-    rotation 1 0 0 1.5708
-    children [
-      Shape {
-        appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
-        geometry Cylinder { height 0.032 radius 0.06 }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 0.14 0 }
+      device [
+        RotationalMotor { name "wheel_rl" maxVelocity 20 }
+        PositionSensor { name "ps_rl" }
+      ]
+      endPoint Solid {
+        translation -0.14 0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
+          }
+          Shape {
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
+          }
+        ]
+        name "wheel_rl_solid"
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
-      Shape {
-        appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
-        geometry Cylinder { height 0.034 radius 0.03 }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 -0.14 0 }
+      device [
+        RotationalMotor { name "wheel_rr" maxVelocity 20 }
+        PositionSensor { name "ps_rr" }
+      ]
+      endPoint Solid {
+        translation -0.14 -0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          Shape {
+            appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
+            geometry Cylinder { height 0.032 radius 0.06 }
+          }
+          Shape {
+            appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
+            geometry Cylinder { height 0.034 radius 0.03 }
+          }
+        ]
+        name "wheel_rr_solid"
+        boundingObject Cylinder { height 0.032 radius 0.06 }
+        physics Physics { density -1 mass 0.25 }
       }
-    ]
-    name "wheel_fr_solid"
-    boundingObject Cylinder { height 0.032 radius 0.06 }
-    physics Physics { density -1 mass 0.25 }
-  }
-}
-HingeJoint {
-  jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 0.14 0 }
-  device [
-    RotationalMotor { name "wheel_rl" maxVelocity 20 }
-    PositionSensor { name "ps_rl" }
-  ]
-  endPoint Solid {
-    translation -0.14 0.14 0
-    rotation 1 0 0 1.5708
-    children [
-      Shape {
-        appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
-        geometry Cylinder { height 0.032 radius 0.06 }
-      }
-      Shape {
-        appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
-        geometry Cylinder { height 0.034 radius 0.03 }
-      }
-    ]
-    name "wheel_rl_solid"
-    boundingObject Cylinder { height 0.032 radius 0.06 }
-    physics Physics { density -1 mass 0.25 }
-  }
-}
-HingeJoint {
-  jointParameters HingeJointParameters { axis 0 1 0 anchor -0.14 -0.14 0 }
-  device [
-    RotationalMotor { name "wheel_rr" maxVelocity 20 }
-    PositionSensor { name "ps_rr" }
-  ]
-  endPoint Solid {
-    translation -0.14 -0.14 0
-    rotation 1 0 0 1.5708
-    children [
-      Shape {
-        appearance PBRAppearance { baseColor 0.15 0.15 0.15 roughness 0.8 metalness 0.2 }
-        geometry Cylinder { height 0.032 radius 0.06 }
-      }
-      Shape {
-        appearance PBRAppearance { baseColor 0.85 0.88 0.92 roughness 0.4 metalness 0.7 }
-        geometry Cylinder { height 0.034 radius 0.03 }
-      }
-    ]
-    name "wheel_rr_solid"
-    boundingObject Cylinder { height 0.032 radius 0.06 }
-    physics Physics { density -1 mass 0.25 }
-  }
-}
-
+    }
   ]
   # Low BoundingObject and Stable Physics Center of Mass (Cannot tip over)
   boundingObject Pose {
