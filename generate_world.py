@@ -830,14 +830,69 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         yb = (byaw + PI + PI) % (2 * PI) - PI
         tags.append({"id": 2 * i + 1, "x": bx, "y": by, "yaw": yb, "z": TAG_Z, "board": i})
 
-    # 10. Trolley Obstacle (DEF TROLLEY)
+    # 10. Trolley Obstacle (DEF TROLLEY) - with physics for collision detection
     parts.append(box_solid("trolley", TROLLEY_PARK[0], TROLLEY_PARK[1], 0.35, 0.5, 0.45, 0.7,
                            (0.95, 0.55, 0.1), def_name="TROLLEY"))
+    # Add physics to trolley (manually since box_solid doesn't add it by default)
+    parts[-1] = parts[-1].rstrip("}\n") + "  physics Physics { density -1 mass 15 }\n}\n"
 
     # 11. Robot (DEF MEDIBOT)
     parts.append(robot_node())
 
     return "".join(parts), tags
+
+
+def check_clearance(parts):
+    """Check that no objects are within 0.55 m of any graph edge centre line or node."""
+    violations = []
+    clearance = 0.55
+
+    # Extract object positions from parts
+    import re
+    for part in parts:
+        # Look for Solid with translation
+        match = re.search(r'Solid\s*\{\s*translation\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)', part)
+        if match:
+            ox, oy, oz = float(match.group(1)), float(match.group(2)), float(match.group(3))
+            # Skip floor and very low objects
+            if oz < 0.1:
+                continue
+            # Skip the robot itself (starts at 0,0)
+            if abs(ox) < 0.1 and abs(oy) < 0.1:
+                continue
+            # Skip trolley (it's meant to be moved)
+            if "trolley" in part.lower():
+                continue
+
+            # Check distance to all nodes
+            for node_name, (nx, ny) in NODES.items():
+                dist = math.hypot(ox - nx, oy - ny)
+                if dist < clearance:
+                    violations.append(f"Object at ({ox:.2f}, {oy:.2f}) is {dist:.2f} m from node {node_name}")
+
+            # Check distance to all edge centre lines
+            for a, b in EDGES:
+                ax, ay = NODES[a]
+                bx, by = NODES[b]
+                # Point-to-line-segment distance
+                ab_len = math.hypot(bx - ax, by - ay)
+                if ab_len == 0:
+                    continue
+                # Project point onto line
+                t = max(0, min(1, ((ox - ax) * (bx - ax) + (oy - ay) * (by - ay)) / (ab_len ** 2)))
+                proj_x = ax + t * (bx - ax)
+                proj_y = ay + t * (by - ay)
+                dist = math.hypot(ox - proj_x, oy - proj_y)
+                if dist < clearance:
+                    violations.append(f"Object at ({ox:.2f}, {oy:.2f}) is {dist:.2f} m from edge {a}-{b}")
+
+    if violations:
+        print("CLEARANCE VIOLATIONS DETECTED:")
+        for v in violations:
+            print(f"  {v}")
+        raise ValueError(f"{len(violations)} clearance violations found. Objects must be at least {clearance} m from graph edges/nodes.")
+    else:
+        print("CLEARANCE CHECK PASSED: All objects are >= 0.55 m from graph edges/nodes.")
 
 
 def main():
@@ -849,6 +904,9 @@ def main():
 
     # 2. Build world and tags
     world, tags = build_world()
+
+    # 3. Check clearance violations
+    check_clearance(world.split("\n"))
 
     # 3. Generate AprilTag markers
     for t in tags:

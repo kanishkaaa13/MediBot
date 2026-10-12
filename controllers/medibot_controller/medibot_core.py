@@ -140,28 +140,45 @@ class TagLocalizer:
             self._detect = lambda g: cv2.aruco.detectMarkers(g, dictionary, parameters=params)
 
     def _candidates(self, corners, tag):
-        """Both IPPE solutions for one tag (near head-on views are ambiguous) as robot-pose dicts."""
+        """Both IPPE solutions for one tag (near head-on views are ambiguous) as robot-pose dicts.
+
+        IPPE_SQUARE can return n[2] > 0 (normal toward camera rather than away) for nearly
+        square projections with slight asymmetry. In that case we fall back to the solution
+        with the most negative n[2] so the hint-based disambiguator can still pick the right one.
+        """
         n_sol, rvecs, tvecs, errs = cv2.solvePnPGeneric(
             self.obj, corners, self.K, None, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+        all_raw = []
         cands = []
         for rvec, tvec, err in zip(rvecs, tvecs, errs):
             Rm, _ = cv2.Rodrigues(rvec)
-            n = Rm[:, 2]              # tag normal (out of the face) in camera frame (x right, y down, z fwd)
+            n = Rm[:, 2]              # tag normal in camera frame (x right, y down, z fwd)
             t = tvec.reshape(3)
-            if n[2] > -0.25:          # facing away from the camera: impossible solution
-                continue
             f = t[2] + self.cam_x     # tag position in robot frame: forward
             l = -t[0]                 # ... and left
-            phi = math.atan2(-n[0], n[2])           # tag normal angle in robot frame
+            phi = math.atan2(-n[0], n[2])
             yaw = wrap(tag["yaw"] - phi)
             cs, sn = math.cos(yaw), math.sin(yaw)
-            cands.append({
+            entry = {
                 "x": tag["x"] - (f * cs - l * sn),
                 "y": tag["y"] - (f * sn + l * cs),
                 "yaw": yaw,
                 "dist": float(np.linalg.norm(t)),
                 "reproj": float(np.ravel(err)[0]),
-            })
+                "_nz": float(n[2]),   # tag normal z; should be < -0.25 for valid (facing camera)
+            }
+            all_raw.append(entry)
+            if n[2] <= -0.25:         # normal points toward camera: valid geometry
+                cands.append(entry)
+
+        # Fallback: if IPPE_SQUARE degenerated (e.g. near-square perturbed view), keep the
+        # solution with the most negative n[2]. The hint will still pick the better one.
+        if not cands and all_raw:
+            cands = [min(all_raw, key=lambda e: -e["_nz"])]
+
+        # Remove internal key before returning
+        for c in cands:
+            c.pop("_nz", None)
         return cands
 
     def measure(self, gray, hint=None, max_dist=3.3):

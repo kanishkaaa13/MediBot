@@ -2370,7 +2370,7 @@ DEF TROLLEY Solid {
       geometry Box { size 0.5 0.45 0.7 }
     }
   ]
-  boundingObject Box { size 0.5 0.45 0.7 }
+  boundingObject Box { size 0.5 0.45 0.7   physics Physics { density -1 mass 15 }
 }
 DEF MEDIBOT Robot {
   translation 0 0 0.06
