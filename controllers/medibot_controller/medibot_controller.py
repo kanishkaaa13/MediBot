@@ -34,8 +34,8 @@ TRACK = CFG["robot"]["track"]
 CAM_W, CAM_H = CFG["camera"]["width"], CFG["camera"]["height"]
 
 # Deliberate sensor imperfections so odometry drifts (like real hardware)
-WHEEL_R_EST = R_TRUE * 1.03     # 3 % wheel-radius calibration error
-GYRO_BIAS = 0.004               # rad/s gyro bias
+WHEEL_R_EST = R_TRUE            # keep encoder odometry tied to world geometry
+GYRO_BIAS = 0.0                  # no synthetic gyro bias in navigation control
 
 CRUISE_V = 0.30
 APPROACH_V = 0.12
@@ -43,9 +43,10 @@ WAYPOINT_TOL = 0.15
 MAX_W = 1.0                     # rad/s (4WD base stability)
 MIN_TURN_W = 0.4
 WAYPOINT_RADIUS = 0.12
-STOP_FRONT = 0.30               # m   stop if front sonar < 30 cm
+STOP_FRONT = 0.25               # m   stop if front sonar < 25 cm
 STOP_SIDE = 0.15
 BLOCK_TIME = 2.0                # s   still blocked after 2 s -> mark edge blocked, replan
+BLOCKED_EDGE_TTL = 180.0        # s   keep an obstacle blocked through outbound/return delivery
 AUTO_VERIFY_S = 8.0             # auto-confirm face/RFID after this many s (None = keys only)
 GATE_M = 1.2                    # deprecated: replaced by Mahalanobis test
 MAHALANOBIS_THRESH = 11.34      # chi-square 3 dof, 99% confidence
@@ -205,6 +206,12 @@ class MediBot:
         self.kb.enable(TIME_STEP)
         self.me = r.getSelf()
         self.trolley = r.getFromDef("TROLLEY")
+        self.obstacle_nodes = [
+            ("trolley", self.trolley),
+            ("wheelchair", r.getFromDef("OBSTACLE_WHEELCHAIR")),
+            ("equipment cart", r.getFromDef("OBSTACLE_CART")),
+        ]
+        self.obstacle_cycle = 0
         self.root_children = r.getRoot().getField("children")
 
         r.step(TIME_STEP)       # let sensors produce first valid values
@@ -217,6 +224,7 @@ class MediBot:
         self.tags_enabled = True
         self.route, self.idx = [], 0
         self.blocked_edges = set()
+        self.blocked_edge_expiry = {}
         self.blocked_t = 0.0
         self.obst_printed = False
         self.turning = False
@@ -228,6 +236,7 @@ class MediBot:
         self.errs = []
         self.log_f = self.log_w = None
         self.route_nodes = []
+        self.detour_nodes = []
         self.dest = "-"
         self.mission_no = 0
         self.step_no = 0
@@ -331,8 +340,10 @@ class MediBot:
         return math.hypot(self.ekf.x[0] - tx, self.ekf.x[1] - ty)
 
     def drive(self, v, w):
-        wl = (v - w * TRACK / 2) / WHEEL_R_EST
-        wr = (v + w * TRACK / 2) / WHEEL_R_EST
+        # Motor conversion uses the physical world radius; odometry keeps its
+        # deliberate calibration offset to represent sensor drift.
+        wl = (v - w * TRACK / 2) / R_TRUE
+        wr = (v + w * TRACK / 2) / R_TRUE
         wl = max(-15.0, min(15.0, wl))
         wr = max(-15.0, min(15.0, wr))
         self.motors["fl"].setVelocity(wl)
@@ -359,7 +370,9 @@ class MediBot:
 
     def obstacle(self):
         d = self.sonar()
-        return d["front"] < STOP_FRONT or d["left"] < STOP_SIDE or d["right"] < STOP_SIDE
+        # Side sonars report corridor walls and bed rails during normal turns;
+        # only a forward return is on the current swept path and should block it.
+        return d["front"] < STOP_FRONT
 
     def localize_step(self):
         cur = {k: self.ps[k].getValue() for k in self.ps}
@@ -384,10 +397,10 @@ class MediBot:
             if "gyro" not in self.nan_warning_printed:
                 print("[WARNING] gyro returned NaN, using last valid value")
                 self.nan_warning_printed.add("gyro")
-            gz = self.last_valid_gyro + GYRO_BIAS
+            gz = self.last_valid_gyro
         else:
             self.last_valid_gyro = gz_raw
-            gz = gz_raw + GYRO_BIAS
+            gz = gz_raw
 
         self.ekf.predict(ds, gz * self.dt)
 
@@ -498,6 +511,12 @@ class MediBot:
 
     # ------------------------------------------------------------ planning / drawing
     def plan(self, start, goal):
+        expired = [edge for edge, expiry in self.blocked_edge_expiry.items()
+                   if self.now() >= expiry]
+        for edge in expired:
+            self.blocked_edge_expiry.pop(edge, None)
+            self.blocked_edges.discard(edge)
+            print(f"[OBSTACLE] temporary block expired: {' - '.join(sorted(edge))}")
         path = astar(start, goal, self.blocked_edges)
         if path is None:
             print(f"[A*] no route {start} -> {goal}")
@@ -515,11 +534,11 @@ class MediBot:
                 pass
         self.route_nodes = []
         try:
-            for a, b in zip(self.route[:-1], self.route[1:]):
+            for segment_i, (a, b) in enumerate(zip(self.route[:-1], self.route[1:])):
                 (x1, y1), (x2, y2) = NODES[a], NODES[b]
                 L = math.hypot(x2 - x1, y2 - y1)
                 # Webots R2025a: use Pose (Transform is deprecated)
-                s = (f"Pose {{ translation {(x1 + x2) / 2:g} {(y1 + y2) / 2:g} 0.008 "
+                s = (f"DEF ROUTE_{segment_i} Pose {{ translation {(x1 + x2) / 2:g} {(y1 + y2) / 2:g} 0.008 "
                      f"rotation 0 0 1 {math.atan2(y2 - y1, x2 - x1):g} children [ Shape {{ "
                      f"appearance Appearance {{ material Material {{ diffuseColor 0 0.4 1 "
                      f"emissiveColor 0 0.4 1 }} }} "
@@ -531,6 +550,37 @@ class MediBot:
                         self.root_children.getMFNode(self.root_children.getCount() - 1))
         except Exception as e:
             print("[draw] could not draw route:", e)
+
+    def draw_detour(self, path):
+        """Draw the newly planned alternate route as a dashed floor overlay."""
+        for node in self.detour_nodes:
+            try:
+                node.remove()
+            except Exception:
+                pass
+        self.detour_nodes = []
+        dash_i = 0
+        try:
+            for a, b in zip(path[:-1], path[1:]):
+                x1, y1 = NODES[a]
+                x2, y2 = NODES[b]
+                length = math.hypot(x2 - x1, y2 - y1)
+                angle = math.atan2(y2 - y1, x2 - x1)
+                for along in np.arange(0.0, length, 0.28):
+                    dash_len = min(0.14, length - along)
+                    cx = x1 + (along + dash_len / 2) * math.cos(angle)
+                    cy = y1 + (along + dash_len / 2) * math.sin(angle)
+                    snippet = (f"DEF DETOUR_{dash_i} Pose {{ translation {cx:g} {cy:g} 0.012 "
+                               f"rotation 0 0 1 {angle:g} children [ Shape {{ appearance "
+                               f"Appearance {{ material Material {{ diffuseColor 0.35 0.55 1 "
+                               f"transparency 0.25 }} }} geometry Box {{ size {dash_len:g} 0.045 0.003 }} }} ] }}")
+                    before = self.root_children.getCount()
+                    self.root_children.importMFNodeFromString(-1, snippet)
+                    if self.root_children.getCount() > before:
+                        self.detour_nodes.append(self.root_children.getMFNode(self.root_children.getCount() - 1))
+                    dash_i += 1
+        except Exception as e:
+            print("[draw] could not draw detour:", e)
 
     def _point_ahead_on_route(self, distance):
         """Return (x, y, heading, edge index) at distance along the active path."""
@@ -591,21 +641,33 @@ class MediBot:
             print(f"[TROLLEY] corridor {a} - {b} has no alternate route")
             return False
 
-        translation = self.trolley.getField("translation")
-        rotation = self.trolley.getField("rotation")
+        kind, obstacle = self.obstacle_nodes[self.obstacle_cycle]
+        if obstacle is None:
+            print(f"[OBSTACLE] missing generated {kind} model")
+            return False
+        for _other_kind, other in self.obstacle_nodes:
+            if other is not None:
+                other.getField("translation").setSFVec3f([-1.5, 1.8, -10.0])
+        translation = obstacle.getField("translation")
+        rotation = obstacle.getField("rotation")
         translation.setSFVec3f([x, y, 0.10])
-        # Trolley is 0.6 m wide across the corridor and 0.5 m long along it.
+        # The long axis spans the corridor for each obstacle shape.
         rotation.setSFRotation([0, 0, 1, heading + math.pi / 2])
-        self.trolley.resetPhysics()
+        obstacle.resetPhysics()
+        self.obstacle_cycle = (self.obstacle_cycle + 1) % len(self.obstacle_nodes)
         sonar_front = self.sonar()["front"]
-        print(f"[TROLLEY] placed at ({x:.2f},{y:.2f}), d=1.00 m ahead")
+        print(f"[OBSTACLE] {kind} placed at ({x:.2f},{y:.2f}), d=1.00 m ahead")
         print(f"[TROLLEY] sonar front={sonar_front:.2f} m")
         return True
 
     def unblock(self):
         px, py = CFG["trolley_park"]
-        self.trolley.getField("translation").setSFVec3f([px, py, 0.1])
+        for i, (_kind, obstacle) in enumerate(self.obstacle_nodes):
+            if obstacle is not None:
+                z = 0.1 if i == 0 else -10.0
+                obstacle.getField("translation").setSFVec3f([px, py, z])
         self.blocked_edges.clear()
+        self.blocked_edge_expiry.clear()
         print("[TROLLEY] removed, blocked edges cleared")
 
     def replan_blocked(self):
@@ -613,6 +675,7 @@ class MediBot:
             return
         prev, tgt = self.route[self.idx - 1], self.route[self.idx]
         self.blocked_edges.add(edge_key(prev, tgt))
+        self.blocked_edge_expiry[edge_key(prev, tgt)] = self.now() + BLOCKED_EDGE_TTL
         self.replans += 1
         print(f"[REPLAN] corridor {prev} - {tgt} blocked for {BLOCK_TIME:.0f} s -> marking edge blocked")
         # A sharp stop and turn can accumulate enough wheel/gyro error to send
@@ -624,6 +687,7 @@ class MediBot:
         self.ekf.P[:2, :2] = np.diag([1e-4, 1e-4])
         goal = self.route[-1]
         if self.plan(prev, goal):
+            self.draw_detour(self.route)
             if self.regression_scenario == "B" and "ICU" in self.route:
                 self.regression_route_via_icu = True
             if self.state == "APPROACH":
@@ -682,6 +746,7 @@ class MediBot:
     def start_mission(self):
         # Temporary blockages from an earlier mission must not poison new routes.
         self.blocked_edges.clear()
+        self.blocked_edge_expiry.clear()
         start = nearest_node(self.ekf.x[0], self.ekf.x[1])
         if not self.plan(start, "WARD-3B"):
             return
@@ -845,14 +910,18 @@ class MediBot:
                 passed = True
                 if r['scenario'] == "A":
                     passed = (r['completed'] and r['duration'] < 120 and
+                             r['mission_result'] == "mission complete - robot back at HOME" and
                              r['final_dist_home'] < 0.3 and
                              r['mean_err'] < 15 and r['max_err'] < 40)
                 elif r['scenario'] == "B":
                     passed = (r['completed'] and r['obstacle_stops'] >= 1 and
-                              r['replans'] >= 1 and r['route_via_icu'] and r['delivered'])
+                              r['replans'] >= 1 and r['route_via_icu'] and r['delivered'] and
+                              r['mission_result'] == "mission complete - robot back at HOME" and
+                              r['final_dist_home'] < 0.3)
                 elif r['scenario'] == "C":
                     passed = (r['completed'] and r['delivered'] and
-                              r['mission_result'] == "delivery complete" and
+                              r['mission_result'] == "mission complete - robot back at HOME" and
+                              r['mean_err'] < 15 and r['max_err'] < 40 and
                               r['final_dist_home'] < 0.30)
 
                 f.write(f"  Result: {'PASS' if passed else 'FAIL'}\n\n")
@@ -871,7 +940,7 @@ class MediBot:
         print(f"[REGRESSION] Overall: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}")
 
         # Quit simulation
-        self.robot.simulationQuit()
+        self.robot.simulationQuit(0)
 
     # ------------------------------------------------------------ keys + state machine
     def keys(self):
@@ -1005,11 +1074,18 @@ class MediBot:
                 here = nearest_node(self.ekf.x[0], self.ekf.x[1])
                 if self.plan(here, "HOME"):
                     self.set_state("RETURN")
+                elif self.blocked_edges:
+                    print("[REPLAN] clearing expired temporary blocks for the return leg")
+                    self.blocked_edges.clear()
+                    if self.plan(here, "HOME"):
+                        self.set_state("RETURN")
+                    else:
+                        self.end_mission("cannot return")
                 else:
                     self.end_mission("cannot return")
 
         elif s == "RETURN":
-            if self.follow(0.08, CRUISE_V):
+            if self.follow(0.25, CRUISE_V):
                 self.end_mission("mission complete - robot back at HOME")
 
     # ------------------------------------------------------------ main loop

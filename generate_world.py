@@ -46,7 +46,7 @@ EDGES = [
 ]
 
 PI = math.pi
-TAG_SIZE = 0.20      # black square side, metres
+TAG_SIZE = 0.30      # black square side, metres; large-format wall marker for 960x720 camera
 TAG_PAD = 0.05       # white margin per side, metres
 TAG_Z = 0.25         # tag centre height above floor (aligned with navigation camera)
 BOARD_W = TAG_SIZE + 2 * TAG_PAD   # 0.30 m
@@ -61,7 +61,7 @@ TRACK = 2 * WHEEL_Y       # 0.28 m
 CHASSIS = (0.44, 0.24, 0.12)
 
 # Navigation Camera: mounted on lower mast at tag height (WHEEL_R + CAM['z'] = 0.06 + 0.19 = 0.25 m = TAG_Z)
-CAM = {"width": 640, "height": 480, "fov": 1.2, "x": 0.22, "z": 0.19}
+CAM = {"width": 960, "height": 720, "fov": 1.8, "x": 0.22, "z": 0.19}
 
 # Face Camera: mounted on mast head at ~0.95 m height looking forward & slightly down
 FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.88}
@@ -110,37 +110,37 @@ def generate_wall_tags():
 
     # Zone 0-9: HOME -> PHARMACY (eastbound corridor, y=1.5, x: 0 to 2)
     # Tag on far end wall (x=2) facing west
-    add_tag(2.0, 1.5, PI, "pharmacy_end")
+    add_tag(2.0, 1.5, -2.16, "pharmacy_end")
     # Tag on near end wall (x=0) facing east
-    add_tag(0.0, 1.5, 0.0, "home_end")
+    add_tag(0.0, 1.5, -0.98, "home_end")
 
     # Zone 10-19: PHARMACY -> JUNCTION (eastbound, y=1.5, x: 2 to 4)
-    add_tag(4.0, 1.5, PI, "junction_south")
-    add_tag(2.0, 1.5, 0.0, "pharmacy_start")
+    add_tag(4.0, 1.5, -2.16, "junction_south")
+    add_tag(2.0, 1.5, -0.98, "pharmacy_start")
 
     # Zone 20-29: JUNCTION -> ICU (eastbound, y=1.5, x: 4 to 7)
-    add_tag(7.0, 1.5, PI, "icu_end")
-    add_tag(4.0, 1.5, 0.0, "junction_south_start")
+    add_tag(7.0, 1.5, -2.36, "icu_end")
+    add_tag(4.0, 1.5, -0.79, "junction_south_start")
 
     # Zone 30-39: JUNCTION -> WARD-2A (northbound, x=4.0, y: 0 to 3.7)
     # Tag on far end wall (y=3.7) facing south
-    add_tag(4.0, 3.7, PI, "ward2a_end")
+    add_tag(4.0, 3.7, -PI/2, "ward2a_end")
     # Tag on near end wall (y=0) facing north
-    add_tag(4.0, 0.0, 0.0, "junction_north")
+    add_tag(4.0, 0.0, PI/2, "junction_north")
 
     # Zone 40-49: ICU -> WARD-3B (northbound, x=7.0, y: 0 to 3.7)
-    add_tag(7.0, 3.7, PI, "ward3b_end")
-    add_tag(7.0, 0.0, 0.0, "icu_north")
+    add_tag(7.0, 3.7, -PI/2, "ward3b_end")
+    add_tag(7.0, 0.0, PI/2, "icu_north")
 
     # Zone 50-59: WARD-2A -> WARD-3B (eastbound, y=3.7, x: 4 to 7)
-    add_tag(7.0, 3.7, PI, "ward3b_north")
-    add_tag(4.0, 3.7, 0.0, "ward2a_north")
+    add_tag(7.0, 3.7, -2.53, "ward3b_north")
+    add_tag(4.0, 3.7, -0.79, "ward2a_north")
 
     # Zone 60-69: Room door frames (head-on tags facing corridor)
-    add_tag(2.0, -0.65, -PI/2, "pharmacy_door")
-    add_tag(7.0, -0.65, -PI/2, "icu_door")
-    add_tag(4.0, 3.65, PI/2, "ward2a_door")
-    add_tag(7.0, 3.65, PI/2, "ward3b_door")
+    add_tag(2.0, -0.65, PI/2, "pharmacy_door")
+    add_tag(7.0, -0.65, PI/2, "icu_door")
+    add_tag(4.0, 3.65, -PI/2, "ward2a_door")
+    add_tag(7.0, 3.65, -PI/2, "ward3b_door")
 
     # Zone 70-79: Inside rooms (tags facing entry)
     add_tag(1.9, -1.55, 0.0, "pharmacy_room")
@@ -164,10 +164,12 @@ def tag_plate(tag_id, x, y, z, yaw):
             f"        metalness 0\n"
             f"        baseColorMap ImageTexture {{ url [ \"textures/tag_{tag_id:02d}.png\" ] filtering 0 }}\n"
             f"      }}\n"
-            f"      geometry Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
+            # The PNG includes its white border around the black marker, so
+            # the physical plate must match BOARD_W, not just the black tag.
+            f"      geometry Box {{ size {BOARD_W} {BOARD_W} 0.01 }}\n"
             f"    }}\n"
             f"  ]\n"
-            f"  boundingObject Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
+            f"  boundingObject Box {{ size {BOARD_W} {BOARD_W} 0.01 }}\n"
             f"  name \"tag_{tag_id}\"\n"
             f"}}\n")
 
@@ -459,7 +461,7 @@ def make_sign_textures(tex_dir):
 # ----------------------------------------------------------------------------
 # .wbt text helpers
 # ----------------------------------------------------------------------------
-def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=None, roughness=1.0, metalness=0.0):
+def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=None, roughness=1.0, metalness=0.0, transparency=0.0):
     d = f"DEF {def_name} " if def_name else ""
     # SFColor is exactly three normalized channels; alpha belongs in
     # transparency, never as a fourth baseColor component.
@@ -474,6 +476,7 @@ def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=No
          f"        baseColor {rgb[0]:g} {rgb[1]:g} {rgb[2]:g}\n"
          f"        roughness {roughness:g}\n"
          f"        metalness {metalness:g}\n"
+         f"        transparency {max(0.0, min(1.0, transparency)):g}\n"
          f"      }}\n"
          f"      geometry Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
          f"    }}\n"
@@ -640,6 +643,9 @@ def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False):
     bed_col = (0.2, 0.45, 0.7) if is_icu else (0.85, 0.88, 0.92)
     parts.append(box_solid(f"{name}_frame", x, y, 0.15, 1.8, 0.85, 0.25, (0.25, 0.28, 0.3), collide=True, yaw=yaw))
     parts.append(box_solid(f"{name}_mattress", x, y, 0.32, 1.7, 0.8, 0.12, (0.95, 0.95, 0.98), collide=False, yaw=yaw))
+    bx, by = x + 0.35 * math.cos(yaw), y + 0.35 * math.sin(yaw)
+    parts.append(box_solid(f"{name}_blue_blanket", bx, by, 0.395, 0.90, 0.78, 0.035,
+                           (0.20, 0.43, 0.82), collide=False, yaw=yaw, roughness=0.9))
     hx = x - 0.85 * math.cos(yaw)
     hy = y - 0.85 * math.sin(yaw)
     parts.append(box_solid(f"{name}_headboard", hx, hy, 0.38, 0.08, 0.85, 0.45, bed_col, collide=False, yaw=yaw))
@@ -649,6 +655,9 @@ def hospital_bed(name, x, y, yaw, has_monitor=False, is_icu=False):
     bx = x + 0.55 * math.sin(yaw)
     by = y - 0.55 * math.cos(yaw)
     parts.append(box_solid(f"{name}_cabinet", bx, by, 0.25, 0.4, 0.4, 0.5, (0.85, 0.9, 0.95), collide=True, yaw=yaw))
+    parts.append(box_solid(f"{name}_bed_number", x + 0.45 * math.cos(yaw),
+                           y + 0.45 * math.sin(yaw), 0.43, 0.30, 0.16, 0.012,
+                           (0.95, 0.98, 1.0), collide=False, yaw=yaw))
     if has_monitor:
         mx = x - 0.55 * math.sin(yaw) - 0.4 * math.cos(yaw)
         my = y + 0.55 * math.cos(yaw) - 0.4 * math.sin(yaw)
@@ -1198,9 +1207,17 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     parts.append(box_solid("pharm_shelves", 1.9, -2.65, 0.60, 2.2, 0.28, 1.2, (0.8, 0.85, 0.9), collide=True))
     parts.append(box_solid("pharm_fridge", 0.85, -2.40, 0.55, 0.5, 0.5, 1.1, (0.95, 0.95, 0.98), collide=True))
 
-    # 4. WAITING AREA: Hospital Benches
-    parts.append(hospital_bench("waiting_bench_1", 3.9, -2.35, 0.0))
-    parts.append(hospital_bench("waiting_bench_2", 5.1, -2.35, 0.0))
+    # 4. WAITING AREA: Four individual chairs, planters and wall storage.
+    for idx, wx in enumerate((3.55, 4.25, 4.95, 5.65)):
+        parts.append(hospital_bench(f"waiting_chair_{idx + 1}", wx, -2.25, 0.0))
+    for idx, (px, py) in enumerate(((3.35, -1.25), (5.95, -1.25), (8.75, 1.0))):
+        parts.append(cylinder_solid(f"planter_{idx}", px, py, 0.18, 0.22, 0.34, (0.72, 0.75, 0.76), collide=True))
+        parts.append(cylinder_solid(f"plant_trunk_{idx}", px, py, 0.75, 0.035, 0.8, (0.30, 0.22, 0.12)))
+        for leaf_i, (ox, oy) in enumerate(((0.0, 0.0), (0.16, 0.02), (-0.13, 0.12), (0.04, -0.16))):
+            parts.append(cylinder_solid(f"plant_leaf_{idx}_{leaf_i}", px + ox, py + oy, 1.0, 0.10, 0.34,
+                                        (0.18, 0.48, 0.28), yaw=leaf_i * PI / 4))
+    parts.append(box_solid("waiting_wall_cabinet", 4.6, -2.72, 1.05, 1.8, 0.20, 0.48,
+                           (0.88, 0.91, 0.94), collide=False))
 
     # 5. ICU: 2 ICU Intensive Care Beds with Monitors
     parts.append(hospital_bed("icu_bed_1", 6.4, -1.9, -PI / 2, has_monitor=True, is_icu=True))
@@ -1208,6 +1225,8 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
 
     # 6. NURSE STATION: Central Island Desk & Monitors
     parts.append(nurse_station_island(5.5, 1.5))
+    parts.append(wheelchair("nurse_station_chair", 5.5, 0.75, PI / 2))
+    parts.append(cylinder_solid("nurse_clock_rim", 5.5, 2.75, 1.12, 0.22, 0.06, (0.18, 0.22, 0.26)))
 
     # 7. WARD 2A: 4 Hospital Beds + Bedside Tables + Curtains
     for idx, bx in enumerate([2.7, 3.4, 4.1, 4.8]):
@@ -1215,6 +1234,7 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         if idx > 0:
             parts.append(box_solid(f"ward2a_curtain_{idx}", bx - 0.35, 4.5, 0.75, 0.03, 1.2, 1.4,
                                    (0.35, 0.7, 0.7), collide=False))
+    parts.append(cylinder_solid("ward2a_curtain_rail", 3.75, 4.5, 1.48, 0.025, 2.6, (0.78, 0.82, 0.86), yaw=PI / 2))
 
     # 8. WARD 3B: 4 Hospital Beds + Bedside Tables + Curtains
     for idx, bx in enumerate([5.8, 6.6, 7.4, 8.2]):
@@ -1222,6 +1242,26 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         if idx > 0:
             parts.append(box_solid(f"ward3b_curtain_{idx}", bx - 0.4, 4.5, 0.75, 0.03, 1.2, 1.4,
                                    (0.35, 0.7, 0.7), collide=False))
+    parts.append(cylinder_solid("ward3b_curtain_rail", 7.0, 4.5, 1.48, 0.025, 2.8, (0.78, 0.82, 0.86), yaw=PI / 2))
+
+    # High-set outer-wall glazing and contrasting lower privacy panels.
+    for name, wx in (("ward2a", 3.75), ("ward3b", 7.0)):
+        parts.append(box_solid(f"{name}_outer_window", wx, 5.08, 0.92, 1.75, 0.035, 0.72,
+                               (0.48, 0.72, 0.84), collide=False, transparency=0.28, roughness=0.2))
+        parts.append(box_solid(f"{name}_window_sill", wx, 5.04, 0.53, 1.85, 0.12, 0.07,
+                               (0.88, 0.90, 0.92), collide=False))
+
+    # Medicine delivery counter and pharmacy stock in coded, colour-coded cartons.
+    parts.append(box_solid("medicine_delivery_counter", 0.0, -1.65, 0.48, 1.7, 0.58, 0.92,
+                           (0.90, 0.93, 0.96), collide=True))
+    parts.append(box_solid("medicine_delivery_monitor", -0.45, -1.62, 1.05, 0.06, 0.32, 0.24,
+                           (0.12, 0.14, 0.18), collide=False))
+    stock_colors = ((0.88, 0.25, 0.28), (0.22, 0.55, 0.84), (0.88, 0.68, 0.18),
+                    (0.32, 0.70, 0.42), (0.72, 0.38, 0.72), (0.92, 0.92, 0.90))
+    for i, color in enumerate(stock_colors):
+        sx, sy = 1.05 + (i % 3) * 0.62, -2.48 - (i // 3) * 0.25
+        parts.append(box_solid(f"pharmacy_medicine_box_{i + 1}", sx, sy, 0.42, 0.20, 0.16, 0.20,
+                               color, collide=False))
 
     # 9. Wall-mounted AprilTag plates (thin plates on walls)
     wall_tags = generate_wall_tags()
@@ -1240,7 +1280,7 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         f"  children [\n"
         f"    Shape {{\n"
         f"      appearance PBRAppearance {{\n"
-        f"        baseColor 0.95 0.55 0.1\n"
+        f"        baseColor 0.82 0.08 0.06\n"
         f"        roughness 1\n"
         f"        metalness 0\n"
         f"      }}\n"
@@ -1251,6 +1291,29 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         f"  physics Physics {{ density -1 mass 15 }}\n"
         f"}}\n"
     )
+
+    # Alternate movable obstacle models stay below the floor until selected by B.
+    parts.append("""DEF OBSTACLE_WHEELCHAIR Solid {
+  translation -1.5 1.8 -10
+  name "wheelchair_obstacle"
+  children [
+    Shape { appearance PBRAppearance { baseColor 0.12 0.32 0.72 roughness 0.75 }
+      geometry Box { size 0.6 0.5 0.45 } }
+    Shape { appearance PBRAppearance { baseColor 0.08 0.08 0.1 roughness 0.8 }
+      geometry Cylinder { radius 0.24 height 0.035 } }
+  ]
+  boundingObject Box { size 0.6 0.5 0.45 }
+  physics Physics { density -1 mass 18 }
+}
+DEF OBSTACLE_CART Solid {
+  translation -1.5 1.8 -10
+  name "equipment_cart_obstacle"
+  children [ Shape { appearance PBRAppearance { baseColor 0.72 0.76 0.8 roughness 0.55 metalness 0.35 }
+    geometry Box { size 0.65 0.55 0.55 } } ]
+  boundingObject Box { size 0.65 0.55 0.55 }
+  physics Physics { density -1 mass 20 }
+}
+""")
 
     # 11. Robot (DEF MEDIBOT)
     parts.append(robot_node())

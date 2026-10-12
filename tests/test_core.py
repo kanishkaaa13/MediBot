@@ -246,7 +246,8 @@ with open(wbt_path, "r") as f:
 # Check wheel radius in .wbt matches config
 wheel_radius_cfg = CFG["robot"]["wheel_radius"]
 import re
-wheel_radii = re.findall(r"boundingObject\s+Cylinder\s*\{[^}]*radius\s+([\d.]+)", wbt_content)
+robot_wbt = wbt_content.split("DEF MEDIBOT Robot", 1)[1]
+wheel_radii = re.findall(r"boundingObject\s+Cylinder\s*\{[^}]*radius\s+([\d.]+)", robot_wbt)
 if wheel_radii:
     for wr in wheel_radii:
         check(f"wheel radius {wr} matches config {wheel_radius_cfg}", abs(float(wr) - wheel_radius_cfg) < 1e-6)
@@ -273,7 +274,9 @@ else:
 
 # Check camera translation matches config
 cam_cfg = CFG["camera"]
-cam_translation = re.search(r'Camera[\s\S]*?translation ([\d.-]+) ([\d.-]+) ([\d.-]+)[\s\S]*?name "camera"', wbt_content)
+camera_nodes = re.findall(r"(?m)^\s*Camera\s*\{[^}]*\}", wbt_content, re.DOTALL)
+camera_node = next((node for node in camera_nodes if re.search(r'name\s+"camera"', node)), "")
+cam_translation = re.search(r'translation ([\d.-]+) ([\d.-]+) ([\d.-]+)', camera_node)
 if cam_translation:
     cam_x = float(cam_translation.group(1))
     cam_z = float(cam_translation.group(3))

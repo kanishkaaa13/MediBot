@@ -3,10 +3,10 @@ REGRESSION REPORT
 
 Scenario A:
   Completed: True
-  Duration: 104.8 s
-  Final distance from HOME: 1.753 m
-  Mean pose error: 53.0 cm
-  Max pose error: 179.1 cm
+  Duration: 100.2 s
+  Final distance from HOME: 1.696 m
+  Mean pose error: 51.5 cm
+  Max pose error: 173.3 cm
   Tag corrections: 0
   Obstacle stops: 1
   Replans: 1
@@ -17,30 +17,30 @@ Scenario A:
 
 Scenario B:
   Completed: True
-  Duration: 91.1 s
-  Final distance from HOME: 6.829 m
-  Mean pose error: 38.4 cm
-  Max pose error: 76.8 cm
+  Duration: 85.6 s
+  Final distance from HOME: 6.844 m
+  Mean pose error: 46.3 cm
+  Max pose error: 96.3 cm
   Tag corrections: 0
   Obstacle stops: 2
   Replans: 2
   Route via ICU: True
   Delivered: True
   Mission result: no route available
-  Result: PASS
+  Result: FAIL
 
 Scenario C:
   Completed: True
-  Duration: 104.8 s
-  Final distance from HOME: 1.751 m
-  Mean pose error: 52.9 cm
-  Max pose error: 179.0 cm
+  Duration: 100.2 s
+  Final distance from HOME: 1.696 m
+  Mean pose error: 51.5 cm
+  Max pose error: 173.3 cm
   Tag corrections: 0
   Obstacle stops: 1
   Replans: 1
   Route via ICU: False
   Delivered: True
   Mission result: no route available
-  Result: PASS
+  Result: FAIL
 
 OVERALL: SOME TESTS FAILED
