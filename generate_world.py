@@ -162,7 +162,7 @@ def tag_plate(tag_id, x, y, z, yaw):
             f"        baseColor 1 1 1\n"
             f"        roughness 0.5\n"
             f"        metalness 0\n"
-            f"        texture ImageTexture {{ url \"textures/tag_{tag_id:02d}.png\" }}\n"
+            f"        baseColorMap ImageTexture {{ url [ \"textures/tag_{tag_id:02d}.png\" ] }}\n"
             f"      }}\n"
             f"      geometry Box {{ size {TAG_SIZE} {TAG_SIZE} 0.01 }}\n"
             f"    }}\n"
@@ -400,7 +400,7 @@ def make_sign_textures(tex_dir):
     make_floor_marker((0, 180, 0), "A").save(os.path.join(tex_dir, "marker_a.png"))
     make_floor_marker((0, 100, 200), "B").save(os.path.join(tex_dir, "marker_b.png"))
 
-    # Door signs (white plaques with dark text, >= 1.2m wide = 768px at 64px/m)
+    # Door signs — power-of-two dimensions (1024x256) to avoid Webots rescale warning
     signs = [
         ("sign_ward_2a.png", "WARD 2A"),
         ("sign_ward_3b.png", "WARD 3B"),
@@ -409,18 +409,21 @@ def make_sign_textures(tex_dir):
         ("sign_nurse_station.png", "NURSE STATION"),
         ("sign_home_charging.png", "HOME / CHARGING"),
         ("sign_medicine_delivery.png", "MEDICINE DELIVERY"),
+        ("sign_junction_dir.png", "JUNCTION"),
+        ("sign_reception.png", "RECEPTION"),
     ]
+    SW, SH = 1024, 256   # power-of-two sign dimensions
     for fn, text in signs:
-        img = Image.new("RGB", (768, 128), (255, 255, 255))
+        img = Image.new("RGB", (SW, SH), (255, 255, 255))
         draw = ImageDraw.Draw(img)
-        draw.rectangle([4, 4, 764, 124], outline=(50, 50, 50), width=4)
-        draw.rectangle([8, 8, 760, 120], outline=(200, 200, 200), width=2)
+        draw.rectangle([4, 4, SW - 4, SH - 4], outline=(50, 50, 50), width=6)
+        draw.rectangle([10, 10, SW - 10, SH - 10], outline=(200, 200, 200), width=3)
 
         font = None
         for font_path in ["C:/Windows/Fonts/arialbd.ttf", "C:/Windows/Fonts/arial.ttf"]:
             if os.path.exists(font_path):
                 try:
-                    font = ImageFont.truetype(font_path, 60)
+                    font = ImageFont.truetype(font_path, 110)
                     break
                 except Exception:
                     pass
@@ -429,8 +432,8 @@ def make_sign_textures(tex_dir):
 
         bbox = draw.textbbox((0, 0), text, font=font)
         tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        x = (768 - tw) / 2
-        y = (128 - th) / 2 - bbox[1]
+        x = (SW - tw) / 2
+        y = (SH - th) / 2 - bbox[1]
         draw.text((x, y), text, fill=(30, 30, 30), font=font)
         img.save(os.path.join(tex_dir, fn))
 
@@ -478,14 +481,19 @@ def box_solid(name, x, y, z, sx, sy, sz, rgb, collide=True, yaw=0.0, def_name=No
 
 
 def box_solid_textured(name, x, y, z, sx, sy, sz, appearance, yaw=0.0):
-    """Box with custom appearance string (for textured walls/floors)."""
+    """Box with custom appearance string (for textured walls/floors).
+
+    `appearance` must be a VRML *value* (e.g. 'USE WallAppearance' or a full
+    'PBRAppearance { ... }' block).  The field name 'appearance' is added by
+    this function — do NOT include it in the `appearance` argument.
+    """
     return (f"Solid {{\n"
             f"  translation {x:g} {y:g} {z:g}\n"
             f"  rotation 0 0 1 {yaw:g}\n"
             f"  name \"{name}\"\n"
             f"  children [\n"
             f"    Shape {{\n"
-            f"      {appearance}\n"
+            f"      appearance {appearance}\n"
             f"      geometry Box {{ size {sx:g} {sy:g} {sz:g} }}\n"
             f"    }}\n"
             f"  ]\n"
@@ -504,7 +512,7 @@ def floor_marker(name, x, y, texture):
             f"        baseColor 1 1 1\n"
             f"        roughness 0.9\n"
             f"        metalness 0\n"
-            f"        texture ImageTexture {{ url \"textures/{texture}\" }}\n"
+            f"        baseColorMap ImageTexture {{ url [ \"textures/{texture}\" ] }}\n"
             f"      }}\n"
             f"      geometry Box {{ size 0.5 0.5 0.01 }}\n"
             f"    }}\n"
@@ -1081,14 +1089,15 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     wz = wh / 2
 
     # DEF/USE for texture reuse (performance optimization).
-    # The DEF must appear *inside a Shape's appearance field* (not at top level).
-    # We pass the full inline appearance for the first wall, then USE it for the rest.
+    # These strings are VRML *values* — the field name 'appearance' is
+    # prepended by box_solid_textured().  The first wall/floor carries the
+    # DEF so subsequent nodes can USE it.
     wall_appearance_def = (
         'DEF WallAppearance PBRAppearance {\n'
         '        baseColor 0.96 0.96 0.96\n'
         '        roughness 0.8\n'
         '        metalness 0\n'
-        '        texture ImageTexture { url "textures/wall_plaster.png" }\n'
+        '        baseColorMap ImageTexture { url [ "textures/wall_plaster.png" ] }\n'
         '      }'
     )
     floor_appearance_def = (
@@ -1096,10 +1105,10 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         '        baseColor 0.78 0.8 0.82\n'
         '        roughness 0.6\n'
         '        metalness 0\n'
-        '        texture ImageTexture { url "textures/floor_corridor.png" }\n'
+        '        baseColorMap ImageTexture { url [ "textures/floor_corridor.png" ] }\n'
         '      }'
     )
-    wall_appearance = "USE WallAppearance"
+    wall_appearance  = "USE WallAppearance"
     floor_appearance = "USE FloorAppearance"
 
     # Outer perimeter boundary walls (first one carries the DEF, rest USE it)
@@ -1341,6 +1350,16 @@ def main():
 
     print(f"Wrote worlds/medibot.wbt, {len(tags)} tag textures, 8 sign textures + logo, controllers/medibot_controller/config.json")
     print("Open worlds/medibot.wbt in Webots and press Run.")
+
+    # Auto-validate the generated file so a broken world is caught immediately.
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "validate_world.py")],
+        cwd=ROOT,
+    )
+    if result.returncode != 0:
+        print("\ngenerate_world.py: world file failed validation – do NOT open in Webots.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

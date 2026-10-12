@@ -409,11 +409,11 @@ Solid {
   name "wall_south_outer"
   children [
     Shape {
-      DEF WallAppearance PBRAppearance {
+      appearance DEF WallAppearance PBRAppearance {
         baseColor 0.96 0.96 0.96
         roughness 0.8
         metalness 0
-        texture ImageTexture { url "textures/wall_plaster.png" }
+        baseColorMap ImageTexture { url [ "textures/wall_plaster.png" ] }
       }
       geometry Box { size 12 0.12 1.4 }
     }
@@ -427,7 +427,7 @@ Solid {
   name "wall_north_outer"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 12 0.12 1.4 }
     }
   ]
@@ -440,7 +440,7 @@ Solid {
   name "wall_west_outer"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 8.4 1.4 }
     }
   ]
@@ -453,7 +453,7 @@ Solid {
   name "wall_east_outer"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 8.4 1.4 }
     }
   ]
@@ -466,7 +466,7 @@ Solid {
   name "wall_s_alcove"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 2.1 0.12 1.4 }
     }
   ]
@@ -479,7 +479,7 @@ Solid {
   name "wall_s_pharm_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.9 0.12 1.4 }
     }
   ]
@@ -492,7 +492,7 @@ Solid {
   name "wall_s_pharm_e"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.7 0.12 1.4 }
     }
   ]
@@ -505,7 +505,7 @@ Solid {
   name "wall_s_icu_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.7 0.12 1.4 }
     }
   ]
@@ -518,7 +518,7 @@ Solid {
   name "wall_s_icu_e"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 1.6 0.12 1.4 }
     }
   ]
@@ -531,7 +531,7 @@ Solid {
   name "div_pharm_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -544,7 +544,7 @@ Solid {
   name "div_pharm_e"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -557,7 +557,7 @@ Solid {
   name "div_icu_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 2.1 1.4 }
     }
   ]
@@ -570,7 +570,7 @@ Solid {
   name "wall_n_ward2a_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 1.2 0.12 1.4 }
     }
   ]
@@ -583,7 +583,7 @@ Solid {
   name "wall_n_middle"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 1.8 0.12 1.4 }
     }
   ]
@@ -596,7 +596,7 @@ Solid {
   name "wall_n_ward3b_e"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 1.6 0.12 1.4 }
     }
   ]
@@ -609,7 +609,7 @@ Solid {
   name "div_ward2a_w"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 1.5 1.4 }
     }
   ]
@@ -622,7 +622,7 @@ Solid {
   name "div_wards_mid"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 0.12 1.5 1.4 }
     }
   ]
@@ -635,7 +635,7 @@ Solid {
   name "wall_w_home_n"
   children [
     Shape {
-      USE WallAppearance
+      appearance USE WallAppearance
       geometry Box { size 2.1 0.12 1.4 }
     }
   ]
@@ -648,11 +648,11 @@ Solid {
   name "floor_main"
   children [
     Shape {
-      DEF FloorAppearance PBRAppearance {
+      appearance DEF FloorAppearance PBRAppearance {
         baseColor 0.78 0.8 0.82
         roughness 0.6
         metalness 0
-        texture ImageTexture { url "textures/floor_corridor.png" }
+        baseColorMap ImageTexture { url [ "textures/floor_corridor.png" ] }
       }
       geometry Box { size 12 8 0.02 }
     }
@@ -668,7 +668,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.9
         metalness 0
-        texture ImageTexture { url "textures/marker_a.png" }
+        baseColorMap ImageTexture { url [ "textures/marker_a.png" ] }
       }
       geometry Box { size 0.5 0.5 0.01 }
     }
@@ -683,7 +683,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.9
         metalness 0
-        texture ImageTexture { url "textures/marker_b.png" }
+        baseColorMap ImageTexture { url [ "textures/marker_b.png" ] }
       }
       geometry Box { size 0.5 0.5 0.01 }
     }
@@ -2200,7 +2200,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_00.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_00.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2217,7 +2217,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_01.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_01.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2234,7 +2234,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_02.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_02.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2251,7 +2251,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_03.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_03.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2268,7 +2268,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_04.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_04.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2285,7 +2285,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_05.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_05.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2302,7 +2302,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_06.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_06.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2319,7 +2319,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_07.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_07.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2336,7 +2336,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_08.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_08.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2353,7 +2353,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_09.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_09.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2370,7 +2370,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_10.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_10.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2387,7 +2387,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_11.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_11.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2404,7 +2404,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_12.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_12.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2421,7 +2421,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_13.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_13.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2438,7 +2438,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_14.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_14.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2455,7 +2455,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_15.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_15.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2472,7 +2472,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_16.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_16.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2489,7 +2489,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_17.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_17.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2506,7 +2506,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_18.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_18.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
@@ -2523,7 +2523,7 @@ Solid {
         baseColor 1 1 1
         roughness 0.5
         metalness 0
-        texture ImageTexture { url "textures/tag_19.png" }
+        baseColorMap ImageTexture { url [ "textures/tag_19.png" ] }
       }
       geometry Box { size 0.2 0.2 0.01 }
     }
