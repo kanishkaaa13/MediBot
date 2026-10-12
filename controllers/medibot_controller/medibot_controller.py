@@ -238,6 +238,14 @@ class MediBot:
         self.nan_warning_printed = set()  # Track which sensors have warned about NaN
         self.last_tag_id = None
         self.last_tag_zone = None
+        self._block_key_armed = True
+        self._block_key_last_seen = -float("inf")
+        self.obstacle_stops = 0
+        self.replans = 0
+        self.regression_route_via_icu = False
+        self.regression_trolley_placed = False
+        self.mission_delivered = False
+        self.last_mission_result = None
 
         # Regression mode
         self.regression_mode = os.path.exists(os.path.join(HERE, "regression.flag"))
@@ -522,22 +530,75 @@ class MediBot:
         except Exception as e:
             print("[draw] could not draw route:", e)
 
+    def _point_ahead_on_route(self, distance):
+        """Return (x, y, heading, edge index) at distance along the active path."""
+        route = self.route
+        if len(route) < 2:
+            return None
+        x, y, _ = self.ekf.x
+        edge_i = min(max(self.idx - 1, 0), len(route) - 2)
+        ax, ay = NODES[route[edge_i]]
+        bx, by = NODES[route[edge_i + 1]]
+        vx, vy = bx - ax, by - ay
+        edge_len = math.hypot(vx, vy)
+        if edge_len <= 1e-9:
+            return None
+        along = max(0.0, min(edge_len, ((x - ax) * vx + (y - ay) * vy) / edge_len))
+        lateral = abs((x - ax) * vy - (y - ay) * vx) / edge_len
+        if lateral > 1.0:  # Robot pose must still be in the corridor for this edge.
+            return None
+
+        remaining = edge_len - along
+        while edge_i < len(route) - 1:
+            ax, ay = NODES[route[edge_i]]
+            bx, by = NODES[route[edge_i + 1]]
+            vx, vy = bx - ax, by - ay
+            length = math.hypot(vx, vy)
+            if distance <= remaining + 1e-9:
+                s = along + distance
+                return (ax + vx * s / length, ay + vy * s / length,
+                        math.atan2(vy, vx), edge_i)
+            distance -= remaining
+            edge_i += 1
+            if edge_i >= len(route) - 1:
+                break
+            remaining = math.hypot(NODES[route[edge_i + 1]][0] - NODES[route[edge_i]][0],
+                                   NODES[route[edge_i + 1]][1] - NODES[route[edge_i]][1])
+            along = 0.0
+        return None
+
     def block_path(self):
-        """Put the trolley on the middle of a corridor that has an alternative route."""
-        route = (self.route if self.state in ("NAVIGATE", "APPROACH", "RETURN")
-                 else astar("HOME", "WARD-3B"))
-        start = max(self.idx, 0) if self.state != "IDLE" else 0
-        goal = route[-1]
-        for i in range(start, len(route) - 1):
-            a, b = route[i], route[i + 1]
-            if astar(a, goal, {edge_key(a, b)}) is not None:
-                mx = (NODES[a][0] + NODES[b][0]) / 2
-                my = (NODES[a][1] + NODES[b][1]) / 2
-                self.trolley.getField("translation").setSFVec3f([mx, my, 0.35])
-                self.trolley.resetPhysics()
-                print(f"[TROLLEY] placed on corridor {a} - {b}")
-                return
-        print("[TROLLEY] no corridor with an alternative route to block")
+        """Place the trolley one metre ahead on the active corridor centre line."""
+        route = self.route or astar(nearest_node(self.ekf.x[0], self.ekf.x[1]), "WARD-3B")
+        if not route or len(route) < 2:
+            print("[TROLLEY] no active route to block")
+            return False
+        if not self.route:
+            self.route, self.idx = route, 0
+        ahead = self._point_ahead_on_route(1.0)
+        if ahead is None:
+            print("[TROLLEY] no corridor point 1.0 m ahead on the current route")
+            return False
+        x, y, heading, edge_i = ahead
+        if min(math.hypot(x - nx, y - ny) for nx, ny in NODES.values()) < 0.5 - 1e-6:
+            print("[TROLLEY] 1.0 m ahead falls within 0.5 m of a node")
+            return False
+
+        a, b = route[edge_i], route[edge_i + 1]
+        if astar(a, route[-1], {edge_key(a, b)}) is None:
+            print(f"[TROLLEY] corridor {a} - {b} has no alternate route")
+            return False
+
+        translation = self.trolley.getField("translation")
+        rotation = self.trolley.getField("rotation")
+        translation.setSFVec3f([x, y, 0.10])
+        # Trolley is 0.6 m wide across the corridor and 0.5 m long along it.
+        rotation.setSFRotation([0, 0, 1, heading + math.pi / 2])
+        self.trolley.resetPhysics()
+        sonar_front = self.sonar()["front"]
+        print(f"[TROLLEY] placed at ({x:.2f},{y:.2f}), d=1.00 m ahead")
+        print(f"[TROLLEY] sonar front={sonar_front:.2f} m")
+        return True
 
     def unblock(self):
         px, py = CFG["trolley_park"]
@@ -550,9 +611,12 @@ class MediBot:
             return
         prev, tgt = self.route[self.idx - 1], self.route[self.idx]
         self.blocked_edges.add(edge_key(prev, tgt))
+        self.replans += 1
         print(f"[REPLAN] corridor {prev} - {tgt} blocked for {BLOCK_TIME:.0f} s -> marking edge blocked")
         goal = self.route[-1]
         if self.plan(prev, goal):
+            if self.regression_scenario == "B" and "ICU" in self.route:
+                self.regression_route_via_icu = True
             if self.state == "APPROACH":
                 self.set_state("NAVIGATE")
         else:
@@ -601,6 +665,7 @@ class MediBot:
                 print(f"[OBSTACLE] STOP  front={d['front'] * 100:.0f} cm "
                       f"left={d['left'] * 100:.0f} cm right={d['right'] * 100:.0f} cm")
                 self.obst_printed = True
+                self.obstacle_stops += 1
                 self._update_status_led("BLOCKED")
             self.blocked_t += self.dt
             if self.blocked_t >= BLOCK_TIME:
@@ -617,6 +682,8 @@ class MediBot:
         if not self.plan(start, "WARD-3B"):
             return
         self.mission_no += 1
+        self.mission_delivered = False
+        self.last_mission_result = None
         self.errs = []
         self.n_corrections = 0
         self.face_ok = self.rfid_ok = False
@@ -634,6 +701,7 @@ class MediBot:
         self.set_state("NAVIGATE")
 
     def end_mission(self, why):
+        self.last_mission_result = why
         if self.errs:
             print(f"[SUMMARY] {why} | tag correction {'ON' if self.tags_enabled else 'OFF'} | "
                   f"mean error {np.mean(self.errs):.1f} cm | max error {np.max(self.errs):.1f} cm | "
@@ -691,13 +759,14 @@ class MediBot:
             self.n_corrections = 0
             self.obstacle_stops = 0
             self.replans = 0
+            self.regression_route_via_icu = False
+            self.regression_trolley_placed = False
+            self.mission_delivered = False
+            self.last_mission_result = None
 
             # Setup for each scenario
             self.reset()
-            if scenario == "B":
-                # Place trolley on the route
-                self.block_path()
-            elif scenario == "C":
+            if scenario == "C":
                 # Turn tags OFF
                 self.tags_enabled = False
 
@@ -711,19 +780,15 @@ class MediBot:
                 self.localize_step()
                 if self.step_no % 2 == 0:
                     self.camera_step()
+                if (scenario == "B" and not self.regression_trolley_placed and self.state == "NAVIGATE"
+                        and self.idx > 0 and self.route[self.idx - 1:self.idx + 1]
+                        == ["JUNCTION", "WARD-2A"]):
+                    self.regression_trolley_placed = self.block_path()
                 self.state_machine()
                 if self.state != "IDLE":
                     self.log_step()
                 if self.step_no % 4 == 0:
                     self.hud()
-
-                # Track obstacle stops for scenario B
-                if self.state == "BLOCKED":
-                    self.obstacle_stops += 1
-
-                # Track replans
-                if "[REPLAN]" in str(self.state_machine):
-                    self.replans += 1
 
             # Collect results
             duration = self.now() - self.regression_start_t
@@ -735,6 +800,8 @@ class MediBot:
             result = {
                 "scenario": scenario,
                 "completed": self.state == "IDLE",
+                "delivered": self.mission_delivered,
+                "mission_result": self.last_mission_result or "",
                 "duration": duration,
                 "final_dist_home": final_dist_home,
                 "mean_err": mean_err,
@@ -742,6 +809,7 @@ class MediBot:
                 "n_corrections": self.n_corrections,
                 "obstacle_stops": self.obstacle_stops,
                 "replans": self.replans,
+                "route_via_icu": self.regression_route_via_icu,
             }
             results.append(result)
 
@@ -765,6 +833,9 @@ class MediBot:
                 f.write(f"  Tag corrections: {r['n_corrections']}\n")
                 f.write(f"  Obstacle stops: {r['obstacle_stops']}\n")
                 f.write(f"  Replans: {r['replans']}\n")
+                f.write(f"  Route via ICU: {r['route_via_icu']}\n")
+                f.write(f"  Delivered: {r['delivered']}\n")
+                f.write(f"  Mission result: {r['mission_result']}\n")
 
                 # Determine PASS/FAIL
                 passed = True
@@ -773,7 +844,8 @@ class MediBot:
                              r['final_dist_home'] < 0.3 and
                              r['mean_err'] < 15 and r['max_err'] < 40)
                 elif r['scenario'] == "B":
-                    passed = (r['completed'] and r['obstacle_stops'] >= 1 and r['replans'] >= 1)
+                    passed = (r['completed'] and r['obstacle_stops'] >= 1 and
+                              r['replans'] == 1 and r['route_via_icu'] and r['delivered'])
                 elif r['scenario'] == "C":
                     passed = True  # No pass criterion for C
 
@@ -784,7 +856,8 @@ class MediBot:
                 (r['scenario'] == "C" or
                  (r['scenario'] == "A" and r['completed'] and r['duration'] < 120 and
                   r['final_dist_home'] < 0.3 and r['mean_err'] < 15 and r['max_err'] < 40) or
-                 (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and r['replans'] >= 1))
+                 (r['scenario'] == "B" and r['completed'] and r['obstacle_stops'] >= 1 and
+                  r['replans'] == 1 and r['route_via_icu'] and r['delivered']))
                 for r in results)
             f.write(f"OVERALL: {'ALL TESTS PASSED' if all_passed else 'SOME TESTS FAILED'}\n")
 
@@ -796,6 +869,7 @@ class MediBot:
 
     # ------------------------------------------------------------ keys + state machine
     def keys(self):
+        saw_block_key = False
         while True:
             k = self.kb.getKey()
             if k == -1:
@@ -804,7 +878,11 @@ class MediBot:
             if c == "S" and self.state == "IDLE":
                 self.start_mission()
             elif c == "B":
-                self.block_path()
+                saw_block_key = True
+                self._block_key_last_seen = self.now()
+                if self._block_key_armed:
+                    self._block_key_armed = False
+                    self.block_path()
             elif c == "U":
                 self.unblock()
             elif c == "F" and self.state == "VERIFY":
@@ -835,6 +913,9 @@ class MediBot:
                 self.calib_start_ekf = tuple(self.ekf.x)
                 self.calib_start_t = self.now()
                 print("[CAL] starting odometry calibration: driving straight 0.2 m/s for 3 s...")
+        if (not saw_block_key and not self._block_key_armed
+                and self.now() - self._block_key_last_seen >= 0.25):
+            self._block_key_armed = True
 
     def reset(self):
         self.stop()
@@ -906,6 +987,7 @@ class MediBot:
                 print("[VERIFY] auto-confirmed")
             if self.face_ok and self.rfid_ok:
                 print("[VERIFY] recipient verified -> unlocking compartment 1")
+                self.mission_delivered = True
                 self.compartments.unlock(1)
                 self.compartments.deliver_cargo(1)
                 self.set_state("DELIVER")

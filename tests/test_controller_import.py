@@ -58,6 +58,7 @@ class FakeSupervisor:
         self.steps += 1
         self.time += timestep / 1000.0
         return 0 if self.steps <= 200 else -1
+    def simulationQuit(self): pass
 
 
 fake_controller = types.ModuleType("controller")
@@ -67,6 +68,12 @@ sys.modules.pop("medibot_controller", None)
 
 controller_module = importlib.import_module("medibot_controller")
 bot = controller_module.MediBot()
+bot.route = ["HOME", "PHARMACY", "JUNCTION", "WARD-2A", "WARD-3B"]
+bot.idx = 3
+bot.ekf.x = [4.0, 0.0, 1.57]
+placement = bot._point_ahead_on_route(1.0)
+assert placement is not None and abs(placement[0] - 4.0) < 1e-9 and abs(placement[1] - 1.0) < 1e-9
+assert placement[3] == 2
 bot.run()
 assert bot.robot.steps == 201, f"expected 201 total steps, got {bot.robot.steps}"
-print("PASS  controller import, MediBot initialization, and 200 simulation steps")
+print("PASS  controller import, initialization, route-ahead trolley placement, and 200 simulation steps")

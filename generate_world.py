@@ -1224,7 +1224,7 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
     tx, ty = TROLLEY_PARK
     parts.append(
         f"DEF TROLLEY Solid {{\n"
-        f"  translation {tx:g} {ty:g} 0.35\n"
+        f"  translation {tx:g} {ty:g} 0.1\n"
         f"  rotation 0 0 1 0\n"
         f"  name \"trolley\"\n"
         f"  children [\n"
@@ -1234,10 +1234,10 @@ DirectionalLight {{ ambientIntensity 0.75 direction -0.3 0.4 -1 intensity 0.8 }}
         f"        roughness 1\n"
         f"        metalness 0\n"
         f"      }}\n"
-        f"      geometry Box {{ size 0.5 0.45 0.7 }}\n"
+        f"      geometry Box {{ size 0.6 0.5 0.2 }}\n"
         f"    }}\n"
         f"  ]\n"
-        f"  boundingObject Box {{ size 0.5 0.45 0.7 }}\n"
+        f"  boundingObject Box {{ size 0.6 0.5 0.2 }}\n"
         f"  physics Physics {{ density -1 mass 15 }}\n"
         f"}}\n"
     )
