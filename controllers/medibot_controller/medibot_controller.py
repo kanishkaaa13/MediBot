@@ -24,6 +24,8 @@ except ImportError:
 from controller import Supervisor
 from medibot_core import (CFG, NODES, EKF, TagLocalizer, astar, edge_key, nearest_node, wrap)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 # ---------------------------------------------------------------- parameters
 TIME_STEP = 32
 R_TRUE = CFG["robot"]["wheel_radius"]

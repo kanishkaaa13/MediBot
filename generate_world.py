@@ -341,14 +341,14 @@ def make_floor_marker(color, letter):
 # Signage and Texture Generation (Pillow + OpenCV)
 # ----------------------------------------------------------------------------
 def make_tag_image(tag_id):
-    """Return a 600x600 uint8 image: 400 px tag36h11 marker + 100 px white margin with ID text."""
+    """Return a 1024x1024 tag36h11 texture with a proportional white margin."""
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_APRILTAG_36h11)
     if hasattr(cv2.aruco, "generateImageMarker"):
         marker = cv2.aruco.generateImageMarker(dictionary, tag_id, 80, borderBits=1)
     else:  # OpenCV < 4.7
         marker = cv2.aruco.drawMarker(dictionary, tag_id, 80, borderBits=1)
-    marker = cv2.resize(marker, (400, 400), interpolation=cv2.INTER_NEAREST)
-    img = cv2.copyMakeBorder(marker, 100, 100, 100, 100, cv2.BORDER_CONSTANT, value=255)
+    marker = cv2.resize(marker, (704, 704), interpolation=cv2.INTER_NEAREST)
+    img = cv2.copyMakeBorder(marker, 160, 160, 160, 160, cv2.BORDER_CONSTANT, value=255)
 
     # Add ID text below the tag (in the white margin)
     img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -362,7 +362,7 @@ def make_tag_image(tag_id):
     ]:
         if os.path.exists(font_path):
             try:
-                font = ImageFont.truetype(font_path, 40)
+                font = ImageFont.truetype(font_path, 64)
                 break
             except Exception:
                 pass
@@ -373,8 +373,8 @@ def make_tag_image(tag_id):
     text = str(tag_id)
     bbox = draw.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    x = (600 - tw) / 2
-    y = 520  # Below the tag (tag is at y=100 to 500)
+    x = (1024 - tw) / 2
+    y = 840  # Below the tag (tag is at y=160 to 864)
     draw.text((x, y), text, fill=(0, 0, 0), font=font)
 
     return cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
