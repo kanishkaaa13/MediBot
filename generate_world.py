@@ -111,6 +111,7 @@ CAM = {"width": 960, "height": 720, "fov": 1.6, "x": 0.22, "z": TAG_Z - WHEEL_R}
 # pitch centers the 0.96 m visitor face in the image from the robot camera mount.
 FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.96,
             "rotation": 0.18}
+FACE_TEXTURE_SIZE = 512
 
 # Safe trolley parking spot in reception alcove (away from transit lines)
 TROLLEY_PARK = (-1.5, 1.8)
@@ -1548,12 +1549,24 @@ def main():
         if src_face and os.path.isfile(src_face):
             try:
                 im = Image.open(src_face)
-                im = im.resize((256, 256), Image.Resampling.LANCZOS)
+                im = im.resize((FACE_TEXTURE_SIZE, FACE_TEXTURE_SIZE), Image.Resampling.LANCZOS)
                 im.save(dest_face)
             except Exception:
                 make_face_image(person["id"]).save(dest_face)
         else:
             make_face_image(person["id"]).save(dest_face)
+    # Keep legacy/unreferenced face textures consistent too; Webots should not
+    # have to rescale non-square or non-512 face images at load time.
+    for fname in os.listdir(face_dir):
+        face_path = os.path.join(face_dir, fname)
+        if not os.path.isfile(face_path):
+            continue
+        try:
+            with Image.open(face_path) as im:
+                if im.size != (FACE_TEXTURE_SIZE, FACE_TEXTURE_SIZE):
+                    im.resize((FACE_TEXTURE_SIZE, FACE_TEXTURE_SIZE), Image.Resampling.LANCZOS).save(face_path)
+        except (OSError, ValueError):
+            continue
     for number in (1, 2, 3):
         make_compartment_image(number).save(os.path.join(TEX_DIR, f"compartment_{number}.png"))
     for number in (1, 2, 3):

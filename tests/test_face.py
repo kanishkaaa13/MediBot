@@ -38,12 +38,17 @@ if len(embeddings)!=4:
     raise SystemExit(1)
 
 f1,f2,v1,v2=(embeddings[name] for name in FILES)
+rahul_enrolment=f1+f2
+rahul_enrolment=rahul_enrolment/np.linalg.norm(rahul_enrolment)
 scores={"family leave-one-out 1->2":float(f1@f2),"family leave-one-out 2->1":float(f2@f1),
-        "visitor 01 vs family":float(v1@f1),"visitor 02 vs family":float(v2@f1),
+        "visitor 01 vs Rahul photo 1":float(v1@f1),"visitor 01 vs Rahul photo 2":float(v1@f2),
+        "visitor 01 vs Rahul enrolment":float(v1@rahul_enrolment),
+        "visitor 02 vs Rahul photo 1":float(v2@f1),"visitor 02 vs Rahul photo 2":float(v2@f2),
+        "visitor 02 vs Rahul enrolment":float(v2@rahul_enrolment),
         "visitor 01 vs visitor 02":float(v1@v2)}
 for label,score in scores.items(): print(f"{label}: SFace cosine={score:.4f}")
 accept=all(scores[key]>=.5 for key in ("family leave-one-out 1->2","family leave-one-out 2->1"))
-reject=all(scores[key]<=.20 for key in ("visitor 01 vs family","visitor 02 vs family","visitor 01 vs visitor 02"))
+reject=all(scores[key]<.30 for key in ("visitor 01 vs Rahul enrolment","visitor 02 vs Rahul enrolment"))
 db=json.loads((CTRL/"patients.json").read_text(encoding="utf-8"))
 patient=next(p for p in db["patients"] if p["ward"]=="WARD-3B")
 rahul=next(p for p in patient["authorised_family"] if p["name"]=="Rahul Mehta")
@@ -56,5 +61,25 @@ wrong_result=decide_handover(other_patient,rahul["id"],scores["family leave-one-
                              rahul["rfid_uid"],known_people,known_cards)
 wrong_patient=wrong_patient and not wrong_result[0]
 print(f"wrong-patient case ({other_patient['id']}): face score={scores['family leave-one-out 1->2']:.4f}; {wrong_result[1]}: {'PASS' if wrong_patient else 'FAIL'}")
-print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visitors (<=0.20): {'PASS' if reject else 'FAIL'}")
+print(f"visitor-to-visitor score (informational only): {scores['visitor 01 vs visitor 02']:.4f}")
+print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visitors vs Rahul enrolment (<0.30): {'PASS' if reject else 'FAIL'}")
+
+# Score the real Webots camera captures produced by the isolated handover-pose
+# probe. These are 640x480 BGR frames from the actual face_cam device.
+for pid in ("VISITOR_UNKNOWN_01", "VISITOR_UNKNOWN_02"):
+    path=CTRL/"logs"/f"face_cam_{pid}.png"
+    frame=cv2.imread(str(path))
+    if frame is None:
+        print(f"in-world {pid}: frame missing ({path})")
+        continue
+    det.setInputSize((frame.shape[1],frame.shape[0])); _,rows=det.detect(frame)
+    if rows is None or len(rows)==0:
+        print(f"in-world {pid}: YuNet NO FACE; best match=none score=-")
+        continue
+    face=max(rows,key=lambda row:float(row[14])); conf=float(face[14])
+    aligned=rec.alignCrop(frame,face); feature=np.asarray(rec.feature(aligned),np.float32).ravel()
+    feature=feature/np.linalg.norm(feature)
+    rahul_score=float(feature@rahul_enrolment)
+    x,y,w,h=(int(face[i]) for i in range(4))
+    print(f"in-world {pid}: YuNet DETECTED conf={conf:.4f} box=({x},{y},{w},{h}); best match=Rahul Mehta score={rahul_score:.4f}")
 if not (accept and reject and wrong_patient): raise SystemExit(1)

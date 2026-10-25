@@ -306,7 +306,8 @@ def _evaluate(max_seeds=500):
     best=None
     # For each possible family identity evaluate its structurally stable variant.
     for family in candidates:
-        fam2,conf2=_model_embed(make_variant(family["seed"]),detector,recognizer)
+        family_variant=make_variant(family["seed"])
+        fam2,conf2=_model_embed(family_variant,detector,recognizer)
         if fam2 is None: continue
         fscore=float(family["emb"]@fam2)
         if fscore<.5: continue
@@ -320,17 +321,17 @@ def _evaluate(max_seeds=500):
             scores={"family_1_vs_family_2":fscore,"visitor_1_vs_family":s1,
                     "visitor_2_vs_family":s2,"visitor_1_vs_visitor_2":s12}
             quality=min(.2-s1,.2-s2,.2-s12,fscore-.5)
-            if best is None or quality>best[0]: best=(quality,family,v1,v2,fam2,conf2,scores)
+            if best is None or quality>best[0]: best=(quality,family,v1,v2,family_variant,conf2,scores)
             if s12<=.2:
                 chosen=(family,v1,v2)
-                _write_set(chosen,fam2)
+                _write_set(chosen,family_variant)
                 print("WINNING SEEDS:",family["seed"],v1["seed"],v2["seed"])
                 print("YuNet confidences:",family["conf"],conf2,v1["conf"],v2["conf"])
                 print("PAIRWISE SFACE SCORES:",scores)
                 return True
     if best:
-        _,family,v1,v2,fam2,conf2,scores=best
-        _write_set((family,v1,v2),fam2)
+        _,family,v1,v2,family_variant,conf2,scores=best
+        _write_set((family,v1,v2),family_variant)
         print("NO ACCEPTABLE SET. Best candidate seeds:",family["seed"],v1["seed"],v2["seed"])
         print("Best pairwise SFace scores:",scores)
         print("Targets were family >= 0.5, all visitor pairs <= 0.2; none met every target. Settings unchanged.")
