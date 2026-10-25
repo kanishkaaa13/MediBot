@@ -647,7 +647,9 @@ def visitor_nodes(people):
     for i, person in enumerate(people):
         pid = person["id"]
         x, y = -30.0 - i * 3.0, -20.0
-        face_path = person["face_image"].replace("\\", "/")
+        face_files = person.get("face_files", [])
+        raw_face = face_files[0] if face_files else person.get("face_image", "")
+        face_path = raw_face.replace("\\", "/")
         nodes.append(f'''DEF VISITOR_{pid} Solid {{
   translation {x:g} {y:g} 0
   name "visitor_{pid}"
@@ -1530,7 +1532,20 @@ def main():
     face_dir = os.path.join(TEX_DIR, "faces")
     os.makedirs(face_dir, exist_ok=True)
     for person in people:
-        make_face_image(person["id"]).save(os.path.join(face_dir, f"{person['id']}.png"))
+        face_files = person.get("face_files", [])
+        rel = face_files[0] if face_files else person.get("face_image", "")
+        fname = os.path.basename(rel) if rel else f"{person['id']}.png"
+        dest_face = os.path.join(face_dir, fname)
+        src_face = os.path.join(CTRL_DIR, rel) if rel else ""
+        if src_face and os.path.isfile(src_face):
+            try:
+                im = Image.open(src_face)
+                im = im.resize((256, 256), Image.Resampling.LANCZOS)
+                im.save(dest_face)
+            except Exception:
+                make_face_image(person["id"]).save(dest_face)
+        else:
+            make_face_image(person["id"]).save(dest_face)
     for number in (1, 2, 3):
         make_compartment_image(number).save(os.path.join(TEX_DIR, f"compartment_{number}.png"))
     for number in (1, 2, 3):

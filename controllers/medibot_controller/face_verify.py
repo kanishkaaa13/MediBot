@@ -117,14 +117,8 @@ def _best_face_box(faces):
 
 def _crop_and_align(img: np.ndarray, face_row: np.ndarray) -> np.ndarray | None:
     """Align and crop face using SFace's alignCrop."""
-    if _RECOGNISER is None:
-        # Fallback: plain bbox crop
-        x, y, w, h = int(face_row[0]), int(face_row[1]), int(face_row[2]), int(face_row[3])
-        x, y = max(x, 0), max(y, 0)
-        crop = img[y:y + h, x:x + w]
-        if crop.size == 0:
-            return None
-        return cv2.resize(crop, (112, 112))
+    if _RECOGNISER is None or face_row is None:
+        return None
     try:
         aligned = _RECOGNISER.alignCrop(img, face_row)
         return aligned
@@ -204,8 +198,8 @@ def enrol_all(patients_json: str | None = None) -> int:
 
             if box is None:
                 print(
-                    f"  [ENROLL] {name} ({pid}) | {os.path.basename(abs_path)}"
-                    f" | YuNet: NO FACE DETECTED – WARNING: skipping this photo"
+                    f"  [WARN] YuNet: NO FACE DETECTED in '{os.path.basename(abs_path)}' ({abs_path})"
+                    f" for {name} ({pid}) – photo REJECTED"
                 )
                 continue
 
