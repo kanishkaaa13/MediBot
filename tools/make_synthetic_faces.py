@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Render and evaluate synthetic face illustrations for the MediBot demo.
+"""Generate structurally varied synthetic portraits and evaluate them locally.
 
-Rendering uses Pillow and NumPy only. OpenCV is used by the command-line
-evaluation to run the project's existing YuNet and SFace models.
+Image construction uses Pillow and NumPy only. The existing OpenCV YuNet/SFace
+models are used only by the optional seed-search/evaluation command.
 """
 from __future__ import annotations
 
 import argparse
 import io
+import itertools
 import math
 from pathlib import Path
 
@@ -18,191 +19,341 @@ ROOT = Path(__file__).resolve().parents[1]
 FACES = ROOT / "controllers" / "medibot_controller" / "faces"
 MODELS = ROOT / "controllers" / "medibot_controller" / "models"
 SIZE = 512
+SCALE = 2
+FILES = ("family_1.jpg", "family_2.jpg", "VISITOR_UNKNOWN_01.jpg", "VISITOR_UNKNOWN_02.jpg")
 
 
-def _rgb(seed: int, salt: int, low: int, high: int) -> int:
-    return int(np.random.default_rng(seed * 7919 + salt).integers(low, high))
+def _params(seed: int) -> dict:
+    """One stable, identity-defining parameter set for a seed."""
+    r = np.random.default_rng(int(seed))
+    return {
+        "seed": int(seed), "ratio": float(r.uniform(.70, .95)),
+        "height": float(r.uniform(278, 322)), "width": float(r.uniform(196, 230)),
+        "jaw": str(r.choice(("pointed", "square", "round"))),
+        "forehead": float(r.uniform(.26, .37)), "cheek": float(r.uniform(.82, 1.16)),
+        "eye_size": float(r.uniform(13, 21)), "eye_spacing": float(r.uniform(.31, .47)),
+        "eye_y": float(r.uniform(.39, .48)), "eye_tilt": float(r.uniform(-12, 12)),
+        "lid": str(r.choice(("almond", "hooded", "round", "narrow"))),
+        "brow_thick": float(r.uniform(2.8, 7.2)), "brow_arch": float(r.uniform(-8, 10)),
+        "brow_gap": float(r.uniform(3, 13)),
+        "nose_len": float(r.uniform(.15, .27)), "nose_width": float(r.uniform(14, 28)),
+        "nostril": float(r.uniform(2, 5.5)), "mouth_width": float(r.uniform(34, 68)),
+        "lip_thick": float(r.uniform(2, 6)), "mouth_y": float(r.uniform(.70, .79)),
+        "corner": float(r.uniform(-7, 7)), "ear_size": float(r.uniform(.085, .15)),
+        "ear_y": float(r.uniform(.43, .57)),
+        "hair_style": str(r.choice(("crop", "side_part", "long", "receding", "volume"))),
+        "hairline": float(r.uniform(-.12, .16)), "beard": str(r.choice(("none", "stubble", "beard", "moustache"))),
+        "glasses": str(r.choice(("none", "round", "rectangular", "none"))),
+        "detail": str(r.choice(("none", "freckles", "wrinkles", "freckles", "none"))),
+        "age": float(r.uniform(0, 1)), "skin": r.uniform([119, 75, 54], [232, 190, 160]),
+        "hair": r.uniform([16, 12, 10], [100, 76, 56]),
+        "iris": tuple(int(x) for x in r.choice(((61, 91, 104), (91, 65, 47), (54, 91, 67), (105, 81, 58)))),
+        "bg1": tuple(int(x) for x in r.integers(218, 249, 3)),
+        "bg2": tuple(int(x) for x in r.integers(224, 255, 3)),
+        "light_angle": float(r.uniform(-math.pi, math.pi)),
+        "pose": float(r.uniform(-5, 5)),
+    }
+
+
+def _paint(seed: int, variant: bool = False) -> Image.Image:
+    p = _params(seed)
+    rng = np.random.default_rng(int(seed) + (991 if variant else 0))
+    S = SIZE * SCALE
+    cx = SIZE * .5
+    top, bottom = 60.0 + p["forehead"] * 32, 443.0
+    fh = bottom - top
+    fw = p["height"] * p["ratio"]
+    # Ratio sets the actual head proportions, while width remains in a useful
+    # detector-friendly range. A soft horizontal background gradient differs
+    # by identity but remains plain and unobtrusive.
+    yy, xx = np.mgrid[0:SIZE, 0:SIZE]
+    mix = np.clip(.34 + .28 * (xx / SIZE) + .16 * np.sin(yy / SIZE * np.pi), 0, 1)[..., None]
+    bg = np.asarray(p["bg1"])[None, None, :] * (1 - mix) + np.asarray(p["bg2"])[None, None, :] * mix
+    canvas = Image.fromarray(np.uint8(np.clip(bg, 0, 255))).resize((S, S), Image.Resampling.BICUBIC).convert("RGBA")
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    def box(b): return tuple(round(v * SCALE) for v in b)
+    def poly(points, fill, outline=None, width=1):
+        pts = [(round(x * SCALE), round(y * SCALE)) for x, y in points]
+        draw.polygon(pts, fill=fill)
+        if outline: draw.line(pts + pts[:1], fill=outline, width=max(1, round(width * SCALE)), joint="curve")
+
+    # Neck is behind the head so its upper edge disappears naturally under
+    # the jaw instead of drawing a dark ellipse across the chin.
+    draw.rounded_rectangle(box((cx-fw*.18, 395, cx+fw*.18, 496)), radius=22*SCALE,
+                           fill=tuple(int(v*.88) for v in p["skin"])+(255,))
+
+    # Individual jaw silhouette: temples, cheeks, jaw and chin all have
+    # independent curvature governed by seed-derived structural traits.
+    cheek_y = top + fh * .56
+    jaw_y = top + fh * .79
+    chin_y = bottom
+    temple = fw * .48
+    cheek = fw * .50 * p["cheek"]
+    jaw = fw * ({"pointed": .22, "square": .42, "round": .34}[p["jaw"]])
+    if p["jaw"] == "pointed":
+        chin_shape = [(cx - jaw, jaw_y), (cx - jaw*.56, chin_y-12), (cx, chin_y+5), (cx+jaw*.56, chin_y-12), (cx+jaw, jaw_y)]
+    elif p["jaw"] == "square":
+        chin_shape = [(cx-jaw, jaw_y), (cx-jaw*.96, chin_y-31), (cx-jaw*.66, chin_y), (cx, chin_y+2), (cx+jaw*.66, chin_y), (cx+jaw*.96, chin_y-31), (cx+jaw, jaw_y)]
+    else:
+        chin_shape = [(cx-jaw, jaw_y), (cx-jaw*.83, chin_y-26), (cx-jaw*.48, chin_y+1), (cx, chin_y+6), (cx+jaw*.48, chin_y+1), (cx+jaw*.83, chin_y-26), (cx+jaw, jaw_y)]
+    face_pts = [(cx-temple, top), (cx-fw*.52, top+fh*.20), (cx-fw*.54, cheek_y),
+                (cx-cheek, cheek_y+20), (cx-jaw, jaw_y)] + chin_shape[1:-1] + [
+                (cx+jaw, jaw_y), (cx+cheek, cheek_y+20), (cx+fw*.54, cheek_y),
+                (cx+fw*.52, top+fh*.20), (cx+temple, top)]
+    # Radial and directional skin shading, softly blurred into a photographic
+    # diffuse-light field clipped to the custom face silhouette.
+    skin = np.asarray(p["skin"], dtype=float)
+    lightx = math.cos(p["light_angle"]) * .33
+    lighty = math.sin(p["light_angle"]) * .26
+    nx, ny = (xx-cx)/(fw*.62), (yy-(top+fh*.48))/(fh*.66)
+    radial = np.maximum(0, 1 - .22*(nx*nx+ny*ny))
+    shade = np.clip(.76 + .23*radial + lightx*nx + lighty*ny, .57, 1.14)
+    grain = rng.normal(0, 1.1, (SIZE, SIZE, 1))
+    skin_pixels = np.uint8(np.clip(skin[None,None,:]*shade[...,None]+grain, 0, 255))
+    skin_im = Image.fromarray(skin_pixels).resize((S,S), Image.Resampling.BICUBIC).convert("RGBA")
+    mask = Image.new("L", (S,S), 0)
+    ImageDraw.Draw(mask).polygon([(round(x*SCALE), round(y*SCALE)) for x,y in face_pts], fill=255)
+    # Cast shadow offset follows illumination direction.
+    shadow = Image.new("RGBA", (S,S), (0,0,0,0))
+    ImageDraw.Draw(shadow).polygon([(round((x-lightx*9)*SCALE),round((y+5)*SCALE)) for x,y in face_pts], fill=(24,18,15,45))
+    canvas = Image.alpha_composite(canvas, shadow.filter(ImageFilter.GaussianBlur(12*SCALE)))
+    skin_im.putalpha(mask)
+    canvas = Image.alpha_composite(canvas, skin_im)
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    base = tuple(int(v) for v in skin)
+    hair = tuple(int(v) for v in p["hair"])
+    hair_rgba = hair + (255,)
+    # Ears have seed-specific size and height, with inner folds.
+    earw = fw * p["ear_size"]
+    ey = top + fh*p["ear_y"]
+    for side in (-1,1):
+        ex = cx + side*(fw*.49)
+        draw.ellipse(box((ex-earw, ey-earw*1.42, ex+earw, ey+earw*1.42)), fill=base+(255,), outline=tuple(max(0,v-35) for v in base)+(120,), width=2*SCALE)
+        draw.arc(box((ex-earw*.5,ey-earw*.8,ex+earw*.6,ey+earw*.8)), 30, 310, fill=(100,55,48,115), width=2*SCALE)
+    # Ears sit over the cheek edge; the neck remains behind the head.
+
+    # Hair styles have distinct silhouettes and hairlines.
+    hairline = top + p["hairline"]*35
+    if p["hair_style"] == "crop":
+        draw.pieslice(box((cx-fw*.59, hairline-77, cx+fw*.59, top+fh*.48)), 180, 360, fill=hair_rgba)
+        draw.rectangle(box((cx-fw*.59, hairline-3, cx+fw*.59, hairline+13)), fill=hair_rgba)
+    elif p["hair_style"] == "side_part":
+        draw.pieslice(box((cx-fw*.62, hairline-78, cx+fw*.62, top+fh*.43)), 180, 360, fill=hair_rgba)
+        poly([(cx-fw*.52,hairline+3),(cx-fw*.10,hairline-25),(cx+fw*.18,hairline-3),(cx+fw*.52,hairline+4)],hair_rgba)
+        draw.line([(round((cx-fw*.05)*SCALE),round((hairline-40)*SCALE)),(round((cx+fw*.02)*SCALE),round((hairline+5)*SCALE))],fill=tuple(min(255,int(c*1.5)) for c in hair)+(170,),width=2*SCALE)
+    elif p["hair_style"] == "long":
+        draw.rounded_rectangle(box((cx-fw*.62,top+20,cx-fw*.42,bottom+38)),radius=28*SCALE,fill=hair_rgba)
+        draw.rounded_rectangle(box((cx+fw*.42,top+20,cx+fw*.62,bottom+38)),radius=28*SCALE,fill=hair_rgba)
+        draw.pieslice(box((cx-fw*.61,hairline-75,cx+fw*.61,top+fh*.42)),180,360,fill=hair_rgba)
+    elif p["hair_style"] == "receding":
+        draw.pieslice(box((cx-fw*.59,top-35,cx+fw*.59,top+fh*.32)),190,350,fill=hair_rgba)
+        if p["age"] > .55:
+            draw.arc(box((cx-fw*.46,top+fh*.27,cx-fw*.05,top+fh*.49)),190,280,fill=(85,54,43,105),width=2*SCALE)
+            draw.arc(box((cx+fw*.05,top+fh*.27,cx+fw*.46,top+fh*.49)),260,350,fill=(85,54,43,105),width=2*SCALE)
+    else:  # curly/voluminous: irregular curls form a broad silhouette.
+        draw.pieslice(box((cx-fw*.67,top-42,cx+fw*.67,top+fh*.39)),180,360,fill=hair_rgba)
+        for i in range(20):
+            x=cx+float(rng.uniform(-fw*.63,fw*.63)); y=top+float(rng.uniform(-38,38))
+            radius=float(rng.uniform(10,23))
+            draw.ellipse(box((x-radius,y-radius,x+radius,y+radius)),fill=hair_rgba)
+
+    # Brow and under-brow shadows; eye centers move independently by identity.
+    eye_y = top + fh*p["eye_y"]
+    eye_dx = fw*p["eye_spacing"]
+    er = p["eye_size"]
+    for side in (-1,1):
+        ex = cx + side*eye_dx
+        tilt = side*p["eye_tilt"]
+        halfw = er*1.48
+        eh = er*({"almond":.54,"hooded":.48,"round":.78,"narrow":.37}[p["lid"]])
+        # Brow shadow softly sits above each lid.
+        brow_y = eye_y-er-p["brow_gap"]
+        shadow=Image.new("RGBA",(S,S),(0,0,0,0)); shd=ImageDraw.Draw(shadow)
+        shd.ellipse(box((ex-halfw-4,brow_y-13,ex+halfw+4,eye_y-eh*.35)),fill=(35,23,20,52))
+        canvas=Image.alpha_composite(canvas,shadow.filter(ImageFilter.GaussianBlur(6*SCALE)))
+        draw=ImageDraw.Draw(canvas,"RGBA")
+        eyepts=[(ex-halfw,eye_y+tilt*.025),(ex-halfw*.55,eye_y-eh*.68),(ex,eye_y-eh*.78),(ex+halfw*.55,eye_y-eh*.68),(ex+halfw,eye_y-tilt*.025),(ex+halfw*.5,eye_y+eh*.55),(ex,eye_y+eh*.68),(ex-halfw*.5,eye_y+eh*.55)]
+        poly(eyepts,(246,239,226,255),outline=(65,43,37,180),width=1.3)
+        ir=er*.50
+        draw.ellipse(box((ex-ir,eye_y-ir,ex+ir,eye_y+ir)),fill=p["iris"]+(255,))
+        draw.ellipse(box((ex-ir*.43,eye_y-ir*.6,ex+ir*.43,eye_y+ir*.6)),fill=(23,24,25,255))
+        draw.ellipse(box((ex-ir*.30-2,eye_y-ir*.48-3,ex-ir*.30+3,eye_y-ir*.48+2)),fill=(255,255,255,245))
+        draw.ellipse(box((ex+ir*.32,eye_y+ir*.25,ex+ir*.32+2,eye_y+ir*.25+2)),fill=(255,255,255,170))
+        draw.line([(round(x*SCALE),round(y*SCALE)) for x,y in eyepts[:5]],fill=(53,37,33,230),width=2*SCALE)
+        arch=p["brow_arch"]
+        browpts=[(ex-halfw-2,brow_y+3),(ex-halfw*.35,brow_y-arch),(ex+halfw*.25,brow_y-arch*.5),(ex+halfw+2,brow_y+4)]
+        draw.line([(round(x*SCALE),round(y*SCALE)) for x,y in browpts],fill=hair_rgba,width=max(2,round(p["brow_thick"]*SCALE)),joint="curve")
+        # Glasses frames are distinct round/rectangular shapes.
+        if p["glasses"] != "none":
+            gb=(ex-halfw-5,eye_y-eh-5,ex+halfw+5,eye_y+eh+5)
+            draw.ellipse(box(gb),outline=(37,42,45,220),width=2*SCALE) if p["glasses"]=="round" else draw.rounded_rectangle(box(gb),radius=5*SCALE,outline=(37,42,45,220),width=2*SCALE)
+    if p["glasses"] != "none":
+        draw.line(box((cx-eye_dx+er*1.5,eye_y,cx+eye_dx-er*1.5,eye_y)),fill=(37,42,45,215),width=2*SCALE)
+
+    # Nose length, width, nostril size and bridge shadow vary independently.
+    nose_start=eye_y+er*.72
+    nose_end=nose_start+fh*p["nose_len"]
+    nw=p["nose_width"]
+    ns=Image.new("RGBA",(S,S),(0,0,0,0)); nd=ImageDraw.Draw(ns)
+    nd.polygon([(round((cx-3)*SCALE),round(nose_start*SCALE)),(round((cx+nw*.18)*SCALE),round((nose_end-10)*SCALE)),(round((cx+nw*.64)*SCALE),round(nose_end*SCALE)),(round((cx-nw*.62)*SCALE),round(nose_end*SCALE))],fill=(49,32,28,57))
+    canvas=Image.alpha_composite(canvas,ns.filter(ImageFilter.GaussianBlur(7*SCALE)))
+    draw=ImageDraw.Draw(canvas,"RGBA")
+    draw.line([(round((cx+3)*SCALE),round((nose_start+8)*SCALE)),(round((cx+1)*SCALE),round((nose_end-5)*SCALE))],fill=(255,230,208,90),width=3*SCALE)
+    draw.arc(box((cx-nw,nose_end-13,cx+nw,nose_end+14)),8,172,fill=tuple(int(v*.55) for v in base)+(210,),width=2*SCALE)
+    nost=p["nostril"]
+    for side in (-1,1): draw.ellipse(box((cx+side*nw*.38-nost,nose_end-1-nost/2,cx+side*nw*.38+nost,nose_end-1+nost/2)),fill=(57,37,33,125))
+
+    # Mouth geometry and expression have separate parameters.
+    mouth_y=top+fh*p["mouth_y"]+(1.7 if variant else 0)
+    mw=p["mouth_width"]
+    corner=p["corner"]+(1.5 if variant else 0)
+    draw.line([(round((cx-mw/2)*SCALE),round((mouth_y+corner)*SCALE)),(round(cx*SCALE),round((mouth_y-2)*SCALE)),(round((cx+mw/2)*SCALE),round((mouth_y-corner)*SCALE))],fill=(102,52,53,235),width=max(2,round(p["lip_thick"]*SCALE)))
+    draw.arc(box((cx-mw/2,mouth_y-4,cx+mw/2,mouth_y+13+corner)),5,175,fill=(137,67,66,240),width=max(2,round(p["lip_thick"]*SCALE)))
+    draw.line([(round((cx-mw*.32)*SCALE),round((mouth_y+8)*SCALE)),(round(cx*SCALE),round((mouth_y+10+corner*.35)*SCALE)),(round((cx+mw*.32)*SCALE),round((mouth_y+8)*SCALE))],fill=(233,179,166,190),width=2*SCALE)
+
+    # Age marks/freckles and beard shapes add non-colour identity cues.
+    if p["age"]>.62 or p["detail"]=="wrinkles":
+        for side in (-1,1):
+            draw.arc(box((cx+side*eye_dx-er*1.5,eye_y+er*.6,cx+side*eye_dx+er*1.5,eye_y+er*2.0)),5,160,fill=(100,65,52,95),width=1*SCALE)
+    if p["detail"]=="freckles":
+        for side in (-1,1):
+            for _ in range(13):
+                fx=cx+side*float(rng.uniform(fw*.15,fw*.38)); fy=eye_y+float(rng.uniform(17,52)); rr=float(rng.uniform(.6,1.5))
+                draw.ellipse(box((fx-rr,fy-rr,fx+rr,fy+rr)),fill=(100,63,46,95))
+    if p["beard"] in ("beard","stubble"):
+        opacity=32 if p["beard"]=="stubble" else 100
+        beard_pts=[(cx-fw*.38,mouth_y+14),(cx-fw*.34,jaw_y-20),(cx-fw*.19,chin_y-6),(cx,chin_y+1),(cx+fw*.19,chin_y-6),(cx+fw*.34,jaw_y-20),(cx+fw*.38,mouth_y+14)]
+        poly(beard_pts, hair+(opacity,))
+        if p["beard"]=="stubble":
+            for _ in range(180):
+                bx=float(rng.uniform(cx-fw*.34,cx+fw*.34)); by=float(rng.uniform(mouth_y+15,chin_y-5))
+                draw.ellipse(box((bx,by,bx+1.0,by+1.0)),fill=hair+(65,))
+    elif p["beard"]=="moustache":
+        for side in (-1,1):
+            left,right=sorted((cx+side*3,cx+side*mw*.28))
+            draw.ellipse(box((left,mouth_y-7,right,mouth_y+2)),fill=hair+(210,))
+
+    # Chin bounce/shadow and final light rotation. Variant preserves all
+    # structural traits and only nudges pose, illumination and mouth corners.
+    chin_shadow=Image.new("RGBA",(S,S),(0,0,0,0)); cd=ImageDraw.Draw(chin_shadow)
+    cd.ellipse(box((cx-fw*.27,chin_y-22,cx+fw*.27,chin_y+1)),fill=(32,22,18,42))
+    chin_shadow.putalpha(Image.fromarray(np.minimum(np.asarray(chin_shadow.getchannel("A")),np.asarray(mask))))
+    canvas=Image.alpha_composite(canvas,chin_shadow.filter(ImageFilter.GaussianBlur(5*SCALE)))
+    out=canvas.convert("RGB").resize((SIZE,SIZE),Image.Resampling.LANCZOS)
+    angle=(p["pose"] + (4.0 if variant else 0.0))
+    fill=tuple(int(v) for v in p["bg1"])
+    out=out.rotate(angle,resample=Image.Resampling.BICUBIC,fillcolor=fill)
+    if variant:
+        a=np.asarray(out,dtype=np.float32)
+        # Distinct but mild second-photo lighting shift.
+        ramp=np.linspace(.985,1.025,SIZE,dtype=np.float32)[None,:,None]
+        out=Image.fromarray(np.uint8(np.clip(a*ramp+2.0,0,255)))
+    out=out.filter(ImageFilter.GaussianBlur(.42))
+    a=np.asarray(out,dtype=np.float32)
+    a=np.uint8(np.clip(a+rng.normal(0,.85,a.shape),0,255))
+    return Image.fromarray(a,"RGB")
 
 
 def make_face(seed: int, *, variant: bool = False) -> Image.Image:
-    """Draw one deterministic, softly rendered cartoon-realistic face."""
-    rng = np.random.default_rng(seed)
-    shift = 4.0 if variant else 0.0
-    light = 1.035 if variant else 1.0
-    bg = Image.new("RGB", (SIZE, SIZE), (239, 239, 235))
-    # Supersampling makes curved feature edges smooth before final soft focus.
-    s = 2
-    im = bg.resize((SIZE*s, SIZE*s))
-    d = ImageDraw.Draw(im, "RGBA")
-    def xy(box): return tuple(int(round(v*s)) for v in box)
-    cx = SIZE/2 + shift
-    fw = float(rng.uniform(142, 174)); fh = float(rng.uniform(190, 218))
-    chin = float(rng.uniform(.58, .82))
-    skin = np.array([_rgb(seed, 1, 166, 229), _rgb(seed, 2, 112, 184), _rgb(seed, 3, 80, 151)], float)
-    # Radial skin illumination and subtle texture are generated numerically.
-    yy, xx = np.mgrid[0:SIZE, 0:SIZE]
-    rx, ry = fw*.94, fh*1.05
-    rad = ((xx-cx)/rx)**2 + ((yy-260)/ry)**2
-    shade = np.clip(1.085 - .23*rad, .76, 1.08) * light
-    noise = rng.normal(0, 1.35, (SIZE, SIZE, 1))
-    skin_img = np.clip(skin[None,None,:]*shade[:,:,None] + noise, 0, 255).astype(np.uint8)
-    skin_layer = Image.fromarray(skin_img, "RGB").resize((SIZE*s, SIZE*s), Image.Resampling.BICUBIC)
-    # Face silhouette: broad temples tapering through cheeks into a rounded chin.
-    face_pts = [(cx-fw*.76,155),(cx-fw*.91,205),(cx-fw*.88,292),(cx-fw*.69,365),
-                (cx-fw*.43,414),(cx-fw*.22,440*chin+260*(1-chin)),(cx,448*chin+260*(1-chin)),
-                (cx+fw*.22,440*chin+260*(1-chin)),(cx+fw*.43,414),(cx+fw*.69,365),
-                (cx+fw*.88,292),(cx+fw*.91,205),(cx+fw*.76,155)]
-    mask = Image.new("L", im.size, 0); md = ImageDraw.Draw(mask)
-    md.polygon([(int(x*s),int(y*s)) for x,y in face_pts], fill=255)
-    # Soft cast shadow behind head and neck.
-    shadow = Image.new("RGBA", im.size, (0,0,0,0)); sd=ImageDraw.Draw(shadow)
-    sd.ellipse(xy((cx-fw*.97,132,cx+fw*.97,444)), fill=(40,34,31,32))
-    shadow=shadow.filter(ImageFilter.GaussianBlur(14*s)); im=Image.alpha_composite(im.convert("RGBA"),shadow)
-    face_rgba = skin_layer.convert("RGBA"); face_rgba.putalpha(mask)
-    im=Image.alpha_composite(im, face_rgba); d=ImageDraw.Draw(im,"RGBA")
-    # Ears and neck
-    d.ellipse(xy((cx-fw*.96,250,cx-fw*.72,325)), fill=tuple(skin.astype(int))+(255,))
-    d.ellipse(xy((cx+fw*.72,250,cx+fw*.96,325)), fill=tuple(skin.astype(int))+(255,))
-    d.rounded_rectangle(xy((cx-40,385,cx+40,475)), radius=20*s, fill=tuple((skin*.9).astype(int))+(255,))
-    hair_choices=["short","wavy","parted","curly"]
-    hair_style=hair_choices[int(rng.integers(0,len(hair_choices)))]
-    hair=np.array([_rgb(seed, 4, 22, 98),_rgb(seed, 5, 15, 65),_rgb(seed, 6, 10, 45)])
-    hc=tuple(hair.astype(int))+(255,)
-    # Hair cap is drawn behind brows, with style-dependent silhouette.
-    d.pieslice(xy((cx-fw*.97,92,cx+fw*.97,290)),180,360,fill=hc)
-    d.rectangle(xy((cx-fw*.95,183,cx+fw*.95,220)),fill=hc)
-    if hair_style=="parted":
-        d.polygon([tuple(int(v*s) for v in p) for p in [(cx,110),(cx+90,145),(cx+12,167)]],fill=tuple((hair*.72).astype(int))+(255,))
-    elif hair_style=="wavy":
-        for hx in np.linspace(cx-fw*.78,cx+fw*.78,7):
-            d.arc(xy((hx-24,145,hx+28,236)),0,180,fill=tuple((hair*.7).astype(int))+(210,),width=3*s)
-    elif hair_style=="curly":
-        for hx in np.linspace(cx-fw*.83,cx+fw*.83,9):
-            hy=158+int(rng.integers(-18,18)); d.ellipse(xy((hx-19,hy-17,hx+19,hy+18)),fill=hc)
-    # eyes/eyebrows, mildly varied spacing and scale
-    eye_y=float(rng.uniform(243,260)); spacing=float(rng.uniform(49,62)); er=float(rng.uniform(23,30))
-    iris_palette=[(68,112,135),(93,68,45),(64,112,74),(114,84,65)]
-    iris=iris_palette[int(rng.integers(0,4))]
-    for sign in (-1,1):
-        ex=cx+sign*spacing
-        d.ellipse(xy((ex-er-5,eye_y-er*.55-4,ex+er+5,eye_y+er*.58+5)),fill=(252,247,239,255))
-        d.ellipse(xy((ex-er*.63,eye_y-er*.72,ex+er*.63,eye_y+er*.72)),fill=iris+(255,))
-        d.ellipse(xy((ex-er*.30,eye_y-er*.45,ex+er*.30,eye_y+er*.46)),fill=(22,24,26,255))
-        d.ellipse(xy((ex-er*.22-4,eye_y-er*.45-5,ex-er*.22+4,eye_y-er*.45+3)),fill=(255,255,255,235))
-        d.arc(xy((ex-er-5,eye_y-er*.85-4,ex+er+5,eye_y+er*.55)),185,355,fill=(55,39,34,255),width=3*s)
-        brow_y=eye_y-er-18
-        thick=float(rng.uniform(5,9)); slope=sign*float(rng.uniform(-5,3))
-        d.line([tuple(int(v*s) for v in p) for p in [(ex-er-8,brow_y+slope),(ex,brow_y),(ex+er+8,brow_y-slope)]],fill=hc,width=int(thick*s))
-    # Nose bridge, soft shadow and nostrils.
-    d.line([tuple(int(v*s) for v in p) for p in [(cx+5,eye_y+17),(cx+13,316),(cx+2,329)]],fill=tuple((skin*.78).astype(int))+(115,),width=5*s)
-    d.ellipse(xy((cx-29,316,cx+30,344)),fill=(92,58,48,28))
-    d.arc(xy((cx-28,308,cx+29,346)),15,165,fill=tuple((skin*.65).astype(int))+(205,),width=3*s)
-    d.ellipse(xy((cx-20,333,cx-9,338)),fill=(77,53,48,115)); d.ellipse(xy((cx+9,333,cx+20,338)),fill=(77,53,48,115))
-    # Mouth with a natural cupid bow and slight variant expression shift.
-    mouth_y=365 + (2 if variant else 0); smile=float(rng.uniform(-4,5))+(2 if variant else 0)
-    d.line([tuple(int(v*s) for v in p) for p in [(cx-38,mouth_y),(cx-15,mouth_y-3),(cx,mouth_y+1),(cx+15,mouth_y-3),(cx+38,mouth_y)]],fill=(112,55,57,240),width=4*s)
-    d.arc(xy((cx-39,mouth_y-6,cx+39,mouth_y+20+smile)),8,172,fill=(130,58,61,255),width=4*s)
-    d.line([tuple(int(v*s) for v in p) for p in [(cx-30,mouth_y+9),(cx,mouth_y+12+smile),(cx+30,mouth_y+9)]],fill=(239,186,177,190),width=2*s)
-    # Optional subtle beard texture.
-    if rng.random()<.38:
-        beard=(45,37,35,55)
-        d.arc(xy((cx-fw*.53,326,cx+fw*.53,425)),5,175,fill=beard,width=5*s)
-        for _ in range(150):
-            bx=float(rng.uniform(cx-fw*.48,cx+fw*.48)); by=float(rng.uniform(365,411))
-            if ((bx-cx)/(fw*.5))**2+((by-365)/54)**2<1 and rng.random()<.75:
-                d.point((int(bx*s),int(by*s)),fill=(38,32,31,int(rng.integers(20,65))))
-    im=im.convert("RGB").resize((SIZE,SIZE),Image.Resampling.LANCZOS)
-    if variant:
-        im=im.rotate(4.0, resample=Image.Resampling.BICUBIC, fillcolor=(239,239,235))
-    im=im.filter(ImageFilter.GaussianBlur(0.65))
-    arr=np.asarray(im,dtype=np.float32)
-    arr=np.clip(arr+rng.normal(0,1.15,arr.shape),0,255).astype(np.uint8)
-    return Image.fromarray(arr,"RGB")
+    """Render an identity determined by seed; variant changes pose/light/expression only."""
+    return _paint(seed, variant=variant)
 
 
 def make_variant(seed: int) -> Image.Image:
-    """Return the same identity with a 4° turn, shifted light, and changed smile."""
     return make_face(seed, variant=True)
 
 
-def _evaluate():
-    import cv2
-    det_path=MODELS/"yuNet.onnx"; rec_path=MODELS/"sface.onnx"
-    if not det_path.is_file() or not rec_path.is_file():
-        raise RuntimeError("Existing YuNet/SFace models are required; no downloads are attempted.")
-    detector=cv2.FaceDetectorYN.create(str(det_path),"",(SIZE,SIZE),0.6,0.3,5000)
-    recognizer=cv2.FaceRecognizerSF.create(str(rec_path),"")
-    def embed(image):
-        jpeg=io.BytesIO(); image.save(jpeg,format="JPEG",quality=94)
-        bgr=cv2.imdecode(np.frombuffer(jpeg.getvalue(),dtype=np.uint8),cv2.IMREAD_COLOR)
-        detector.setInputSize((bgr.shape[1],bgr.shape[0])); _, faces=detector.detect(bgr)
-        if faces is None or not len(faces): return None,0.0
-        row=max(faces,key=lambda f:float(f[14])); conf=float(row[14])
-        if conf<.7:return None,conf
-        aligned=recognizer.alignCrop(bgr,row); feat=np.asarray(recognizer.feature(aligned),np.float32).ravel()
-        return feat/np.linalg.norm(feat),conf
-    best=None
-    last_images=None
-    # Each seed supplies three candidate identities; at most 500 seeds are tried.
-    for seed in range(500):
-        family1=make_face(seed); family2=make_variant(seed)
-        visitor1=make_face(seed+10000); visitor2=make_face(seed+20000)
-        last_images=(family1,family2,visitor1,visitor2)
-        items=[embed(x) for x in (family1,family2,visitor1,visitor2)]
-        if any(e is None for e,c in items):
-            continue
-        a,b,v1,v2=[x[0] for x in items]
-        scores={"family_1_vs_family_2":float(a@b),"visitor_1_vs_family":float(v1@a),
-                "visitor_2_vs_family":float(v2@a),"visitor_1_vs_visitor_2":float(v1@v2)}
-        quality=min(scores["family_1_vs_family_2"]-.5,.25-scores["visitor_1_vs_family"],
-                    .25-scores["visitor_2_vs_family"],.25-scores["visitor_1_vs_visitor_2"])
-        if best is None or quality>best[0]: best=(quality,seed,items,scores,(family1,family2,visitor1,visitor2))
-        if quality>=0:
-            for im,name in zip((family1,family2,visitor1,visitor2),
-                               ("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")):
-                im.save(FACES/name,quality=94)
-            print(f"WINNING SEED {seed}; YuNet confidences {[round(x[1],3) for x in items]}; scores {scores}")
-            return True
-    if best:
-        _,seed,items,scores,images=best
-        print(f"NO ACCEPTABLE SET in 500 seeds. Best seed {seed}; confidences {[round(x[1],3) for x in items]}; scores {scores}")
-        print("Synthetic drawings weren’t recognised with the required separation; thresholds and detector settings were not changed.")
-        # Keep the strongest face-detected candidate for a usable preview, while reporting failure honestly.
-        for im,name in zip(images,("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")):
-            im.save(FACES/name,quality=94)
-    else:
-        print("NO ACCEPTABLE SET in 500 seeds. No complete four-face set passed YuNet confidence >= 0.7.")
-        print("Synthetic drawings weren’t recognised with the required detector confidence; thresholds and detector settings were not changed.")
-        if last_images:
-            for im,name in zip(last_images,("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")):
-                im.save(FACES/name,quality=94)
-    _save_preview()
-    return False
-
-
 def _save_preview():
-    """Write a labelled three-identity contact sheet using the chosen files."""
-    names=("family_1.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")
-    sheet=Image.new("RGB",(3*320,360),(245,245,242))
-    draw=ImageDraw.Draw(sheet)
-    for i,name in enumerate(names):
+    sheet=Image.new("RGB",(3*320,360),(245,245,242)); d=ImageDraw.Draw(sheet)
+    for i,name in enumerate((FILES[0],FILES[2],FILES[3])):
         path=FACES/name
-        image=Image.open(path).convert("RGB") if path.is_file() else make_face(50+i)
-        image.thumbnail((300,300),Image.Resampling.LANCZOS)
-        sheet.paste(image,(i*320+10,10))
-        draw.text((i*320+10,320),name,fill=(35,35,35))
+        im=Image.open(path).convert("RGB") if path.is_file() else make_face(400+i)
+        im.thumbnail((300,300),Image.Resampling.LANCZOS); sheet.paste(im,(i*320+10,10)); d.text((i*320+10,320),name,fill=(35,35,35))
     sheet.save(ROOT/"faces_preview.png")
 
 
+def _model_embed(image, detector, recognizer):
+    jpeg=io.BytesIO(); image.save(jpeg,format="JPEG",quality=95)
+    bgr=__import__("cv2").imdecode(np.frombuffer(jpeg.getvalue(),dtype=np.uint8),__import__("cv2").IMREAD_COLOR)
+    detector.setInputSize((bgr.shape[1],bgr.shape[0])); _, rows=detector.detect(bgr)
+    if rows is None or not len(rows): return None,0.0
+    row=max(rows,key=lambda f:float(f[14])); conf=float(row[14])
+    if conf<.75:return None,conf
+    aligned=recognizer.alignCrop(bgr,row); feat=np.asarray(recognizer.feature(aligned),np.float32).ravel()
+    norm=float(np.linalg.norm(feat))
+    return (feat/norm if norm else None),conf
+
+
+def _evaluate(max_seeds=500):
+    import cv2
+    det_path=MODELS/"yuNet.onnx"; rec_path=MODELS/"sface.onnx"
+    if not det_path.is_file() or not rec_path.is_file(): raise RuntimeError("Existing YuNet/SFace models are required; no downloads are attempted.")
+    # Match the project's detector configuration. Only the required confidence
+    # acceptance is stricter; neither detector nor recognition thresholds move.
+    # These are the same settings used by face_verify._load_models().
+    detector=cv2.FaceDetectorYN.create(str(det_path),"",(SIZE,SIZE),0.6,0.3,5000)
+    recognizer=cv2.FaceRecognizerSF.create(str(rec_path),"")
+    candidates=[]
+    for seed in range(max_seeds):
+        image=make_face(seed)
+        emb,conf=_model_embed(image,detector,recognizer)
+        if emb is not None: candidates.append({"seed":seed,"image":image,"emb":emb,"conf":conf})
+        if seed%50==49: print(f"searched {seed+1}/{max_seeds} seeds; YuNet-qualified identities={len(candidates)}")
+    if not candidates:
+        print(f"No candidates passed YuNet confidence >= 0.75 in {max_seeds} seeds.")
+        return False
+    best=None
+    # For each possible family identity evaluate its structurally stable variant.
+    for family in candidates:
+        fam2,conf2=_model_embed(make_variant(family["seed"]),detector,recognizer)
+        if fam2 is None: continue
+        fscore=float(family["emb"]@fam2)
+        if fscore<.5: continue
+        remaining=[c for c in candidates if c["seed"]!=family["seed"]]
+        visitors=[]
+        for c in remaining:
+            sf=float(c["emb"]@family["emb"])
+            if sf<=.2: visitors.append((c,sf))
+        for (v1,s1),(v2,s2) in itertools.combinations(visitors,2):
+            s12=float(v1["emb"]@v2["emb"])
+            scores={"family_1_vs_family_2":fscore,"visitor_1_vs_family":s1,
+                    "visitor_2_vs_family":s2,"visitor_1_vs_visitor_2":s12}
+            quality=min(.2-s1,.2-s2,.2-s12,fscore-.5)
+            if best is None or quality>best[0]: best=(quality,family,v1,v2,fam2,conf2,scores)
+            if s12<=.2:
+                chosen=(family,v1,v2)
+                _write_set(chosen,fam2)
+                print("WINNING SEEDS:",family["seed"],v1["seed"],v2["seed"])
+                print("YuNet confidences:",family["conf"],conf2,v1["conf"],v2["conf"])
+                print("PAIRWISE SFACE SCORES:",scores)
+                return True
+    if best:
+        _,family,v1,v2,fam2,conf2,scores=best
+        _write_set((family,v1,v2),fam2)
+        print("NO ACCEPTABLE SET. Best candidate seeds:",family["seed"],v1["seed"],v2["seed"])
+        print("Best pairwise SFace scores:",scores)
+        print("Targets were family >= 0.5, all visitor pairs <= 0.2; none met every target. Settings unchanged.")
+    else:
+        print("NO ACCEPTABLE SET: no candidate family variant reached SFace 0.5 with YuNet confidence >= 0.75.")
+    return False
+
+
+def _write_set(chosen, family_variant):
+    FACES.mkdir(parents=True,exist_ok=True)
+    images=(chosen[0]["image"],family_variant,chosen[1]["image"],chosen[2]["image"])
+    for image,name in zip(images,FILES): image.save(FACES/name,quality=96)
+    _save_preview()
+
+
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument("--render-only",action="store_true")
+    parser=argparse.ArgumentParser(); parser.add_argument("--render-only",action="store_true"); parser.add_argument("--seeds",type=int,default=500)
     args=parser.parse_args(); FACES.mkdir(parents=True,exist_ok=True)
     if args.render_only:
-        for seed,name in enumerate(("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")):
-            (make_face(13) if seed==0 else make_variant(13) if seed==1
-             else make_face(10013+seed)).save(FACES/name,quality=94)
-        _save_preview()
-        return 0
-    return 0 if _evaluate() else 2
+        imgs=(make_face(1),make_variant(1),make_face(2),make_face(3))
+        for im,name in zip(imgs,FILES): im.save(FACES/name,quality=96)
+        _save_preview(); return 0
+    return 0 if _evaluate(max(300,args.seeds)) else 2
+
 
 if __name__=="__main__": raise SystemExit(main())

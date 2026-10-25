@@ -22,11 +22,12 @@ def embed(name):
     det.setInputSize((img.shape[1],img.shape[0])); _,faces=det.detect(img)
     if faces is None or len(faces)==0: return None,0.0
     face=max(faces,key=lambda row:float(row[14])); conf=float(face[14])
+    if conf < .75: return None,conf
     aligned=rec.alignCrop(img,face); feat=np.asarray(rec.feature(aligned),np.float32).ravel()
     return feat/np.linalg.norm(feat),conf
 
 embeddings={}
-print(f"OpenCV {cv2.__version__}; YuNet threshold=.6; required detection confidence >=.7")
+print(f"OpenCV {cv2.__version__}; YuNet settings unchanged (.6, .3, 5000); required confidence >=.75")
 for filename in FILES:
     emb,conf=embed(filename)
     print(f"{filename}: YuNet confidence={conf:.4f} {'DETECTED' if emb is not None else 'NO FACE'}")
@@ -42,7 +43,7 @@ scores={"family leave-one-out 1->2":float(f1@f2),"family leave-one-out 2->1":flo
         "visitor 01 vs visitor 02":float(v1@v2)}
 for label,score in scores.items(): print(f"{label}: SFace cosine={score:.4f}")
 accept=all(scores[key]>=.5 for key in ("family leave-one-out 1->2","family leave-one-out 2->1"))
-reject=all(scores[key]<=.25 for key in ("visitor 01 vs family","visitor 02 vs family","visitor 01 vs visitor 02"))
+reject=all(scores[key]<=.20 for key in ("visitor 01 vs family","visitor 02 vs family","visitor 01 vs visitor 02"))
 db=json.loads((CTRL/"patients.json").read_text(encoding="utf-8"))
 patient=next(p for p in db["patients"] if p["ward"]=="WARD-3B")
 rahul=next(p for p in patient["authorised_family"] if p["name"]=="Rahul Mehta")
@@ -55,5 +56,5 @@ wrong_result=decide_handover(other_patient,rahul["id"],scores["family leave-one-
                              rahul["rfid_uid"],known_people,known_cards)
 wrong_patient=wrong_patient and not wrong_result[0]
 print(f"wrong-patient case ({other_patient['id']}): face score={scores['family leave-one-out 1->2']:.4f}; {wrong_result[1]}: {'PASS' if wrong_patient else 'FAIL'}")
-print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visitors: {'PASS' if reject else 'FAIL'}")
+print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visitors (<=0.20): {'PASS' if reject else 'FAIL'}")
 if not (accept and reject and wrong_patient): raise SystemExit(1)
