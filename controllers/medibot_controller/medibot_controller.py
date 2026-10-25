@@ -95,8 +95,13 @@ def safe_set(node, field_name, value):
                     "color": (3, "setSFColor")}
     if field_name in vector_sizes:
         size, setter_name = vector_sizes[field_name]
-        valid = (type(value) is list and len(value) == size and
-                 all(type(component) is float for component in value))
+        # Webots expects a list of native Python floats with an exact vector
+        # length. Normalize numeric tuples/NumPy scalars before crossing its API.
+        try:
+            value = [float(component) for component in value]
+            valid = len(value) == size and all(math.isfinite(component) for component in value)
+        except (TypeError, ValueError):
+            valid = False
     elif type(value) is bool:
         setter_name, valid = "setSFBool", True
     elif type(value) is int:
@@ -1316,8 +1321,9 @@ class MediBot:
                     frame_bgr = cv2.cvtColor(bgra, cv2.COLOR_BGRA2BGR)
 
             matched_id, score = None, 0.0
-            if frame_bgr is not None:
-                matched_id, score = face_verify.match(frame_bgr)
+            matcher = getattr(face_verify, "match", None)
+            if frame_bgr is not None and callable(matcher):
+                matched_id, score = matcher(frame_bgr)
 
             if score > self.handover_best_score:
                 self.handover_best_score = score

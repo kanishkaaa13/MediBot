@@ -10,11 +10,11 @@
       "compartment": 1,
       "authorised_family": [
         {
-          "id": "me",
-          "name": "me",
-          "relation": "daughter",
+          "id": "FAM_W3B_01_RAHUL",
+          "name": "Rahul Mehta",
+          "relation": "brother",
           "rfid_uid": "UID-1001",
-          "face_files": ["faces/me_1.jpg", "faces/me_2.jpg"]
+          "face_files": ["faces/family_1.jpg", "faces/family_2.jpg"]
         },
         {
           "id": "FAM_W3B_01_A",

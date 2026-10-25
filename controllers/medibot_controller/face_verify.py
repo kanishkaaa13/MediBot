@@ -5,7 +5,7 @@ average SFace embedding per person, and provides a ``match(frame)``
 function returning ``(person_id, score)``.
 
 The ``face_files`` field in patients.json is a list of relative paths
-(relative to the controller directory, e.g. ``"faces/me_1.jpg"``).
+(relative to the controller directory, e.g. ``"faces/family_1.jpg"``).
 Adding more photos of a person is done by appending entries to that list.
 
 Fall-back: if the ONNX models are missing the module prints a clear

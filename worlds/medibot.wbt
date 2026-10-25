@@ -3727,14 +3727,14 @@ DEF OBSTACLE_CART Solid {
   boundingObject Box { size 0.65 0.55 0.55 }
   physics Physics { density -1 mass 20 }
 }
-DEF VISITOR_me Solid {
+DEF VISITOR_FAM_W3B_01_RAHUL Solid {
   translation -30 -20 0
-  name "visitor_me"
+  name "visitor_FAM_W3B_01_RAHUL"
   children [
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/me_1.jpg" ] filtering 0 } }
+  appearance Appearance { texture ImageTexture { url [ "textures/faces/family_1.jpg" ] filtering 0 } }
   geometry IndexedFaceSet {
     coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
@@ -3745,9 +3745,9 @@ DEF VISITOR_me Solid {
  ] }
   ]
 }
-DEF CARD_me Solid {
+DEF CARD_FAM_W3B_01_RAHUL Solid {
   translation -30 -20 0.7
-  name "card_me"
+  name "card_FAM_W3B_01_RAHUL"
   children [ Shape { appearance PBRAppearance { baseColor 0.95 0.72 0.12 roughness 0.45 } geometry Box { size 0.09 0.06 0.008 } } ]
   boundingObject Box { size 0.09 0.06 0.008 }
   physics Physics { density -1 mass 0.02 }
