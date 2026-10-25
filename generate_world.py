@@ -17,7 +17,7 @@ import math
 import json
 import numpy as np
 import cv2
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 rng = np.random.default_rng(42)
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -601,8 +601,11 @@ def tag_face(tex_name, width=BOARD_W, height=None, unlit=False):
     height = width if height is None else height
     hw, hh = width / 2, height / 2
     if unlit:
-        appearance = (f"PBRAppearance {{ baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 "
-                      f"baseColorMap ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}")
+        # An untextured white emission added over baseColorMap washes the face
+        # out. Use the image as the emission map itself so the quad remains
+        # unlit while preserving the source pixel values.
+        appearance = (f"PBRAppearance {{ baseColor 0 0 0 emissiveColor 1 1 1 roughness 1 metalness 0 "
+                      f"emissiveColorMap ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}")
     else:
         appearance = f"Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}"
     return (f"Shape {{\n"
@@ -1549,6 +1552,14 @@ def main():
         if src_face and os.path.isfile(src_face):
             try:
                 im = Image.open(src_face)
+                if person.get("id") == "VISITOR_UNKNOWN_01":
+                    # This portrait has a narrower in-world head than Rahul's.
+                    # Widen the face inside the fixed quad and strengthen only
+                    # its tonal contrast, keeping vertical proportions intact.
+                    w, h = im.size
+                    margin_x = round(w * 0.08)
+                    im = im.crop((margin_x, 0, w - margin_x, h))
+                    im = ImageEnhance.Contrast(im).enhance(2.0)
                 im = im.resize((FACE_TEXTURE_SIZE, FACE_TEXTURE_SIZE), Image.Resampling.LANCZOS)
                 im.save(dest_face)
             except Exception:

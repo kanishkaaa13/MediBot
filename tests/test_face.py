@@ -66,15 +66,29 @@ print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visito
 
 # Score the real Webots camera captures produced by the isolated handover-pose
 # probe. These are 640x480 BGR frames from the actual face_cam device.
+world_ok=True
+rahul_frame=cv2.imread(str(CTRL/"logs"/"face_cam_RAHUL.png"))
+if rahul_frame is not None:
+    det.setInputSize((rahul_frame.shape[1],rahul_frame.shape[0])); _,rows=det.detect(rahul_frame)
+    if rows is not None and len(rows):
+        face=max(rows,key=lambda row:float(row[14]))
+        aligned=rec.alignCrop(rahul_frame,face); feature=np.asarray(rec.feature(aligned),np.float32).ravel()
+        feature=feature/np.linalg.norm(feature)
+        print(f"in-world Rahul baseline: YuNet DETECTED conf={float(face[14]):.4f}; score vs Rahul enrolment={float(feature@rahul_enrolment):.4f}")
+    else:
+        print("in-world Rahul baseline: YuNet NO FACE")
+
 for pid in ("VISITOR_UNKNOWN_01", "VISITOR_UNKNOWN_02"):
     path=CTRL/"logs"/f"face_cam_{pid}.png"
     frame=cv2.imread(str(path))
     if frame is None:
         print(f"in-world {pid}: frame missing ({path})")
+        world_ok=False
         continue
     det.setInputSize((frame.shape[1],frame.shape[0])); _,rows=det.detect(frame)
     if rows is None or len(rows)==0:
         print(f"in-world {pid}: YuNet NO FACE; best match=none score=-")
+        world_ok=False
         continue
     face=max(rows,key=lambda row:float(row[14])); conf=float(face[14])
     aligned=rec.alignCrop(frame,face); feature=np.asarray(rec.feature(aligned),np.float32).ravel()
@@ -82,4 +96,6 @@ for pid in ("VISITOR_UNKNOWN_01", "VISITOR_UNKNOWN_02"):
     rahul_score=float(feature@rahul_enrolment)
     x,y,w,h=(int(face[i]) for i in range(4))
     print(f"in-world {pid}: YuNet DETECTED conf={conf:.4f} box=({x},{y},{w},{h}); best match=Rahul Mehta score={rahul_score:.4f}")
-if not (accept and reject and wrong_patient): raise SystemExit(1)
+    world_ok = world_ok and conf>=.6 and rahul_score<.4
+print(f"in-world visitors detected >=.6 and score <.4: {'PASS' if world_ok else 'FAIL'}")
+if not (accept and reject and wrong_patient and world_ok): raise SystemExit(1)
