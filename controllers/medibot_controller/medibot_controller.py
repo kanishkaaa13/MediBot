@@ -380,12 +380,15 @@ class MediBot:
         self.handover_step = "-"
         self.handover_face_id = None
         self.handover_face_score = 0.0
+        self.handover_best_score = 0.0
+        self.handover_consec_frames = 0
         self.handover_uid = None
         self.handover_reason = ""
         self.rfid_started_t = 0.0
         self.rfid_tap_requested = False
         self.rfid_tap_started_t = 0.0
         self.face_started_t = 0.0
+        self.face_last_print_t = 0.0
         self.rfid_card_start = None
         self.rfid_card_target = None
         self.state_t0 = 0.0
@@ -1155,19 +1158,20 @@ class MediBot:
                 f"{tx:.3f}", f"{ty:.3f}",
                 f"{e:.1f}", int(self.tag_seen),
                 f"{target[0]:.3f}" if target[0] != "" else "",
-                f"{target[1]:.3f}" if target[1] != "" else ""])
+                f"{target[1]:.3f}" if target[1] != "" else ""
+            ])
 
     def _visitor_candidates(self):
         patient = self.active_patient
-        other_relative = next(person for p in PATIENTS if p["id"] != patient["id"]
-                              for person in p["authorised_family"])
-        return [patient["authorised_family"][0], other_relative,
-                PATIENT_DATA["unauthorised_visitors"][0]]
+        visitors = PATIENT_DATA.get("unauthorised_visitors", [])
+        v1 = visitors[0] if len(visitors) > 0 else patient["authorised_family"][0]
+        v2 = visitors[1] if len(visitors) > 1 else v1
+        return [patient["authorised_family"][0], v1, v2]
 
     def _selected_people(self):
         visitor = self._visitor_candidates()[self.visitor_choice_index % 3]
-        other_card = next(person for p in PATIENTS if p["id"] != self.active_patient["id"]
-                          for person in p["authorised_family"])
+        other_people = [p for p in PEOPLE if p["id"] != visitor["id"]]
+        other_card = other_people[0] if other_people else visitor
         card_owner = other_card if self.card_swapped else visitor
         return visitor, card_owner
 
@@ -1188,11 +1192,15 @@ class MediBot:
         self.handover_step = "FACE"
         self.handover_face_id = None
         self.handover_face_score = 0.0
+        self.handover_best_score = 0.0
+        self.handover_consec_frames = 0
         self.handover_uid = None
         self.handover_reason = ""
         self.face_started_t = self.now()
-        self.handover_result = f"ATTEMPT {self.handover_attempt}/{HANDOVER_MAX_ATTEMPTS}"
-        print(f"[HANDOVER] FACE step started for {self.active_visitor_id}")
+        self.face_last_print_t = self.now()
+        self.handover_result = f"ATTEMPT {self.handover_attempt}/3"
+        visitor, card = self._selected_people()
+        print(f"[HANDOVER] attempt {self.handover_attempt}/3: scanning face for {visitor['name']} ({visitor['id']}) | card={card['name']}...")
 
     def _handover_log(self, outcome, reason=""):
         os.makedirs(os.path.join(HERE, "logs"), exist_ok=True)
@@ -1220,100 +1228,157 @@ class MediBot:
             return PEOPLE_BY_ID[self.active_card_owner_id]["rfid_uid"]
         return None
 
-    def _finish_handover_attempt(self, timed_out=False, missing=False):
-        self.handover_step = "DECISION"
-        face_id, face_score = self.handover_face_id, self.handover_face_score
-        uid = self.handover_uid
-        if self.dev_mode and "face" in self.dev_override_steps:
-            face_id = self.active_patient["authorised_family"][0]["id"]
-            face_score = 1.0
-        if self.dev_mode and "rfid" in self.dev_override_steps:
-            uid = self.active_patient["authorised_family"][0]["rfid_uid"]
-        decision = decide_handover(self.active_patient, face_id, face_score, uid,
-                                   PEOPLE_BY_ID, CARDS_BY_UID,
-                                   rfid_timed_out=timed_out)
-        compartment = compartment_to_unlock(self.active_patient, decision)
-        if missing:
-            decision = (False, "RFID missing", None)
-            compartment = None
-        allowed, reason, _person_id = decision
-        self.handover_reason = reason
-        if allowed:
-            self.last_event = f"Handover authorized: compartment {compartment}"
-            if self.dev_mode and self.dev_override_steps:
-                self.handover_result = "DEV_OVERRIDE"
-                self._handover_log("DEV_OVERRIDE", ",".join(sorted(self.dev_override_steps)))
-                print("[HANDOVER] DEV_OVERRIDE")
-            else:
-                self.handover_result = "DELIVERED"
-                self._handover_log("DELIVERED")
-                print(f"[HANDOVER] AUTHORIZED patient={self.active_patient['id']} "
-                      f"compartment={compartment}")
-            unlock_authorized_compartment(self.active_patient, decision, self.compartments)
-            self.mission_delivered = True
-            self.actors.park_all()
-            self.set_state("DELIVER")
+    def _transition_to_rfid(self):
+        self.handover_step = "RFID"
+        self.rfid_started_t = self.now()
+        root = self.me.getPosition()
+        yaw = self.true_pose()[2]
+        self.rfid_card_target = (root[0] + (0.242 + 0.15) * math.cos(yaw),
+                                 root[1] + (0.242 + 0.15) * math.sin(yaw),
+                                 root[2] + 0.15)
+        print(f"[HANDOVER] RFID step started for card owner {self.active_card_owner_id}")
+
+    def _check_final_handover(self):
+        auth_family = {fam["id"]: fam for fam in self.active_patient.get("authorised_family", [])}
+        if self.handover_face_id not in auth_family:
+            self._on_handover_failure(f"face '{self.handover_face_id}' is not an authorised family member")
             return
 
-        self.handover_result = f"DENIED: {reason}"
-        self.last_event = f"Handover denied: {reason}"
-        print(f"[HANDOVER] DENIED attempt={self.handover_attempt}: {reason}")
-        if self.dev_mode and self.dev_override_steps:
-            self.handover_result = f"DEV_OVERRIDE: DENIED {reason}"
-            self._handover_log("DEV_OVERRIDE",
-                               f"{','.join(sorted(self.dev_override_steps))}; denied: {reason}")
-        else:
-            self._handover_log("DENIED", reason)
-        if self.handover_attempt < HANDOVER_MAX_ATTEMPTS:
-            self._start_handover_attempt()
+        card_owner_id = CARDS_BY_UID.get(self.handover_uid)
+        if card_owner_id != self.handover_face_id:
+            card_owner_name = PEOPLE_BY_ID.get(card_owner_id, {}).get("name", card_owner_id or "unknown")
+            face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", self.handover_face_id)
+            self._on_handover_failure(f"RFID mismatch: card belongs to {card_owner_name}, but face is {face_name}")
             return
 
-        self.mission_delivered = False
+        self._on_handover_success()
+
+    def _on_handover_success(self):
+        compartment = self.active_patient["compartment"]
+        self.handover_step = "DONE"
+        self.handover_result = f"ACCESS GRANTED - COMPARTMENT {compartment} UNLOCKED"
+        self.last_event = f"Handover authorized: compartment {compartment}"
+        self._update_status_led("DELIVER")
+        print(f"[HANDOVER] ACCESS GRANTED for patient={self.active_patient['id']} ({self.active_patient['name']}) -> compartment {compartment} UNLOCKED")
+        self.compartments.unlock(compartment)
+        self._handover_log("DELIVERED")
+        self.mission_delivered = True
         self.actors.park_all()
-        self.set_state("DENIED")
+        self.set_state("DELIVER")
+
+    def _on_handover_failure(self, reason):
+        self.handover_step = "DENIED"
+        self.handover_reason = reason
+        self.handover_result = f"ACCESS DENIED: {reason}"
+        self.last_event = f"ACCESS DENIED: {reason}"
+        self._update_status_led("DENIED")
+        self.compartments.lock_all()
+
+        print(f"ACCESS DENIED: {reason}")
+        self._handover_log("DENIED", reason)
+
+        if self.handover_attempt < 3:
+            retries_left = 3 - self.handover_attempt
+            print(f"[VERIFY] Retry available ({retries_left} left). Press 'V' to swap visitor.")
+        else:
+            print("[VERIFY] All 3 attempts failed. Aborting, keeping lid locked, and returning HOME.")
+            self.mission_delivered = False
+            self.actors.park_all()
+            self.set_state("DENIED")
 
     def _advance_handover(self):
+        if self.handover_step in ("DENIED", "DONE"):
+            return
+
+        now = self.now()
+        auth_family = {fam["id"]: fam for fam in self.active_patient.get("authorised_family", [])}
+
         if self.handover_step == "FACE":
-            if self.now() - self.face_started_t < 0.5:
+            elapsed = now - self.face_started_t
+
+            # [DEV OVERRIDE] for face
+            if self.dev_mode and "face" in self.dev_override_steps:
+                auth_first = list(auth_family.values())[0]
+                self.handover_face_id = auth_first["id"]
+                self.handover_face_score = 1.0
+                self.handover_best_score = 1.0
+                print(f"[DEV OVERRIDE] face verified as {self.handover_face_id} (score 1.00)")
+                self._transition_to_rfid()
                 return
-            frame = self.face_cam.getImage() if self.face_cam else None
-            # FACE RECOGNITION STUB: image plus supervisor-known actor identity.
-            self.handover_face_id, self.handover_face_score = face_verify(
-                [{"image": frame,
-                  "person_id": (self.active_visitor_id if
-                                self.actors.visitors.get(self.active_visitor_id) is not None
-                                else None)}])
-            print(f"[HANDOVER] FACE: STUB id={self.handover_face_id} "
-                  f"score={self.handover_face_score:.2f}")
-            self.handover_step = "RFID"
-            self.rfid_started_t = self.now()
-            root = self.me.getPosition()
-            yaw = self.true_pose()[2]
-            self.rfid_card_target = (root[0] + (0.242 + 0.15) * math.cos(yaw),
-                                     root[1] + (0.242 + 0.15) * math.sin(yaw),
-                                     root[2] + 0.15)
-            return
-        elapsed = self.now() - self.rfid_started_t
-        if self.active_card_owner_id not in self.actors.cards or not self.actors.cards[self.active_card_owner_id]:
-            print("[RFID] missing card")
-            self._finish_handover_attempt(missing=True)
-            return
-        fraction = min(1.0, max(0.0, elapsed / 1.0))
-        start = self.rfid_card_start
-        target = self.rfid_card_target
-        position = tuple(start[i] + fraction * (target[i] - start[i]) for i in range(3))
-        self.actors.move_card(self.active_card_owner_id, position)
-        # Query the node's world pose after Supervisor moved it; do not assume
-        # the commanded transform is the physical read position.
-        actual_position = self.actors.card_position(self.active_card_owner_id)
-        uid = self._read_emulated_rfid(actual_position) if actual_position else None
-        if uid:
-            self.handover_uid = uid
-            print(f"[RFID] UID={uid} read")
-            self._finish_handover_attempt()
-        elif elapsed >= RFID_TIMEOUT_S:
-            print("[RFID] timeout")
-            self._finish_handover_attempt(timed_out=True)
+
+            frame_bgr = None
+            if self.face_cam:
+                raw_bytes = self.face_cam.getImage()
+                if raw_bytes is not None:
+                    w = self.face_cam.getWidth()
+                    h = self.face_cam.getHeight()
+                    bgra = np.frombuffer(raw_bytes, np.uint8).reshape((h, w, 4))
+                    frame_bgr = cv2.cvtColor(bgra, cv2.COLOR_BGRA2BGR)
+
+            matched_id, score = None, 0.0
+            if frame_bgr is not None:
+                matched_id, score = face_verify.match(frame_bgr)
+
+            if score > self.handover_best_score:
+                self.handover_best_score = score
+            self.handover_face_score = score
+
+            if score >= face_verify.THRESHOLD and matched_id in auth_family:
+                self.handover_consec_frames += 1
+                self.handover_face_id = matched_id
+            else:
+                self.handover_consec_frames = 0
+                if score < face_verify.THRESHOLD:
+                    self.handover_face_id = None
+
+            if now - self.face_last_print_t >= 1.0:
+                self.face_last_print_t = now
+                face_name = PEOPLE_BY_ID.get(self.handover_face_id or matched_id, {}).get("name", "none") if (self.handover_face_id or matched_id) else "none"
+                print(f"[VERIFY] t={elapsed:.1f}s | face: {face_name} | score={score:.4f} | best so far={self.handover_best_score:.4f} (consec={self.handover_consec_frames}/5)")
+
+            if self.handover_consec_frames >= 5:
+                face_name = auth_family[self.handover_face_id]["name"]
+                print(f"[VERIFY] Face verified: {face_name} ({self.handover_face_id}) with 5 consecutive frames (score {score:.4f} >= {face_verify.THRESHOLD})")
+                self._transition_to_rfid()
+                return
+
+            if elapsed >= 6.0:
+                reason = f"face verification timed out (best score: {self.handover_best_score:.4f} < {face_verify.THRESHOLD})"
+                if matched_id and matched_id not in auth_family:
+                    reason = f"face '{matched_id}' not authorised for patient {self.active_patient['id']}"
+                self._on_handover_failure(reason)
+                return
+
+        elif self.handover_step == "RFID":
+            elapsed = now - self.rfid_started_t
+
+            # [DEV OVERRIDE] for RFID
+            if self.dev_mode and "rfid" in self.dev_override_steps:
+                auth_first = list(auth_family.values())[0]
+                self.handover_uid = auth_first["rfid_uid"]
+                print(f"[DEV OVERRIDE] RFID verified as UID={self.handover_uid}")
+                self._check_final_handover()
+                return
+
+            if self.active_card_owner_id not in self.actors.cards or not self.actors.cards[self.active_card_owner_id]:
+                self._on_handover_failure("RFID missing")
+                return
+
+            fraction = min(1.0, max(0.0, elapsed / 1.0))
+            start = self.rfid_card_start
+            target = self.rfid_card_target
+            position = tuple(start[i] + fraction * (target[i] - start[i]) for i in range(3))
+            self.actors.move_card(self.active_card_owner_id, position)
+
+            actual_position = self.actors.card_position(self.active_card_owner_id)
+            uid = self._read_emulated_rfid(actual_position) if actual_position else None
+            if uid:
+                self.handover_uid = uid
+                card_owner_name = PEOPLE_BY_ID.get(CARDS_BY_UID.get(uid), {}).get("name", "unknown")
+                print(f"[RFID] UID={uid} read (owner: {card_owner_name})")
+                self._check_final_handover()
+            elif elapsed >= RFID_TIMEOUT_S:
+                self._on_handover_failure("RFID timeout")
 
     def dashboard_step(self):
         """Draw the live map and mission summary to the robot's 480x320 Display."""
@@ -1384,12 +1449,18 @@ class MediBot:
         # Compact status panel; all rendering uses only Display text/line/rectangle calls.
         patient = self.active_patient or {}
         sonar = self.sonar()
+        face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", "none") if self.handover_face_id else "none"
+        rfid_status = f"UID={self.handover_uid}" if self.handover_uid else ("READING" if self.handover_step == "RFID" else "-")
+        res_color = 0x42E88A if "GRANTED" in self.handover_result else (0xFF4B45 if "DENIED" in self.handover_result else 0xFFD166)
         info = [
             (f"STATE: {self.state}", 0x72C7FF),
             (f"DEST: {self.dest}", 0xE8EEF5),
             (f"PATIENT: {patient.get('name', '-')}", 0xE8EEF5),
+            (f"FACE: {face_name} ({self.handover_face_score:.2f})", 0xE8EEF5),
+            (f"RFID: {rfid_status}", 0xE8EEF5),
+            (f"RESULT: {self.handover_result[:24]}", res_color),
             (f"WARD: {patient.get('ward', '-')}", 0xE8EEF5),
-            (f"COMPARTMENT: {patient.get('compartment', '-')}", 0xE8EEF5),
+            (f"COMP: {patient.get('compartment', '-')}", 0xE8EEF5),
             ("LIDS: " + "  ".join(
                 f"{n}:{'OPEN' if self.compartments.is_open(n) else 'LOCK'}" for n in (1, 2, 3)), 0xFFD166),
             (f"SONAR m F {sonar['front']:.2f} L {sonar['left']:.2f} R {sonar['right']:.2f}", 0xE8EEF5),
@@ -1433,10 +1504,11 @@ class MediBot:
                           f"Ward: {self.active_patient['ward']}  Bed: {self.active_patient['bed']}  "
                           f"Compartment: {self.active_patient['compartment']}",
                        0.01, 0.25, 0.05, 0x202020, 0, "Arial")
-        face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", "-")
-        rfid_text = self.handover_uid or "-"
-        r.setLabel(9, f"FACE: STUB | {self.handover_step} | face={face_name} "
-                      f"score={self.handover_face_score:.2f} | RFID={rfid_text} | {self.handover_result}",
+        else:
+            r.setLabel(8, "Patient: None", 0.01, 0.25, 0.05, 0x202020, 0, "Arial")
+        face_name = PEOPLE_BY_ID.get(self.handover_face_id, {}).get("name", "none") if self.handover_face_id else "none"
+        rfid_status = f"UID={self.handover_uid}" if self.handover_uid else ("READING" if self.handover_step == "RFID" else "-")
+        r.setLabel(9, f"Face: {face_name} ({self.handover_face_score:.2f}) | RFID: {rfid_status} | Result: {self.handover_result}",
                    0.01, 0.29, 0.045, 0x202020, 0, "Arial")
 
     def run_regression(self):
