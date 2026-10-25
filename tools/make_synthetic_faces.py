@@ -7,6 +7,7 @@ evaluation to run the project's existing YuNet and SFace models.
 from __future__ import annotations
 
 import argparse
+import io
 import math
 from pathlib import Path
 
@@ -119,6 +120,11 @@ def make_face(seed: int, *, variant: bool = False) -> Image.Image:
     return Image.fromarray(arr,"RGB")
 
 
+def make_variant(seed: int) -> Image.Image:
+    """Return the same identity with a 4° turn, shifted light, and changed smile."""
+    return make_face(seed, variant=True)
+
+
 def _evaluate():
     import cv2
     det_path=MODELS/"yuNet.onnx"; rec_path=MODELS/"sface.onnx"
@@ -127,7 +133,8 @@ def _evaluate():
     detector=cv2.FaceDetectorYN.create(str(det_path),"",(SIZE,SIZE),0.6,0.3,5000)
     recognizer=cv2.FaceRecognizerSF.create(str(rec_path),"")
     def embed(image):
-        bgr=cv2.cvtColor(np.asarray(image),cv2.COLOR_RGB2BGR)
+        jpeg=io.BytesIO(); image.save(jpeg,format="JPEG",quality=94)
+        bgr=cv2.imdecode(np.frombuffer(jpeg.getvalue(),dtype=np.uint8),cv2.IMREAD_COLOR)
         detector.setInputSize((bgr.shape[1],bgr.shape[0])); _, faces=detector.detect(bgr)
         if faces is None or not len(faces): return None,0.0
         row=max(faces,key=lambda f:float(f[14])); conf=float(row[14])
@@ -138,7 +145,7 @@ def _evaluate():
     last_images=None
     # Each seed supplies three candidate identities; at most 500 seeds are tried.
     for seed in range(500):
-        family1=make_face(seed); family2=make_face(seed,variant=True)
+        family1=make_face(seed); family2=make_variant(seed)
         visitor1=make_face(seed+10000); visitor2=make_face(seed+20000)
         last_images=(family1,family2,visitor1,visitor2)
         items=[embed(x) for x in (family1,family2,visitor1,visitor2)]
@@ -192,7 +199,8 @@ def main():
     args=parser.parse_args(); FACES.mkdir(parents=True,exist_ok=True)
     if args.render_only:
         for seed,name in enumerate(("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")):
-            make_face(13 if seed<2 else 10013+seed,variant=(seed==1)).save(FACES/name,quality=94)
+            (make_face(13) if seed==0 else make_variant(13) if seed==1
+             else make_face(10013+seed)).save(FACES/name,quality=94)
         _save_preview()
         return 0
     return 0 if _evaluate() else 2

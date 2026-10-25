@@ -1,5 +1,6 @@
 """Evaluate the synthetic demo faces with the project's YuNet and SFace models."""
 import json
+import sys
 from pathlib import Path
 
 import cv2
@@ -7,6 +8,8 @@ import numpy as np
 
 ROOT=Path(__file__).resolve().parents[1]
 CTRL=ROOT/"controllers"/"medibot_controller"
+sys.path.insert(0,str(CTRL))
+from handover import decide_handover
 FACES=CTRL/"faces"
 MODELS=CTRL/"models"
 FILES=("family_1.jpg","family_2.jpg","VISITOR_UNKNOWN_01.jpg","VISITOR_UNKNOWN_02.jpg")
@@ -45,6 +48,12 @@ patient=next(p for p in db["patients"] if p["ward"]=="WARD-3B")
 rahul=next(p for p in patient["authorised_family"] if p["name"]=="Rahul Mehta")
 other_patient=next(p for p in db["patients"] if p["id"]!="PAT_W3B_01")
 wrong_patient=rahul["id"] not in {x["id"] for x in other_patient["authorised_family"]}
-print(f"wrong-patient case ({other_patient['id']}): Rahul Mehta is not authorised: {'PASS' if wrong_patient else 'FAIL'}")
+known_people={person["id"]:person for p in db["patients"] for person in p["authorised_family"]}
+known_people.update({person["id"]:person for person in db["unauthorised_visitors"]})
+known_cards={person["rfid_uid"]:person["id"] for person in known_people.values()}
+wrong_result=decide_handover(other_patient,rahul["id"],scores["family leave-one-out 1->2"],
+                             rahul["rfid_uid"],known_people,known_cards)
+wrong_patient=wrong_patient and not wrong_result[0]
+print(f"wrong-patient case ({other_patient['id']}): face score={scores['family leave-one-out 1->2']:.4f}; {wrong_result[1]}: {'PASS' if wrong_patient else 'FAIL'}")
 print(f"leave-one-out accept: {'PASS' if accept else 'FAIL'}; reject both visitors: {'PASS' if reject else 'FAIL'}")
 if not (accept and reject and wrong_patient): raise SystemExit(1)

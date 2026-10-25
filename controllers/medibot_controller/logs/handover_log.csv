@@ -14,3 +14,5 @@ time_s,patient_id,visitor_id,face_id,face_score,rfid_uid,attempt,outcome,reason
 1137.57,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-2051,3,DENIED,RFID belongs to someone else
 3344.03,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-1042,1,DELIVERED,
 3427.33,PAT_W3B_01,FAM_W3B_01_A,FAM_W3B_01_A,1.00,UID-1042,1,DELIVERED,
+90.18,PAT_W3B_01,VISITOR_UNKNOWN_01,,0.39,,2,DENIED,face verification timed out (best score: 0.3943 < 0.4)
+106.66,PAT_W3B_01,VISITOR_UNKNOWN_01,,0.39,,4,DENIED,face verification timed out (best score: 0.3942 < 0.4)
