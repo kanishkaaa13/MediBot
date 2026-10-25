@@ -43,6 +43,7 @@ CARDS_BY_UID = {person["rfid_uid"]: person["id"] for person in PEOPLE}
 
 # ---------------------------------------------------------------- parameters
 TIME_STEP = 32
+DEBUG_SETFIELD = False
 R_TRUE = CFG["robot"]["wheel_radius"]
 TRACK = CFG["robot"]["track"]
 CAM_W, CAM_H = CFG["camera"]["width"], CFG["camera"]["height"]
@@ -93,8 +94,18 @@ def safe_set(node, field_name, value):
     vector_sizes = {"translation": (3, "setSFVec3f"),
                     "rotation": (4, "setSFRotation"),
                     "color": (3, "setSFColor")}
+    node_type = ""
+    if node is not None:
+        get_type = getattr(node, "getTypeName", None)
+        if callable(get_type):
+            try:
+                node_type = get_type()
+            except Exception:
+                pass
     if field_name in vector_sizes:
         size, setter_name = vector_sizes[field_name]
+        if field_name == "color" and node_type == "LED":
+            setter_name = "setMFColor"
         # Webots expects a list of native Python floats with an exact vector
         # length. Normalize numeric tuples/NumPy scalars before crossing its API.
         try:
@@ -110,13 +121,36 @@ def safe_set(node, field_name, value):
         setter_name, valid = "setSFFloat", True
     else:
         setter_name, valid = "", False
+    def target_name():
+        if node is None:
+            return "<missing-node>"
+        get_def = getattr(node, "getDef", None)
+        if callable(get_def):
+            try:
+                name = get_def()
+                if name:
+                    return name
+            except Exception:
+                pass
+        return getattr(node, "getTypeName", lambda: "<unnamed-node>")()
+
+    target = target_name()
     if node is None or not valid:
-        print(f"[SETFIELD] node.{field_name} bad value {value!r}")
+        print(f"[SETFIELD][ERROR] DEF={target} field={field_name} value={value!r} (rejected before Webots call)")
         return False
     try:
-        getattr(node.getField(field_name), setter_name)(value)
+        field = node.getField(field_name)
+        if DEBUG_SETFIELD:
+            print(f"[SETFIELD][DEBUG] DEF={target} field={field_name} value={value!r} setter={setter_name}")
+        if setter_name == "setMFColor":
+            if field.getCount() == 0:
+                field.insertMFColor(0, value)
+            else:
+                field.setMFColor(0, value)
+        else:
+            getattr(field, setter_name)(value)
     except (AttributeError, TypeError, ValueError) as exc:
-        print(f"[SETFIELD] node.{field_name} bad value {value!r}: {exc}")
+        print(f"[SETFIELD][ERROR] DEF={target} field={field_name} value={value!r} error={exc}")
         return False
     return True
 
@@ -313,7 +347,16 @@ class MediBot:
         # Face camera (on mast head)
         self.face_cam = r.getDevice("face_cam")
         if self.face_cam:
-            self.face_cam.enable(4 * TIME_STEP)
+            self.face_cam.enable(TIME_STEP)
+            get_period = getattr(self.face_cam, "getSamplingPeriod", None)
+            get_width = getattr(self.face_cam, "getWidth", None)
+            get_height = getattr(self.face_cam, "getHeight", None)
+            sampling = get_period() if callable(get_period) else TIME_STEP
+            width = get_width() if callable(get_width) else CFG["face_camera"]["width"]
+            height = get_height() if callable(get_height) else CFG["face_camera"]["height"]
+            print(f"[FACE CAM] enabled {width}x{height} sampling={sampling} ms")
+        else:
+            print("[FACE CAM] device 'face_cam' not found")
 
         # Ultrasonic sensors
         self.us = {n: r.getDevice(f"us_{n}") for n in ("front", "left", "right")}
@@ -1151,6 +1194,19 @@ class MediBot:
             writer.writerow(row)
         print(f"[MISSION LOG] {outcome} appended to {path}")
 
+    def _append_abort_event(self, reason):
+        """Record a user abort independently from the mission outcome."""
+        path = os.path.join(HERE, "logs", "mission_aborts.csv")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        needs_header = not os.path.exists(path) or os.path.getsize(path) == 0
+        with open(path, "a", newline="", encoding="utf-8") as aborts:
+            writer = csv.writer(aborts)
+            if needs_header:
+                writer.writerow(["timestamp", "patient", "abort_status"])
+            writer.writerow([datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+                             (self.active_patient or {}).get("id", ""), reason])
+        print(f"[MISSION ABORT] {reason} appended to {path}")
+
     def log_step(self):
         e = self.true_err() * 100
         self.errs.append(e)
@@ -1190,9 +1246,11 @@ class MediBot:
             room["handover"]["visitor"], self.true_pose())
         print(f"[VISITOR] {visitor['name']} ({visitor['id']}); card={card_owner['name']}")
 
-    def _start_handover_attempt(self, retry=False):
-        if not retry:
-            self.handover_attempt += 1
+    def _start_handover_attempt(self):
+        if self.handover_attempt >= HANDOVER_MAX_ATTEMPTS:
+            print(f"[HANDOVER] attempt limit reached ({HANDOVER_MAX_ATTEMPTS}); press X to reset the mission")
+            return False
+        self.handover_attempt += 1
         self._show_selected_visitor()
         self.handover_step = "FACE"
         self.handover_face_id = None
@@ -1203,9 +1261,11 @@ class MediBot:
         self.handover_reason = ""
         self.face_started_t = self.now()
         self.face_last_print_t = self.now()
+        self.face_debug_captured = False
         self.handover_result = f"ATTEMPT {self.handover_attempt}/3"
         visitor, card = self._selected_people()
         print(f"[HANDOVER] attempt {self.handover_attempt}/3: scanning face for {visitor['name']} ({visitor['id']}) | card={card['name']}...")
+        return True
 
     def _handover_log(self, outcome, reason=""):
         os.makedirs(os.path.join(HERE, "logs"), exist_ok=True)
@@ -1300,17 +1360,6 @@ class MediBot:
 
         if self.handover_step == "FACE":
             elapsed = now - self.face_started_t
-
-            # [DEV OVERRIDE] for face
-            if self.dev_mode and "face" in self.dev_override_steps:
-                auth_first = list(auth_family.values())[0]
-                self.handover_face_id = auth_first["id"]
-                self.handover_face_score = 1.0
-                self.handover_best_score = 1.0
-                print(f"[DEV OVERRIDE] face verified as {self.handover_face_id} (score 1.00)")
-                self._transition_to_rfid()
-                return
-
             frame_bgr = None
             if self.face_cam:
                 raw_bytes = self.face_cam.getImage()
@@ -1320,10 +1369,41 @@ class MediBot:
                     bgra = np.frombuffer(raw_bytes, np.uint8).reshape((h, w, 4))
                     frame_bgr = cv2.cvtColor(bgra, cv2.COLOR_BGRA2BGR)
 
-            matched_id, score = None, 0.0
-            matcher = getattr(face_verify, "match", None)
-            if frame_bgr is not None and callable(matcher):
-                matched_id, score = matcher(frame_bgr)
+            matched_id, score, detections = None, 0.0, None
+            matcher = getattr(face_verify, "match_with_details", None)
+            if frame_bgr is not None:
+                debug_this_frame = not self.face_debug_captured
+                if debug_this_frame:
+                    debug_dir = os.path.join(HERE, "logs")
+                    os.makedirs(debug_dir, exist_ok=True)
+                    debug_path = os.path.join(debug_dir, "face_cam_debug.png")
+                    # Save the exact contiguous BGR ndarray handed to YuNet below.
+                    if cv2.imwrite(debug_path, frame_bgr):
+                        print(f"[FACE DEBUG] saved {debug_path}")
+                    print(f"[FACE DEBUG] YuNet input shape={frame_bgr.shape} dtype={frame_bgr.dtype} strides={frame_bgr.strides}")
+                    self.face_debug_captured = True
+                if callable(matcher):
+                    matched_id, score, detections = matcher(frame_bgr)
+                else:
+                    matched_id, score = face_verify.match(frame_bgr)
+                    detections = face_verify.detect_yunet(frame_bgr)
+                if debug_this_frame:
+                    if detections is None or len(detections) == 0:
+                        print("[FACE DEBUG] YuNet detections: none")
+                    else:
+                        boxes = [(int(row[0]), int(row[1]), int(row[2]), int(row[3]), round(float(row[14]), 4))
+                                 for row in detections]
+                        print(f"[FACE DEBUG] YuNet detections (x,y,w,h,confidence): {boxes}")
+
+            # [DEV OVERRIDE] for face; capture and inspect the first VERIFY frame first.
+            if self.dev_mode and "face" in self.dev_override_steps:
+                auth_first = list(auth_family.values())[0]
+                self.handover_face_id = auth_first["id"]
+                self.handover_face_score = 1.0
+                self.handover_best_score = 1.0
+                print(f"[DEV OVERRIDE] face verified as {self.handover_face_id} (score 1.00)")
+                self._transition_to_rfid()
+                return
 
             if score > self.handover_best_score:
                 self.handover_best_score = score
@@ -1334,13 +1414,20 @@ class MediBot:
                 self.handover_face_id = matched_id
             else:
                 self.handover_consec_frames = 0
-                if score < face_verify.THRESHOLD:
-                    self.handover_face_id = None
+                self.handover_face_id = None
 
             if now - self.face_last_print_t >= 1.0:
                 self.face_last_print_t = now
-                face_name = PEOPLE_BY_ID.get(self.handover_face_id or matched_id, {}).get("name", "none") if (self.handover_face_id or matched_id) else "none"
-                print(f"[VERIFY] t={elapsed:.1f}s | face: {face_name} | score={score:.4f} | best so far={self.handover_best_score:.4f} (consec={self.handover_consec_frames}/5)")
+                detected = detections is not None and len(detections) > 0
+                face_name = PEOPLE_BY_ID.get(matched_id, {}).get("name", "unknown") if detected and matched_id else "none"
+                score_text = f"{score:.4f}" if detected else "-"
+                if detected:
+                    face_row = max(detections, key=lambda row: float(row[14]))
+                    x, y, w, h = (int(face_row[i]) for i in range(4))
+                    yunet_text = f"detected conf={float(face_row[14]):.3f} box=({x},{y},{w},{h})"
+                else:
+                    yunet_text = "no face"
+                print(f"[VERIFY] t={elapsed:.1f}s | YuNet: {yunet_text} | best match: {face_name} score={score_text} | best so far={self.handover_best_score:.4f} (consec={self.handover_consec_frames}/5)")
 
             if self.handover_consec_frames >= 5:
                 face_name = auth_family[self.handover_face_id]["name"]
@@ -1802,9 +1889,11 @@ class MediBot:
             self._handover_log("DEV_OVERRIDE", f"manual compartment {number}")
 
     def reset(self):
-        if (self.mission_start_t is not None and not self.delivery_logged and
-                self.state != "IDLE"):
-            self._append_delivery_row("ABORTED_BLOCKED")
+        if self.mission_start_t is not None and self.state != "IDLE":
+            if not self.delivery_logged:
+                outcome = "DELIVERED" if self.mission_delivered else "ABORTED_BLOCKED"
+                self._append_delivery_row(outcome)
+            self._append_abort_event("ABORTED_BY_USER")
         self.stop()
         self.actors.park_all()
         self.visitor_choice_index = 0

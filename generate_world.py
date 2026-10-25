@@ -107,7 +107,10 @@ CHASSIS = (0.44, 0.24, 0.12)
 CAM = {"width": 960, "height": 720, "fov": 1.6, "x": 0.22, "z": TAG_Z - WHEEL_R}
 
 # Face Camera: mounted on mast head at ~0.95 m height looking forward & slightly down
-FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.88}
+# Webots' Robot Camera default points along robot-forward (+X). A slight downward
+# pitch centers the 0.96 m visitor face in the image from the robot camera mount.
+FACE_CAM = {"width": 640, "height": 480, "fov": 0.9, "x": 0.19, "z": 0.96,
+            "rotation": 0.18}
 
 # Safe trolley parking spot in reception alcove (away from transit lines)
 TROLLEY_PARK = (-1.5, 1.8)
@@ -592,12 +595,17 @@ def point_light(name, x, y, z, intensity=0.6, radius=4.5):
             f"}}\n")
 
 
-def tag_face(tex_name, width=BOARD_W, height=None):
+def tag_face(tex_name, width=BOARD_W, height=None, unlit=False):
     """Verified +X-facing textured quad; optional face-sized dimensions."""
     height = width if height is None else height
     hw, hh = width / 2, height / 2
+    if unlit:
+        appearance = (f"PBRAppearance {{ baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 "
+                      f"baseColorMap ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}")
+    else:
+        appearance = f"Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}"
     return (f"Shape {{\n"
-            f"  appearance Appearance {{ texture ImageTexture {{ url [ \"textures/{tex_name}\" ] filtering 0 }} }}\n"
+            f"  appearance {appearance}\n"
             f"  geometry IndexedFaceSet {{\n"
             f"    coord Coordinate {{ point [ 0.006 {-hw:g} {-hh:g}, 0.006 {hw:g} {-hh:g}, 0.006 {hw:g} {hh:g}, 0.006 {-hw:g} {hh:g} ] }}\n"
             f"    texCoord TextureCoordinate {{ point [ 0 0, 1 0, 1 1, 0 1 ] }}\n"
@@ -656,7 +664,7 @@ def visitor_nodes(people):
   children [
     Shape {{ appearance PBRAppearance {{ baseColor 0.16 0.34 0.55 roughness 0.8 }} geometry Cylinder {{ radius 0.15 height 0.68 }} }}
     Pose {{ translation 0 0 0.96 children [ Shape {{ appearance PBRAppearance {{ baseColor 0.82 0.72 0.62 roughness 0.8 }} geometry Sphere {{ radius 0.14 }} }} ] }}
-    Pose {{ translation 0.145 0 0.96 children [ {tag_face(face_path, 0.19, 0.25)} ] }}
+    Pose {{ translation 0.145 0 0.96 children [ {tag_face(face_path, 0.28, 0.34, unlit=True)} ] }}
   ]
 }}
 DEF CARD_{pid} Solid {{
@@ -1092,8 +1100,8 @@ def robot_node():
     }}
     # Face Camera on Head (pointing forward and slightly down at patient/nurse faces)
     Camera {{
-      translation 0.19 0 0.88
-      rotation 0 1 0 0.18
+      translation {FACE_CAM['x']:g} 0 {FACE_CAM['z']:g}
+      rotation 0 1 0 {FACE_CAM['rotation']:g}
       name "face_cam"
       width {FACE_CAM['width']}
       height {FACE_CAM['height']}

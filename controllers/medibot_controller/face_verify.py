@@ -169,6 +169,8 @@ def enrol_all(patients_json: str | None = None) -> int:
 
     total = len(people)
     enrolled = 0
+    warnings = []
+    no_photo_people = []
 
     for person in people:
         pid = person.get("id", "?")
@@ -185,22 +187,19 @@ def enrol_all(patients_json: str | None = None) -> int:
         for rel_path in face_files:
             abs_path = str(HERE / rel_path) if not os.path.isabs(rel_path) else rel_path
             if not os.path.isfile(abs_path):
-                print(f"  [WARN] Photo not found: {abs_path} - skipping")
+                warnings.append(f"{os.path.basename(abs_path)}: missing")
                 continue
 
             img = cv2.imread(abs_path)
             if img is None:
-                print(f"  [WARN] Cannot read image: {abs_path}")
+                warnings.append(f"{os.path.basename(abs_path)}: unreadable")
                 continue
 
             faces = detect_faces_yunet(img)
             box = _best_face_box(faces)
 
             if box is None:
-                print(
-                    f"  [WARN] YuNet: NO FACE DETECTED in '{os.path.basename(abs_path)}' ({abs_path})"
-                    f" for {name} ({pid}) - photo REJECTED"
-                )
+                warnings.append(f"{os.path.basename(abs_path)}: no face ({name}/{pid})")
                 continue
 
             x, y, w, h, conf = box
@@ -223,44 +222,56 @@ def enrol_all(patients_json: str | None = None) -> int:
                 enrolled += 1
                 print(f"  [ENROLL] {name} ({pid}) - {len(embeddings)} photo(s) enrolled OK")
         else:
-            print(f"  [ENROLL] {name} ({pid}) - NO valid face found in any photo - NOT enrolled")
+            no_photo_people.append(f"{name} ({pid})")
 
     print(f"[ENROLL] {enrolled}/{total} people enrolled")
+    if warnings:
+        print(f"[ENROLL] skipped {len(warnings)} photo(s); no usable enrollment for "
+              + (", ".join(no_photo_people) if no_photo_people else "none")
+              + ": " + "; ".join(warnings))
+    elif no_photo_people:
+        print(f"[ENROLL] no usable enrollment photos for {', '.join(no_photo_people)}")
     return enrolled
 
 
 # ---------------------------------------------------------------------------
 # Matching
 # ---------------------------------------------------------------------------
+def match_with_details(frame: np.ndarray):
+    """Return ``(person_id, score, detections)`` for a BGR frame."""
+    if not _ENROLLMENTS:
+        return None, 0.0, None
+
+    faces = detect_yunet(frame)
+    box = _best_face_box(faces)
+    if box is None:
+        return None, 0.0, faces
+
+    face_row = faces[0] if len(faces) == 1 else max(faces, key=lambda r: float(r[14]))
+    aligned = _crop_and_align(frame, face_row)
+    emb = _embed(aligned)
+    if emb is None:
+        return None, 0.0, faces
+
+    best_id, best_score = None, -1.0
+    for pid, stored in _ENROLLMENTS.items():
+        score = float(np.dot(emb, stored))
+        if score > best_score:
+            best_score, best_id = score, pid
+
+    # Preserve the nearest enrolled identity for diagnostics even below the
+    # acceptance threshold. Callers must apply THRESHOLD before authorizing.
+    return best_id, best_score, faces
+
+
 def match(frame: np.ndarray) -> tuple[str | None, float]:
     """Match *frame* (BGR ndarray) against enrolled faces.
 
     Returns:
         (person_id, score)  – person_id is None when no match >= THRESHOLD.
     """
-    if not _ENROLLMENTS:
-        return None, 0.0
-
-    faces = detect_yunet(frame)
-    box = _best_face_box(faces)
-    if box is None:
-        return None, 0.0
-
-    face_row = faces[0] if len(faces) == 1 else max(faces, key=lambda r: float(r[14]))
-    aligned = _crop_and_align(frame, face_row)
-    emb = _embed(aligned)
-    if emb is None:
-        return None, 0.0
-
-    best_id, best_score = None, -1.0
-    for pid, stored in _ENROLLMENTS.items():
-        s = float(np.dot(emb, stored))
-        if s > best_score:
-            best_score, best_id = s, pid
-
-    if best_score >= THRESHOLD:
-        return best_id, best_score
-    return None, best_score
+    person_id, score, _faces = match_with_details(frame)
+    return (person_id if score >= THRESHOLD else None), score
 
 
 def detect_yunet(frame: np.ndarray):

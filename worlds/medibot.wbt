@@ -3734,9 +3734,9 @@ DEF VISITOR_FAM_W3B_01_RAHUL Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/family_1.jpg" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/family_1.jpg" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3759,9 +3759,9 @@ DEF VISITOR_FAM_W3B_01_A Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_W3B_01_A.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_W3B_01_A.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3784,9 +3784,9 @@ DEF VISITOR_FAM_W3B_02_A Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_W3B_02_A.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_W3B_02_A.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3809,9 +3809,9 @@ DEF VISITOR_FAM_W3B_02_B Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_W3B_02_B.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_W3B_02_B.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3834,9 +3834,9 @@ DEF VISITOR_FAM_W2A_01_A Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_W2A_01_A.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_W2A_01_A.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3859,9 +3859,9 @@ DEF VISITOR_FAM_W2A_01_B Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_W2A_01_B.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_W2A_01_B.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3884,9 +3884,9 @@ DEF VISITOR_FAM_ICU_01_A Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_ICU_01_A.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_ICU_01_A.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3909,9 +3909,9 @@ DEF VISITOR_FAM_ICU_01_B Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/FAM_ICU_01_B.png" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/FAM_ICU_01_B.png" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3934,9 +3934,9 @@ DEF VISITOR_VISITOR_UNKNOWN_01 Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/VISITOR_UNKNOWN_01.jpg" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/VISITOR_UNKNOWN_01.jpg" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -3959,9 +3959,9 @@ DEF VISITOR_VISITOR_UNKNOWN_02 Solid {
     Shape { appearance PBRAppearance { baseColor 0.16 0.34 0.55 roughness 0.8 } geometry Cylinder { radius 0.15 height 0.68 } }
     Pose { translation 0 0 0.96 children [ Shape { appearance PBRAppearance { baseColor 0.82 0.72 0.62 roughness 0.8 } geometry Sphere { radius 0.14 } } ] }
     Pose { translation 0.145 0 0.96 children [ Shape {
-  appearance Appearance { texture ImageTexture { url [ "textures/faces/VISITOR_UNKNOWN_02.jpg" ] filtering 0 } }
+  appearance PBRAppearance { baseColor 1 1 1 emissiveColor 1 1 1 roughness 1 metalness 0 baseColorMap ImageTexture { url [ "textures/faces/VISITOR_UNKNOWN_02.jpg" ] filtering 0 } }
   geometry IndexedFaceSet {
-    coord Coordinate { point [ 0.006 -0.095 -0.125, 0.006 0.095 -0.125, 0.006 0.095 0.125, 0.006 -0.095 0.125 ] }
+    coord Coordinate { point [ 0.006 -0.14 -0.17, 0.006 0.14 -0.17, 0.006 0.14 0.17, 0.006 -0.14 0.17 ] }
     texCoord TextureCoordinate { point [ 0 0, 1 0, 1 1, 0 1 ] }
     coordIndex [ 0 1 2 3 -1 ]
     texCoordIndex [ 0 1 2 3 -1 ]
@@ -4097,7 +4097,7 @@ DEF MEDIBOT Robot {
     }
     # Face Camera on Head (pointing forward and slightly down at patient/nurse faces)
     Camera {
-      translation 0.19 0 0.88
+      translation 0.19 0 0.96
       rotation 0 1 0 0.18
       name "face_cam"
       width 640
