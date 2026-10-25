@@ -9,8 +9,8 @@ DEF VIEW_OVERVIEW Viewpoint {
   description "Overview - hospital floor"
 }
 DEF VIEW_FOLLOW_ROBOT Viewpoint {
-  orientation -0.0284298611099518 0.9978838638438151 0.05847680974033398 0.906767399440762
-  position -11.19027469417783 7.831079656025985 22.096781721484202
+  orientation 0.017759344211865466 0.9994520675069164 -0.02793153145308493 1.1330965236479662
+  position -3.239747468519335 2.502972443124915 10.859228420374714
   description "Follow robot - tracking shot"
   follow "MediBot"
 }
@@ -4722,8 +4722,8 @@ Solid {
   }
 }
 DEF TROLLEY Solid {
-  translation -1.4978732472403136 1.8046203551188178 0.039966296561701094
-  rotation 0.0137895882759117 0.032083088062344174 0.9993900753537454 3.1415375973788087
+  translation -1.580003605982356 1.4497083715783892 0.114114
+  rotation 1.2886506415657173e-17 -1.9721266406280018e-16 0.9999999999999999 -3.140620164641684
   children [
     Shape {
       appearance PBRAppearance {
@@ -4744,12 +4744,12 @@ DEF TROLLEY Solid {
     density -1
     mass 15
   }
-  linearVelocity -4.768995220100987e-05 -2.1268666843452338e-05 -3.7563602829754315e-05
-  angularVelocity -0.0020289441438208814 0.000388823707365363 3.0059549490315626e-06
+  linearVelocity 3.4090153530434396e-17 -1.588667544727732e-16 -1.9724934576792342e-16
+  angularVelocity 1.5615956035398634e-15 5.616040286599723e-16 -7.247360287501054e-17
 }
 DEF OBSTACLE_WHEELCHAIR Solid {
-  translation -1.4994752282168107 1.8000431167426083 -5589.467199120369
-  rotation 0.09221883679969886 0.9813358145594672 -0.16874745983930445 0.808758104068706
+  translation -11041084.93882986 1349442.4477693413 -34456365.7681801
+  rotation -0.9572653001288497 -0.1351690862327279 0.25568039286623584 -2.2311951505613914
   children [
     Shape {
       appearance PBRAppearance {
@@ -4779,12 +4779,12 @@ DEF OBSTACLE_WHEELCHAIR Solid {
     density -1
     mass 18
   }
-  linearVelocity 0.00024847148824911697 2.0415124337755173e-05 -2651.9955814016917
-  angularVelocity 0.0010350523385489496 -0.04353467969173408 0.0002587741149281866
+  linearVelocity -6534.608387408332 798.6594996830478 -28680.304760219235
+  angularVelocity -1342.6803036720453 -797.6459920663659 9877.295706491308
 }
 DEF OBSTACLE_CART Solid {
-  translation -1.4993141838866086 1.8000343148529898 -5574.855858424072
-  rotation 0.02861534247759748 0.9989290389873242 -0.03635845490048906 0.7294730507763276
+  translation -0.18013741802799607 1.4348195551026397 -17298243.842243027
+  rotation -0.5936060751794687 -0.3324900677068469 -0.7328589102865048 2.4615555732665633
   children [
     Shape {
       appearance PBRAppearance {
@@ -4805,8 +4805,8 @@ DEF OBSTACLE_CART Solid {
     density -1
     mass 20
   }
-  linearVelocity 0.0003247235385403027 1.6247562969847384e-05 -2645.077332965945
-  angularVelocity 0.0006949071123393912 -0.043890009747029 0.0008062824878580227
+  linearVelocity 0.0007811538737268679 -0.00021613016615373834 -18525.358638257472
+  angularVelocity -0.0025084678723081167 -0.06890246100868055 -0.005130363198166026
 }
 DEF VISITOR_FAM_W3B_01_A Solid {
   translation -30 -20 0
@@ -4878,8 +4878,8 @@ DEF VISITOR_FAM_W3B_01_A Solid {
   name "visitor_FAM_W3B_01_A"
 }
 DEF CARD_FAM_W3B_01_A Solid {
-  translation -30 -20 -20.847468799999998
-  rotation -0.9081937390115074 -0.40759699408845707 0.09512530068468743 5.1246885544814394e-15
+  translation -30 -20 -14002804.224417083
+  rotation 0.34747796553814825 0.9356878484064952 0.06121530699010796 6.697129776784396e-15
   children [
     Shape {
       appearance PBRAppearance {
@@ -4899,7 +4899,7 @@ DEF CARD_FAM_W3B_01_A Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_W3B_01_B Solid {
   translation -33 -20 0
@@ -4971,7 +4971,7 @@ DEF VISITOR_FAM_W3B_01_B Solid {
   name "visitor_FAM_W3B_01_B"
 }
 DEF CARD_FAM_W3B_01_B Solid {
-  translation -33 -20 -20.847468799999998
+  translation -33 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -4991,7 +4991,7 @@ DEF CARD_FAM_W3B_01_B Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_W3B_02_A Solid {
   translation -36 -20 0
@@ -5063,8 +5063,8 @@ DEF VISITOR_FAM_W3B_02_A Solid {
   name "visitor_FAM_W3B_02_A"
 }
 DEF CARD_FAM_W3B_02_A Solid {
-  translation -36 -20 -20.847468799999998
-  rotation -0.04010459345077732 0.9991954871715819 3.0536514019005205e-07 3.92261906743776e-05
+  translation -36 -20 -14002804.224417083
+  rotation -0.040139968639730114 0.9991940666945075 3.0583797177362557e-07 3.9253976242480435e-05
   children [
     Shape {
       appearance PBRAppearance {
@@ -5084,7 +5084,7 @@ DEF CARD_FAM_W3B_02_A Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_W3B_02_B Solid {
   translation -39 -20 0
@@ -5156,7 +5156,7 @@ DEF VISITOR_FAM_W3B_02_B Solid {
   name "visitor_FAM_W3B_02_B"
 }
 DEF CARD_FAM_W3B_02_B Solid {
-  translation -39 -20 -20.847468799999998
+  translation -39 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5176,7 +5176,7 @@ DEF CARD_FAM_W3B_02_B Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_W2A_01_A Solid {
   translation -42 -20 0
@@ -5248,7 +5248,7 @@ DEF VISITOR_FAM_W2A_01_A Solid {
   name "visitor_FAM_W2A_01_A"
 }
 DEF CARD_FAM_W2A_01_A Solid {
-  translation -42 -20 -20.847468799999998
+  translation -42 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5268,7 +5268,7 @@ DEF CARD_FAM_W2A_01_A Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_W2A_01_B Solid {
   translation -45 -20 0
@@ -5340,7 +5340,7 @@ DEF VISITOR_FAM_W2A_01_B Solid {
   name "visitor_FAM_W2A_01_B"
 }
 DEF CARD_FAM_W2A_01_B Solid {
-  translation -45 -20 -20.847468799999998
+  translation -45 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5360,7 +5360,7 @@ DEF CARD_FAM_W2A_01_B Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_ICU_01_A Solid {
   translation -48 -20 0
@@ -5432,7 +5432,7 @@ DEF VISITOR_FAM_ICU_01_A Solid {
   name "visitor_FAM_ICU_01_A"
 }
 DEF CARD_FAM_ICU_01_A Solid {
-  translation -48 -20 -20.847468799999998
+  translation -48 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5452,7 +5452,7 @@ DEF CARD_FAM_ICU_01_A Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_FAM_ICU_01_B Solid {
   translation -51 -20 0
@@ -5524,7 +5524,7 @@ DEF VISITOR_FAM_ICU_01_B Solid {
   name "visitor_FAM_ICU_01_B"
 }
 DEF CARD_FAM_ICU_01_B Solid {
-  translation -51 -20 -20.847468799999998
+  translation -51 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5544,7 +5544,7 @@ DEF CARD_FAM_ICU_01_B Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_VISITOR_UNKNOWN_01 Solid {
   translation -54 -20 0
@@ -5616,7 +5616,7 @@ DEF VISITOR_VISITOR_UNKNOWN_01 Solid {
   name "visitor_VISITOR_UNKNOWN_01"
 }
 DEF CARD_VISITOR_UNKNOWN_01 Solid {
-  translation -54 -20 -20.847468799999998
+  translation -54 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5636,7 +5636,7 @@ DEF CARD_VISITOR_UNKNOWN_01 Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF VISITOR_VISITOR_UNKNOWN_02 Solid {
   translation -57 -20 0
@@ -5708,7 +5708,7 @@ DEF VISITOR_VISITOR_UNKNOWN_02 Solid {
   name "visitor_VISITOR_UNKNOWN_02"
 }
 DEF CARD_VISITOR_UNKNOWN_02 Solid {
-  translation -57 -20 -20.847468799999998
+  translation -57 -20 -14002804.224417083
   children [
     Shape {
       appearance PBRAppearance {
@@ -5728,11 +5728,11 @@ DEF CARD_VISITOR_UNKNOWN_02 Solid {
     density -1
     mass 0.02
   }
-  linearVelocity 0 0 -20.404799999999987
+  linearVelocity 0 0 -16574.976000008908
 }
 DEF MEDIBOT Robot {
-  translation -3.305878692755028e-06 -1.9948363411285818e-10 0.07818478696218115
-  rotation 6.0318828761805365e-05 -0.9999999981808195 5.403130913214713e-09 5.5097982290509666e-05
+  translation -3.3058816308933365e-06 9.545212400997872e-10 0.07818479683987292
+  rotation -0.00028776380687330435 -0.9999999585954359 1.0574732573820882e-06 5.509798518590496e-05
   children [
     Pose {
       translation 0 0 0.06
@@ -6056,7 +6056,7 @@ DEF MEDIBOT Robot {
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position -1.1772068977010864e-08
+        position -1.1772064904584154e-08
         axis 0 1 0
         anchor 0.08 0 0.13
       }
@@ -6073,7 +6073,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation 0.08 0 0.13
-        rotation 0 1 0 0
+        rotation -0.1695887565127606 -0.9734903214041922 -0.15348044760430601 1.192265323506961e-15
         children [
           Pose {
             translation -0.04 0 0.004
@@ -6123,8 +6123,8 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.03
         }
-        linearVelocity -2.0005766130076073e-11 -9.636866831030772e-16 7.426875274774148e-08
-        angularVelocity 8.774977289228244e-16 -1.0295669707321838e-10 1.711513199472719e-16
+        linearVelocity 4.940781580161277e-16 5.823296705489434e-16 -5.921189464667503e-17
+        angularVelocity -1.0327882256553437e-15 6.870191794719359e-15 2.145253646643223e-15
       }
     }
     Pose {
@@ -6174,7 +6174,7 @@ DEF MEDIBOT Robot {
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position -1.1772070435207913e-08
+        position -1.1772065052986092e-08
         axis 0 1 0
         anchor -0.02 0 0.13
       }
@@ -6191,7 +6191,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation -0.02 0 0.13
-        rotation 0 1 0 0
+        rotation -0.25775799737515975 -0.27933005260190724 -0.9249516400885848 2.2531744748783793e-16
         children [
           Pose {
             translation -0.04 0 0.004
@@ -6241,8 +6241,8 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.03
         }
-        linearVelocity -2.0005260147378202e-11 -8.881901404262763e-16 7.425845272024391e-08
-        angularVelocity 2.9696375499912846e-15 -1.0296700236120946e-10 -6.371201510700398e-16
+        linearVelocity 5.077174213459954e-16 4.463047078098542e-16 1.1842378929335005e-16
+        angularVelocity -1.5488543966094832e-15 6.8701918655705004e-15 1.3452331646640667e-15
       }
     }
     Pose {
@@ -6292,7 +6292,7 @@ DEF MEDIBOT Robot {
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position -1.177207075434507e-08
+        position -1.1772063683321097e-08
         axis 0 1 0
         anchor -0.12 0 0.13
       }
@@ -6309,7 +6309,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation -0.12 0 0.13
-        rotation 0 1 0 0
+        rotation -0.02725102380806976 0.9428991339394691 -0.3319617521908378 7.570104548366829e-16
         children [
           Pose {
             translation -0.04 0 0.004
@@ -6359,13 +6359,13 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.03
         }
-        linearVelocity -2.000431099704233e-11 -9.061373865104377e-16 7.424815275195822e-08
-        angularVelocity 1.8072589569817956e-15 -1.0294639178525254e-10 -3.825200734300665e-16
+        linearVelocity 5.16242864428973e-16 1.9995133199836797e-16 6.513308411134253e-16
+        angularVelocity -1.715647827979567e-15 3.4350958130714943e-15 2.029805441677534e-15
       }
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position 1226.7050952505876
+        position 2118.3319673891174
         axis 0 1 0
         anchor 0.14 0.14 0
       }
@@ -6380,7 +6380,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation 0.14 0.14 0
-        rotation -0.6107593239184747 -0.5598976447735993 0.5598997013962626 4.2381758450336235
+        rotation -0.82621490139356 -0.3983514597407101 0.39835292296866015 4.52263404713316
         children [
           Shape {
             appearance PBRAppearance {
@@ -6414,13 +6414,13 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.25
         }
-        linearVelocity -1.2815877505386459e-11 -4.147321810966936e-11 7.43286535155914e-08
-        angularVelocity -2.838748072163623e-12 -1.0378569390678841e-10 -1.1198939805748258e-15
+        linearVelocity 1.944511092763731e-16 5.124498391088463e-16 -4.2714456422074026e-16
+        angularVelocity -2.0737981549346562e-14 3.1587599027861318e-15 2.0027469551617392e-16
       }
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position 1493.4994030400428
+        position 2417.9791779691345
         axis 0 1 0
         anchor 0.14 -0.14 0
       }
@@ -6435,7 +6435,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation 0.14 -0.14 0
-        rotation 0.4517444741483025 -0.6308422966461152 0.6308446138620258 2.292988040134941
+        rotation -0.7746087785346485 0.4472022870054328 -0.44720392967210204 4.459720305192004
         children [
           Shape {
             appearance PBRAppearance {
@@ -6469,13 +6469,13 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.25
         }
-        linearVelocity -1.2816186926056596e-11 4.147192265135079e-11 7.432865601181345e-08
-        angularVelocity 2.8672967796852922e-12 -1.037853261297811e-10 -3.198186577932624e-16
+        linearVelocity 1.1987894713241964e-16 4.197625800880529e-16 6.715436022955613e-16
+        angularVelocity -3.199436188823607e-15 2.3307322374882072e-15 6.977355683138663e-16
       }
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position 1226.7051799364979
+        position 2118.332087915704
         axis 0 1 0
         anchor -0.14 0.14 0
       }
@@ -6490,7 +6490,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation -0.14 0.14 0
-        rotation -0.6107267724794508 -0.5599153981764486 0.5599174548643236 4.238128428840202
+        rotation -0.8261745068507956 -0.3983933472239085 0.3983948106057293 4.522586032667154
         children [
           Shape {
             appearance PBRAppearance {
@@ -6524,13 +6524,13 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.25
         }
-        linearVelocity 4.599539535583474e-13 -4.1812456752808963e-11 7.430040163594683e-08
-        angularVelocity -2.8977253374592288e-12 -1.022036998050286e-10 -3.7758136729577147e-16
+        linearVelocity 1.6766887302844912e-16 2.7575786519881953e-16 2.263644516943077e-16
+        angularVelocity -4.376220445783645e-15 2.6753370183203924e-15 1.2787578199734894e-15
       }
     }
     HingeJoint {
       jointParameters HingeJointParameters {
-        position 1493.49946326767
+        position 2417.9792717656005
         axis 0 1 0
         anchor -0.14 -0.14 0
       }
@@ -6545,7 +6545,7 @@ DEF MEDIBOT Robot {
       ]
       endPoint Solid {
         translation -0.14 -0.14 0
-        rotation 0.45176734810882824 -0.6308341064248283 0.6308364236106736 2.2929500462469123
+        rotation -0.7746423352088772 0.4471732234167171 -0.4471748659766563 4.459762249823056
         children [
           Shape {
             appearance PBRAppearance {
@@ -6579,8 +6579,8 @@ DEF MEDIBOT Robot {
           density -1
           mass 0.25
         }
-        linearVelocity 4.596776746559262e-13 4.1811502480548454e-11 7.43004041525184e-08
-        angularVelocity 2.9052388081161172e-12 -1.0220423801126081e-10 -1.7239557369697055e-15
+        linearVelocity 1.3046965586223351e-16 -3.0289256604839423e-16 -6.980948099348079e-16
+        angularVelocity 1.5980435582160257e-14 2.3910861674250064e-15 8.475406345921915e-16
       }
     }
   ]
@@ -6602,8 +6602,8 @@ DEF MEDIBOT Robot {
   }
   controller "medibot_controller"
   supervisor TRUE
-  linearVelocity -5.1731064600719045e-12 -6.281405381730262e-16 7.426536188859246e-08
-  angularVelocity 3.848639798019456e-15 -1.0299494590526663e-10 -9.720226805657228e-16
+  linearVelocity 1.2423207265428033e-16 2.5767764051180177e-16 0
+  angularVelocity -5.919965747227661e-16 3.6893565096392684e-15 8.923240699268057e-16
 }
 DEF ROUTE_0 Pose {
   translation 1 0 0.008
