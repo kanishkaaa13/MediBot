@@ -185,7 +185,7 @@ def enrol_all(patients_json: str | None = None) -> int:
         for rel_path in face_files:
             abs_path = str(HERE / rel_path) if not os.path.isabs(rel_path) else rel_path
             if not os.path.isfile(abs_path):
-                print(f"  [WARN] Photo not found: {abs_path} – skipping")
+                print(f"  [WARN] Photo not found: {abs_path} - skipping")
                 continue
 
             img = cv2.imread(abs_path)
@@ -199,7 +199,7 @@ def enrol_all(patients_json: str | None = None) -> int:
             if box is None:
                 print(
                     f"  [WARN] YuNet: NO FACE DETECTED in '{os.path.basename(abs_path)}' ({abs_path})"
-                    f" for {name} ({pid}) – photo REJECTED"
+                    f" for {name} ({pid}) - photo REJECTED"
                 )
                 continue
 
@@ -221,9 +221,9 @@ def enrol_all(patients_json: str | None = None) -> int:
             if norm > 0:
                 _ENROLLMENTS[pid] = avg / norm
                 enrolled += 1
-                print(f"  [ENROLL] {name} ({pid}) – {len(embeddings)} photo(s) enrolled ✓")
+                print(f"  [ENROLL] {name} ({pid}) - {len(embeddings)} photo(s) enrolled OK")
         else:
-            print(f"  [ENROLL] {name} ({pid}) – NO valid face found in any photo – NOT enrolled")
+            print(f"  [ENROLL] {name} ({pid}) - NO valid face found in any photo - NOT enrolled")
 
     print(f"[ENROLL] {enrolled}/{total} people enrolled")
     return enrolled

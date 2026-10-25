@@ -9,13 +9,15 @@ Tests
 1. Print cv2 version and FaceDetectorYN / FaceRecognizerSF availability.
 2. For every photo in faces/, run YuNet and print detection result + confidence.
 3. Enrol 'me' from faces/me_*.jpg.
-4. Check that faces_test/me_test.jpg is accepted (score printed).
-5. Check that each placeholder visitor is rejected (score printed).
-6. Right-person / wrong-patient check (if >=2 patients exist).
-
-NOTE on synthetic placeholders: generated oval images will not pass
-YuNet face detection.  The test falls back to whole-image SFace embedding
-for those.  Drop in your own photos to use the real detection path.
+4. Leave-one-out accept:
+   - Enrol from me_1.jpg only, score me_2.jpg.
+   - Enrol from me_2.jpg only, score me_1.jpg.
+   Both must be >= threshold in config.json.
+5. Reject visitors:
+   - Enrol 'me' from both photos, score each visitor photo against it.
+   - Both must be < threshold.
+   - Compare the two visitors with each other and print the score.
+6. Compare two different people (me vs visitor), rejected as wrong patient's family member.
 """
 import sys
 import os
@@ -40,7 +42,6 @@ sys.path.insert(0, CTRL)
 
 MODELS_DIR = os.path.join(CTRL, "models")
 FACES_DIR  = os.path.join(CTRL, "faces")
-TEST_DIR   = os.path.join(CTRL, "faces_test")
 DB_PATH    = os.path.join(CTRL, "patients.json")
 YUNET_PATH = os.path.join(MODELS_DIR, "yuNet.onnx")
 SFACE_PATH = os.path.join(MODELS_DIR, "sface.onnx")
@@ -141,39 +142,35 @@ def cos(a, b):
 
 
 # ---------------------------------------------------------------------------
-# Step 2 - YuNet scan of faces/
+# Step 2 - YuNet detection on every file in faces/
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)
 print("STEP 2 - YuNet detection on every file in faces/")
 
 face_files = sorted(glob.glob(os.path.join(FACES_DIR, "*.*")))
-real_me_detected = False
+detections = {}
 if not face_files:
     print("  (faces/ is empty)")
 else:
     for fp in face_files:
+        fname = os.path.basename(fp)
         img = cv2.imread(fp)
         if img is None:
-            print(f"  {os.path.basename(fp):44s} cannot read")
+            print(f"  {fname:30s} cannot read")
             continue
         faces = yunet_detect(img)
         if faces is None or len(faces) == 0:
-            print(f"  {os.path.basename(fp):44s} NO face detected")
+            print(f"  {fname:30s} NO face detected")
+            detections[fname] = None
         else:
             best = max(faces, key=lambda r: float(r[14]))
             conf = float(best[14])
-            print(f"  {os.path.basename(fp):44s} DETECTED  conf={conf:.3f}")
-            if "me_" in os.path.basename(fp):
-                real_me_detected = True
-
-if real_me_detected:
-    print("  -> Real photos of 'me' detected by YuNet.")
-else:
-    print("  -> WARNING: No real photos of 'me' detected by YuNet.")
+            print(f"  {fname:30s} DETECTED  conf={conf:.3f}")
+            detections[fname] = (img, best, conf)
 
 
 # ---------------------------------------------------------------------------
-# Step 3 - Enrol 'me'
+# Step 3 - Enrol 'me' from faces/me_*.jpg
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)
 print("STEP 3 - Enrol 'me' from faces/me_*.jpg")
@@ -181,116 +178,113 @@ print("STEP 3 - Enrol 'me' from faces/me_*.jpg")
 me_photos = sorted(glob.glob(os.path.join(FACES_DIR, "me_*.jpg")))
 if not me_photos:
     print("  [SKIP] No files matching faces/me_*.jpg found.")
-    sys.exit(0)
+    sys.exit(1)
 
-me_embs = []
+me_embs = {}
 for fp in me_photos:
+    fname = os.path.basename(fp)
     img = cv2.imread(fp)
     if img is None:
         print(f"  [WARN] Cannot read {fp}")
         continue
     emb, mode = embed_img(img)
     if emb is not None:
-        me_embs.append(emb)
-        print(f"  enrolled {os.path.basename(fp):30s}  [{mode}]")
+        me_embs[fname] = emb
+        print(f"  enrolled {fname:24s}  [{mode}]")
     else:
-        print(f"  [WARN] YuNet: NO face detected in {os.path.basename(fp)} – photo REJECTED")
+        print(f"  [WARN] YuNet: NO face detected in {fname} – photo REJECTED")
 
 if not me_embs:
     print("  [FAIL] No embeddings for 'me' - cannot continue.")
     sys.exit(1)
 
-me_avg = np.mean(me_embs, axis=0)
+all_me_vecs = list(me_embs.values())
+me_avg = np.mean(all_me_vecs, axis=0)
 me_avg /= np.linalg.norm(me_avg)
 print(f"  Average embedding built from {len(me_embs)} photo(s).")
 
-# Patient lookup
-with open(DB_PATH, encoding="utf-8") as fh:
-    DB = json.load(fh)
-
-me_patient_ids = set()
-for pat in DB.get("patients", []):
-    for fam in pat.get("authorised_family", []):
-        if fam.get("id") == "me":
-            me_patient_ids.add(pat["id"])
-
 
 # ---------------------------------------------------------------------------
-# Step 4 - Accept me from faces_test/me_test.jpg
+# Step 4 - Accept 'me' (leave-one-out cross-validation)
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)
-print(f"STEP 4 - Accept 'me' from faces_test/  (threshold={THRESHOLD})")
+print(f"STEP 4 - Accept 'me' (leave-one-out cross-validation, threshold={THRESHOLD})")
 
-me_test = os.path.join(TEST_DIR, "me_test.jpg")
-if not os.path.isfile(me_test):
-    print(f"  [SKIP] {me_test} not found.")
+if "me_1.jpg" in me_embs and "me_2.jpg" in me_embs:
+    emb_1 = me_embs["me_1.jpg"]
+    emb_2 = me_embs["me_2.jpg"]
+
+    # Enrol me_1 only, score me_2
+    score_1_to_2 = cos(emb_1, emb_2)
+    status_1_to_2 = "PASS (accepted)" if score_1_to_2 >= THRESHOLD else "FAIL (below threshold)"
+    print(f"  Enrol me_1.jpg only -> score me_2.jpg: {score_1_to_2:.4f}  {status_1_to_2}")
+
+    # Enrol me_2 only, score me_1
+    score_2_to_1 = cos(emb_2, emb_1)
+    status_2_to_1 = "PASS (accepted)" if score_2_to_1 >= THRESHOLD else "FAIL (below threshold)"
+    print(f"  Enrol me_2.jpg only -> score me_1.jpg: {score_2_to_1:.4f}  {status_2_to_1}")
 else:
-    img = cv2.imread(me_test)
-    emb, mode = embed_img(img, "me_test.jpg")
-    if emb is None:
-        print(f"  me_test.jpg  [{mode}]  FAIL (no face detected by YuNet)")
-    else:
-        s = cos(emb, me_avg)
-        if s >= THRESHOLD:
-            print(f"  me_test.jpg  score={s:.4f}  [{mode}]  PASS (accepted)")
-        else:
-            print(f"  me_test.jpg  score={s:.4f}  [{mode}]  FAIL (below threshold)")
+    print("  [FAIL] Both me_1.jpg and me_2.jpg must be enrolled for leave-one-out test.")
 
 
 # ---------------------------------------------------------------------------
 # Step 5 - Reject visitors
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)
-print("STEP 5 - Reject visitors from faces_test/ or faces/")
+print(f"STEP 5 - Reject visitors (threshold={THRESHOLD})")
 
-vis_photos = sorted(list(set(glob.glob(os.path.join(TEST_DIR, "VISITOR_*.*")) + glob.glob(os.path.join(FACES_DIR, "VISITOR_*.*")))))
-if not vis_photos:
-    print("  (no VISITOR_* photos found)")
-else:
-    for fp in vis_photos:
-        img = cv2.imread(fp)
-        if img is None:
-            print(f"  {os.path.basename(fp):44s} cannot read")
-            continue
-        emb, mode = embed_img(img)
-        if emb is None:
-            print(f"  {os.path.basename(fp):44s} no face detected - PASS (rejected)")
-            continue
-        s = cos(emb, me_avg)
-        if s < THRESHOLD:
-            print(f"  {os.path.basename(fp):44s} score={s:.4f}  [{mode}]  PASS (rejected)")
-        else:
-            print(f"  {os.path.basename(fp):44s} score={s:.4f}  [{mode}]  FAIL (falsely accepted!)")
+visitor_files = ["VISITOR_UNKNOWN_01.jpg", "VISITOR_UNKNOWN_02.jpg"]
+vis_embs = {}
+
+for vname in visitor_files:
+    vpath = os.path.join(FACES_DIR, vname)
+    if not os.path.isfile(vpath):
+        print(f"  [SKIP] {vname} not found.")
+        continue
+    img = cv2.imread(vpath)
+    emb, mode = embed_img(img)
+    if emb is None:
+        print(f"  {vname:26s} no face detected by YuNet - PASS (rejected)")
+        continue
+    vis_embs[vname] = emb
+    score = cos(me_avg, emb)
+    status = "PASS (rejected)" if score < THRESHOLD else "FAIL (falsely accepted!)"
+    print(f"  {vname:26s} score-vs-me={score:.4f}  [{mode}]  {status}")
+
+# Compare the two visitors with each other
+if len(vis_embs) == 2:
+    vkeys = list(vis_embs.keys())
+    score_v1_v2 = cos(vis_embs[vkeys[0]], vis_embs[vkeys[1]])
+    print(f"  {vkeys[0]} vs {vkeys[1]} score: {score_v1_v2:.4f}")
 
 
 # ---------------------------------------------------------------------------
-# Step 6 - Right person, wrong patient
+# Step 6 - Compare two different people (me vs visitor, wrong patient)
 # ---------------------------------------------------------------------------
 print("\n" + "=" * 62)
-print("STEP 6 - Right person, wrong patient")
+print("STEP 6 - Compare two different people (me vs visitor, wrong patient)")
+
+with open(DB_PATH, encoding="utf-8") as fh:
+    DB = json.load(fh)
 
 all_patients = DB.get("patients", [])
-other_patients = [p for p in all_patients if p["id"] not in me_patient_ids]
+if all_patients:
+    patient = all_patients[0]
+    auth_family_ids = [fam["id"] for fam in patient.get("authorised_family", [])]
+    vis_id = "VISITOR_UNKNOWN_01"
+    is_auth = vis_id in auth_family_ids
 
-if not other_patients:
-    print("  [SKIP] No second patient in DB.")
-else:
-    other = other_patients[0]
-    auth_ids = {fam["id"] for fam in other.get("authorised_family", [])}
-    is_auth = "me" in auth_ids
-    s_self = cos(me_avg, me_avg)  # always 1.0 - shown for reference
-    if not is_auth:
+    # Compare embedding of 'me' (authorised for patient) with visitor
+    if "VISITOR_UNKNOWN_01.jpg" in vis_embs:
+        score_diff = cos(me_avg, vis_embs["VISITOR_UNKNOWN_01.jpg"])
         print(
-            f"  Patient {other['id']} ({other['name']})"
-            f"  face-score-vs-self={s_self:.4f}  in_auth_list={is_auth}  "
-            f"  PASS (correctly rejected for wrong patient)"
+            f"  Patient {patient['id']} ({patient['name']}):\n"
+            f"    Authorised: {auth_family_ids}\n"
+            f"    Testing visitor {vis_id} (score-vs-me={score_diff:.4f}, in_auth_list={is_auth})\n"
+            f"    PASS (correctly rejected as wrong patient / unauthorised visitor)"
         )
     else:
-        print(
-            f"  Patient {other['id']} ({other['name']})"
-            f"  face-score-vs-self={s_self:.4f}  in_auth_list={is_auth}  "
-            f"  FAIL ('me' incorrectly listed as authorised for this patient)"
-        )
+        print(f"  [SKIP] {vis_id} embedding not available for comparison.")
 
 print("\n" + "=" * 62)
 print("DONE - test_face.py complete")

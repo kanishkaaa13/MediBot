@@ -104,14 +104,14 @@
       "name": "Taylor Reed",
       "relation": "visitor",
       "rfid_uid": "UID-9001",
-      "face_files": ["faces/VISITOR_UNKNOWN_01.png"]
+      "face_files": ["faces/VISITOR_UNKNOWN_01.jpg"]
     },
     {
       "id": "VISITOR_UNKNOWN_02",
       "name": "Jordan Ellis",
       "relation": "visitor",
       "rfid_uid": "UID-9002",
-      "face_files": ["faces/VISITOR_UNKNOWN_02.png"]
+      "face_files": ["faces/VISITOR_UNKNOWN_02.jpg"]
     }
   ]
 }

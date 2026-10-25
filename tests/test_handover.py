@@ -50,7 +50,7 @@ check("patient records include delivery identity and compartment",
 check("all family and visitor RFID UIDs are unique",
       len(known_cards) == len(known_people))
 face_files = [os.path.join(ROOT, "worlds", "textures", "faces",
-                           os.path.basename(person["face_image"])) for person in known_people.values()]
+                           os.path.basename(person.get("face_files", [person.get("face_image", "")])[0])) for person in known_people.values()]
 check("generated face texture exists for each person", all(os.path.isfile(p) for p in face_files))
 
 success = decide_handover(patient, relative["id"], 1.0, relative["rfid_uid"],

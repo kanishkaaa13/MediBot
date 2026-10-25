@@ -28,7 +28,8 @@ except ImportError:
 from controller import Supervisor
 from medibot_core import (CFG, NODES, EKF, TagLocalizer, astar, edge_key, nearest_node, wrap,
                           rotate_drive_command)
-from handover import (face_verify, decide_handover, compartment_to_unlock,
+import face_verify
+from handover import (decide_handover, compartment_to_unlock,
                       unlock_authorized_compartment)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -39,31 +40,6 @@ PEOPLE = [relative for patient in PATIENTS for relative in patient["authorised_f
 PEOPLE.extend(PATIENT_DATA["unauthorised_visitors"])
 PEOPLE_BY_ID = {person["id"]: person for person in PEOPLE}
 CARDS_BY_UID = {person["rfid_uid"]: person["id"] for person in PEOPLE}
-
-def _startup_face_check():
-    """Load face images for all people and run a simple Haar cascade detection.
-    Prints detection results and counts successful enrollments.
-    """
-    cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    face_cascade = cv2.CascadeClassifier(cascade_path)
-    enrolled = 0
-    for person in PEOPLE:
-        img_path = os.path.join(HERE, person["face_image"])
-        if not os.path.isfile(img_path):
-            print(f"[WARNING] face image not found: {person['face_image']}")
-            continue
-        img = cv2.imread(img_path)
-        if img is None:
-            print(f"[WARNING] could not read image: {person['face_image']}")
-            continue
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-        print(f"[ENROLL] {person.get('name','?')} ({person.get('id','?')}): {len(faces)} face(s) detected")
-        if len(faces) > 0:
-            enrolled += 1
-    print(f"[ENROLL] Total faces enrolled: {enrolled}")
-
-_startup_face_check()
 
 # ---------------------------------------------------------------- parameters
 TIME_STEP = 32

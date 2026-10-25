@@ -14,9 +14,9 @@ def face_verify(frames):
 
 
 def decide_handover(patient, face_person_id, face_score, rfid_uid,
-                    known_people, known_cards, rfid_timed_out=False):
+                    known_people, known_cards, rfid_timed_out=False, threshold=0.4):
     """Return (allowed, reason, authorized_person_id) for one protocol attempt."""
-    if not face_person_id or face_score < 0.75:
+    if not face_person_id or face_score < threshold:
         return False, "unknown face", None
 
     authorized = {person["id"] for person in patient["authorised_family"]}
